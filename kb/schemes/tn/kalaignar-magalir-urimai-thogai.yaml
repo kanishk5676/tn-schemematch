@@ -2,6 +2,7 @@ id: kmut
 name: Kalaignar Magalir Urimai Thogai
 name_ta: கலைஞர் மகளிர் உரிமைத் தொகை
 level: state
+jurisdiction: TN
 authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
 sectors: [women, income_support]
 benefit_type: cash_transfer

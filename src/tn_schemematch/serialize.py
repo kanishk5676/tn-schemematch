@@ -25,7 +25,7 @@ import re
 from typing import Any, Mapping
 
 from .attributes import Attribute, AttributeSpec
-from .kb import Scheme, SchemeKB
+from .kb import Scheme, SchemeKB, jurisdiction_name
 from .rules import All, AnyOf, Const, Not, Predicate, Trace, Verdict
 
 VERDICT_KEYS = ("eligible", "ineligible", "undetermined")
@@ -265,6 +265,8 @@ def scheme_summary(scheme: Scheme) -> dict[str, Any]:
         "name": scheme.name,
         "name_ta": scheme.name_ta,
         "level": scheme.level,
+        "jurisdiction": scheme.jurisdiction,
+        "jurisdiction_name": jurisdiction_name(scheme.jurisdiction) if scheme.jurisdiction else "",
         "authority": scheme.authority,
         "sectors": list(scheme.sectors),
         "benefit_type": scheme.benefit_type,

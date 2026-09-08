@@ -2,6 +2,7 @@ id: tn-adw-post-matric-scholarship
 name: Post-Matric Scholarship with Maintenance Allowance (Adi Dravidar and Tribal Welfare, Tamil Nadu)
 name_ta: மேல்நிலைக் கல்வி உதவித்தொகை — ஆதிதிராவிடர் நலத்துறை
 level: state
+jurisdiction: TN
 authority: Adi Dravidar and Tribal Welfare Department, Government of Tamil Nadu
 sectors: [education, scholarship, social_justice]
 benefit_type: scholarship

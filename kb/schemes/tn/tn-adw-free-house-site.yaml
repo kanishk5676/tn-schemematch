@@ -2,6 +2,7 @@ id: tn-adw-free-house-site
 name: Free House Site Patta for Adi Dravidar and Tribal Families (Tamil Nadu)
 name_ta: ஆதிதிராவிடர் மற்றும் பழங்குடியினருக்கு இலவச வீட்டு மனைப் பட்டா
 level: state
+jurisdiction: TN
 authority: Adi Dravidar and Tribal Welfare Department, Government of Tamil Nadu
 sectors: [housing, social_justice]
 benefit_type: in_kind

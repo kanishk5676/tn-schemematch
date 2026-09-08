@@ -2,6 +2,7 @@ id: moovalur-marriage-assistance
 name: Moovalur Ramamirtham Ammaiyar Ninaivu Marriage Assistance Scheme (discontinued)
 name_ta: மூவலூர் ராமாமிர்தம் அம்மையார் நினைவு திருமண உதவித் திட்டம்
 level: state
+jurisdiction: TN
 authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
 sectors: [women, marriage_assistance]
 benefit_type: cash_transfer

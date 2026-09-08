@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Mapping
 
@@ -33,6 +34,7 @@ from .rules import Node, RuleError, Verdict, evaluate, parse_rule, referenced_at
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_KB_DIR = _REPO_ROOT / "kb" / "schemes"
+DEFAULT_JURISDICTIONS_PATH = _REPO_ROOT / "kb" / "spec" / "jurisdictions.yaml"
 
 SCHEME_LEVELS = {"central", "state"}
 SCHEME_STATUSES = {"draft", "verified", "deprecated"}
@@ -42,6 +44,19 @@ BENEFIT_TYPES = {"cash_transfer", "pension", "subsidy", "insurance", "loan",
 
 class KBError(ValueError):
     """Raised when a scheme file is malformed or fails validation."""
+
+
+@lru_cache(maxsize=2)
+def jurisdictions(path: str | None = None) -> dict[str, dict[str, str]]:
+    """Code -> display names, for the text the system writes rather than reads."""
+    source = Path(path) if path else DEFAULT_JURISDICTIONS_PATH
+    raw = yaml.safe_load(source.read_text(encoding="utf-8")) or {}
+    return dict(raw.get("jurisdictions") or {})
+
+
+def jurisdiction_name(code: str) -> str:
+    """The English display name for a jurisdiction code, or the code if unknown."""
+    return (jurisdictions().get(code) or {}).get("name_en", code)
 
 
 # ------------------------------------------------------------------- provenance
@@ -76,8 +91,13 @@ class Scheme:
     id: str
     name: str
     level: str                      # central | state
+    # Which government runs it. Required iff level == state, empty for central schemes.
+    # Kept as an explicit field rather than inferred from the rule: a rule may reach
+    # `state` through a disjunction or an `in` list, so reading the jurisdiction back off
+    # it is guesswork, and this value is what the retrieval corpus and the UI display.
     eligibility: Node               # parsed rule AST
     eligibility_prose: str          # verbatim eligibility wording from the source
+    jurisdiction: str = ""
     summary: str = ""
     name_ta: str = ""
     authority: str = ""
@@ -122,7 +142,8 @@ class Scheme:
             f"Scheme: {self.name}",
             f"Tamil name: {self.name_ta}" if self.name_ta else "",
             f"Implemented by: {self.authority}" if self.authority else "",
-            f"Level: {'Central Government' if self.level == 'central' else 'Government of Tamil Nadu'}",
+            f"Level: {'Central Government' if self.level == 'central' else 'Government of ' + jurisdiction_name(self.jurisdiction)}",
+            f"State: {jurisdiction_name(self.jurisdiction)}" if self.jurisdiction else "",
             f"Sectors: {', '.join(self.sectors)}" if self.sectors else "",
             f"Summary: {self.summary}" if self.summary else "",
             f"Benefit: {self.benefit_prose}" if self.benefit_prose else "",
@@ -137,6 +158,8 @@ class Scheme:
             "name": self.name,
             "name_ta": self.name_ta,
             "level": self.level,
+            "jurisdiction": self.jurisdiction,
+            "jurisdiction_name": jurisdiction_name(self.jurisdiction) if self.jurisdiction else "",
             "authority": self.authority,
             "sectors": list(self.sectors),
             "benefit_type": self.benefit_type,
@@ -242,9 +265,13 @@ class SchemeKB:
         by_level: dict[str, int] = {}
         by_sector: dict[str, int] = {}
         by_status: dict[str, int] = {}
+        by_jurisdiction: dict[str, int] = {}
         for scheme in self:
             by_level[scheme.level] = by_level.get(scheme.level, 0) + 1
             by_status[scheme.status] = by_status.get(scheme.status, 0) + 1
+            if scheme.jurisdiction:
+                by_jurisdiction[scheme.jurisdiction] = (
+                    by_jurisdiction.get(scheme.jurisdiction, 0) + 1)
             for sector in scheme.sectors:
                 by_sector[sector] = by_sector.get(sector, 0) + 1
         clause_counts = [
@@ -253,6 +280,7 @@ class SchemeKB:
         return {
             "n_schemes": len(self),
             "by_level": dict(sorted(by_level.items())),
+            "by_jurisdiction": dict(sorted(by_jurisdiction.items(), key=lambda kv: -kv[1])),
             "by_sector": dict(sorted(by_sector.items(), key=lambda kv: -kv[1])),
             "by_status": dict(sorted(by_status.items())),
             "attributes_used": len(usage),
@@ -313,6 +341,26 @@ def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
             f"{path.name}: benefit_type must be one of {sorted(BENEFIT_TYPES)}, got {benefit_type!r}"
         )
 
+    # A state scheme must say which state runs it, and it must be a state the vocabulary
+    # knows about — otherwise the rule can constrain `state` to a value no persona can
+    # ever hold, and the scheme is silently unreachable rather than loudly wrong.
+    jurisdiction = str(raw.get("jurisdiction") or "").strip()
+    known_states = tuple(spec["state"].domain or ()) if "state" in spec else ()
+    if level == "state":
+        if not jurisdiction:
+            raise KBError(f"{path.name}: a state scheme must declare a jurisdiction")
+        if jurisdiction == "other" or (known_states and jurisdiction not in known_states):
+            raise KBError(
+                f"{path.name}: jurisdiction {jurisdiction!r} is not a value of the `state` "
+                f"attribute; add it to kb/spec/attributes.yaml in the same change that "
+                f"adds this state's first scheme"
+            )
+    elif jurisdiction:
+        raise KBError(
+            f"{path.name}: a central scheme applies nationally and must not declare a "
+            f"jurisdiction (got {jurisdiction!r})"
+        )
+
     try:
         rule = parse_rule(raw["eligibility"], spec)
     except RuleError as exc:
@@ -334,6 +382,7 @@ def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
         benefit_prose=str(raw.get("benefit_prose") or "").strip(),
         eligibility_prose=str(raw["eligibility_prose"]).strip(),
         eligibility=rule,
+        jurisdiction=jurisdiction,
         documents=tuple(raw.get("documents") or ()),
         apply_url=str(raw.get("apply_url") or ""),
         status=status,
@@ -412,7 +461,7 @@ def validate_kb(kb: SchemeKB) -> list[str]:
         if scheme.level == "state" and "state" not in scheme.attributes:
             problems.append(
                 f"{scheme.id}: state scheme whose rule never constrains 'state' — "
-                "non-TN personas would wrongly match"
+                "residents of every other state would wrongly match"
             )
         for attr in scheme.attributes:
             if attr not in spec:
@@ -428,6 +477,63 @@ def validate_kb(kb: SchemeKB) -> list[str]:
             problems.append(
                 f"{scheme.id}: UNDETERMINED under a fully-specified profile "
                 f"(unresolved: {unresolved})"
+            )
+
+    problems += _check_jurisdiction_scoping(kb, saturated)
+    return problems
+
+
+def _check_jurisdiction_scoping(kb: "SchemeKB", saturated: dict[str, Any]) -> list[str]:
+    """Prove each state scheme is refuted for a resident of every other state.
+
+    This is the check that stands in for personas we have not written. The benchmark's
+    personas are all Tamil Nadu residents, so a Karnataka scheme copied from a Tamil Nadu
+    one that still says ``value: TN`` passes everything else in this file: its rule *does*
+    constrain ``state``, no persona lives in Karnataka so no gold label moves, and the
+    gold-set diff is clean. The scheme is simply unreachable, forever, and nothing says so.
+
+    Being a property of the rules rather than of any persona, this holds for every state
+    in the vocabulary whether or not anybody in the benchmark lives there.
+    """
+    problems: list[str] = []
+    spec = kb.spec
+    if "state" not in spec:
+        return problems
+    domain = tuple(spec["state"].domain or ())
+
+    for scheme in kb:
+        if scheme.level != "state":
+            continue
+        if not scheme.jurisdiction:
+            problems.append(f"{scheme.id}: state scheme with no jurisdiction")
+            continue
+
+        # Negative direction: a resident of any other state must be refuted outright.
+        for other in domain:
+            if other == scheme.jurisdiction:
+                continue
+            if scheme.verdict({**saturated, "state": other}) is not Verdict.FALSE:
+                problems.append(
+                    f"{scheme.id}: declares jurisdiction {scheme.jurisdiction} but is not "
+                    f"refuted for a resident of {other!r} — the state clause does not "
+                    f"actually scope it"
+                )
+
+        # Positive direction: `state` must not be what refutes it at home. Catches the
+        # copy-paste — a Karnataka file whose rule still tests `state == TN`.
+        home = {**saturated, "state": scheme.jurisdiction}
+        if any(pred.attr == "state" for pred in scheme.decide(home).failing_predicates()):
+            problems.append(
+                f"{scheme.id}: declares jurisdiction {scheme.jurisdiction} but its own "
+                f"state clause refutes a resident of {scheme.jurisdiction} — copied from "
+                f"another state?"
+            )
+
+        if "district" in scheme.attributes and scheme.jurisdiction != "TN":
+            problems.append(
+                f"{scheme.id}: reads `district`, whose domain is the 38 Tamil Nadu "
+                f"districts; encode non-TN district scoping at state level with a "
+                f"MODELLING LIMITATION note"
             )
     return problems
 

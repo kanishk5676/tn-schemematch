@@ -2,6 +2,7 @@ id: tn-da-unemployment-allowance
 name: Unemployment Allowance for the Differently Abled (Tamil Nadu)
 name_ta: மாற்றுத்திறனாளிகளுக்கான வேலையில்லாத் திண்டாட்ட உதவித்தொகை
 level: state
+jurisdiction: TN
 authority: Department for the Welfare of the Differently Abled, Government of Tamil Nadu
 sectors: [disability, income_support]
 benefit_type: cash_transfer

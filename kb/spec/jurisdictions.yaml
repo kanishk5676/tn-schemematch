@@ -1,0 +1,30 @@
+# Display names for the jurisdictions a scheme can belong to.
+#
+# Separate from the `state` attribute's alias table on purpose. Aliases are lowercased
+# surface forms a citizen might type ("tamilnadu", "தமிழ்நாடு") and are matched by
+# substring; these are the names the system writes back out — into the RAG corpus, the
+# schemes browser, and the dashboard. Reusing one for the other produces "Government of
+# tamilnadu" in the retrieval text, which is both ugly and worse for lexical retrieval.
+#
+# Codes are ISO 3166-2:IN subdivision codes with the "IN-" prefix stripped. A code appears
+# in the `state` attribute's domain only once the KB actually carries a scheme for it —
+# see tests/test_kb_and_personas.py::test_state_domain_matches_the_scheme_tree.
+
+version: "0.1"
+updated: "2026-09-08"
+
+jurisdictions:
+  TN: {name_en: Tamil Nadu,     name_ta: தமிழ்நாடு}
+  AP: {name_en: Andhra Pradesh, name_ta: ஆந்திரப் பிரதேசம்}
+  BR: {name_en: Bihar,          name_ta: பீகார்}
+  GJ: {name_en: Gujarat,        name_ta: குஜராத்}
+  KA: {name_en: Karnataka,      name_ta: கர்நாடகா}
+  KL: {name_en: Kerala,         name_ta: கேரளா}
+  MH: {name_en: Maharashtra,    name_ta: மகாராஷ்டிரா}
+  MP: {name_en: Madhya Pradesh, name_ta: மத்தியப் பிரதேசம்}
+  OD: {name_en: Odisha,         name_ta: ஒடிசா}
+  PB: {name_en: Punjab,         name_ta: பஞ்சாப்}
+  RJ: {name_en: Rajasthan,      name_ta: ராஜஸ்தான்}
+  TS: {name_en: Telangana,      name_ta: தெலங்கானா}
+  UP: {name_en: Uttar Pradesh,  name_ta: உத்தரப் பிரதேசம்}
+  WB: {name_en: West Bengal,    name_ta: மேற்கு வங்கம்}

@@ -2,6 +2,7 @@ id: tn-adw-higher-education-scholarship
 name: Higher Education Scholarship for SC/ST Students (Tamil Nadu)
 name_ta: உயர்கல்வி உதவித்தொகை — ஆதிதிராவிடர் நலத்துறை
 level: state
+jurisdiction: TN
 authority: Adi Dravidar and Tribal Welfare Department, Government of Tamil Nadu
 sectors: [education, scholarship, social_justice]
 benefit_type: scholarship

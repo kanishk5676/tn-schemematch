@@ -67,7 +67,12 @@ class RAGBaseline:
     client: LLMClient
     kb: SchemeKB
     retriever: Retriever | None = None
-    top_k: int = 8
+    # 0 means "scale with the corpus". A fixed k is a confound once the KB grows: at 42
+    # schemes k=8 already retrieves only ~27% of the mean gold set, and holding it fixed
+    # while the corpus triples would let the baseline's candidate list starve. The
+    # headline finding would then partly mean "the baseline was denied the right answer",
+    # which is a harness artefact rather than a result about retrieval.
+    top_k: int = 0
     max_rounds: int = 4
     max_questions: int = 15
     name: str = "rag"
@@ -75,6 +80,8 @@ class RAGBaseline:
     def __post_init__(self) -> None:
         if self.retriever is None:
             self.retriever = BM25Retriever(self.kb)
+        if not self.top_k:
+            self.top_k = max(8, round(0.2 * len(self.kb)))
         self.name = f"rag[{self.retriever.name},k={self.top_k}]"
 
     def run(self, persona: Persona, condition: str, kb: SchemeKB | None = None) -> MatchResult:

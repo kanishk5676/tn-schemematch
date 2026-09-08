@@ -2,6 +2,7 @@ id: tn-fishermen-savings-relief
 name: National Marine Fishermen Savings-cum-Relief Scheme (Tamil Nadu)
 name_ta: தேசிய கடல் மீனவர் சேமிப்பு மற்றும் நிவாரணத் திட்டம்
 level: state
+jurisdiction: TN
 authority: Department of Fisheries and Fishermen Welfare, Government of Tamil Nadu
 sectors: [livelihood, fisheries, social_security]
 benefit_type: cash_transfer

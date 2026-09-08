@@ -2,6 +2,7 @@ id: kalaignar-kanavu-illam
 name: Kalaignarin Kanavu Illam (rural housing scheme, Tamil Nadu)
 name_ta: கலைஞரின் கனவு இல்லம்
 level: state
+jurisdiction: TN
 authority: Rural Development and Panchayat Raj Department, Government of Tamil Nadu
 sectors: [housing, rural]
 benefit_type: housing

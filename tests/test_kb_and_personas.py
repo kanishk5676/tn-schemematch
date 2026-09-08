@@ -5,11 +5,16 @@ is good; they check that the ground truth is well-formed, so that when a model d
 with it, the model is the thing that was wrong.
 """
 
+from datetime import date
+from pathlib import Path
+
 import pytest
 
 from tn_schemematch import validate_kb
 from tn_schemematch.elicitation import assert_monotone, necessary_questions
 from tn_schemematch.personas import validate_personas
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 from tn_schemematch.rules import Verdict
 
 
@@ -263,3 +268,143 @@ def test_scheme_filename_matches_its_id(kb):
         assert scheme.source_file.stem == scheme.id, (
             f"{scheme.source_file.name} declares id {scheme.id!r}"
         )
+
+
+# ------------------------------------------------------------- multi-jurisdiction KB
+#
+# The KB is national while the persona benchmark is Tamil Nadu only. That makes these
+# checks structural by necessity: they are properties of the rules, so they hold for
+# states no persona lives in.
+
+
+def test_state_schemes_are_refuted_outside_their_jurisdiction(kb):
+    """A state scheme must reject a resident of every other state in the vocabulary.
+
+    The failure this guards is a Karnataka file copied from a Tamil Nadu one that still
+    tests `state == TN`. Nothing else catches it: the rule *does* constrain `state`, no
+    persona lives in Karnataka so no gold label moves, and the gold-set diff is clean.
+    The scheme is simply unreachable, permanently, and silently.
+    """
+    from tn_schemematch.kb import _check_jurisdiction_scoping, _saturated_profile
+
+    problems = _check_jurisdiction_scoping(kb, _saturated_profile(kb.spec))
+    assert problems == [], "\n".join(problems)
+
+
+def test_every_state_scheme_declares_a_jurisdiction(kb):
+    for scheme in kb:
+        if scheme.level == "state":
+            assert scheme.jurisdiction, f"{scheme.id} is a state scheme with no jurisdiction"
+        else:
+            assert not scheme.jurisdiction, f"{scheme.id} is central but claims a jurisdiction"
+
+
+def test_state_domain_matches_the_scheme_tree(kb, spec):
+    """Every state in the vocabulary has schemes, and every scheme directory has a code.
+
+    Keeps the domain from advertising coverage that does not exist. It is also what makes
+    dropping a state clean: remove its directory and its code in one commit, and this
+    stays green.
+    """
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent / "kb" / "schemes"
+    directories = {d.name.upper() for d in root.iterdir()
+                   if d.is_dir() and d.name != "central"}
+    codes = {c for c in (spec["state"].domain or ()) if c != "other"}
+    assert directories == codes, (
+        f"in the domain but with no schemes: {sorted(codes - directories)}; "
+        f"on disk but not in the domain: {sorted(directories - codes)}"
+    )
+
+
+def test_state_aliases_do_not_collide(spec):
+    """`canonicalize` substring-matches aliases longer than two characters.
+
+    So one state's alias being a substring of another's resolves to the wrong state,
+    silently. This is not hypothetical: "bengal" (West Bengal) is a substring of
+    "bengaluru", so an alias like "bengaluru state" for Karnataka would canonicalize to
+    West Bengal.
+    """
+    from tn_schemematch.attributes import _fold
+
+    forms = [(code, _fold(f)) for code, fs in spec["state"].aliases.items() for f in fs]
+    for code_a, form_a in forms:
+        if len(form_a) <= 2:
+            continue
+        for code_b, form_b in forms:
+            if code_a == code_b or len(form_b) <= 2:
+                continue
+            assert form_a not in form_b, (
+                f"alias {form_a!r} ({code_a}) is a substring of {form_b!r} ({code_b}); "
+                f"{form_b!r} would canonicalize to {code_a}"
+            )
+
+
+def test_enum_probing_is_equivalent_to_probing_the_whole_domain(kb):
+    """The enum reduction in `candidate_values` must be exact, not merely cheaper.
+
+    Enums admit only eq/ne/in/not_in, so values no predicate names are indistinguishable
+    to the rule. If that reasoning is ever wrong — a new operator, a rule reaching an enum
+    some other way — pivotality starts silently missing questions, and the interview stops
+    asking things it needs.
+    """
+    from tn_schemematch.elicitation import candidate_values
+
+    for scheme in kb:
+        for attr in scheme.attributes:
+            if kb.spec[attr].type != "enum":
+                continue
+            reduced = {scheme.eligibility.evaluate({attr: v}).verdict
+                       for v in candidate_values(scheme.eligibility, attr, kb.spec)}
+            full = {scheme.eligibility.evaluate({attr: v}).verdict
+                    for v in kb.spec[attr].values()}
+            assert reduced == full, f"{scheme.id}/{attr}: {reduced} != {full}"
+
+
+def test_oracle_sequence_is_not_capped_below_the_vocabulary(kb, personas):
+    """A pinned oracle cap truncates silently once the KB outgrows it.
+
+    `oracle_n_questions` then saturates at the cap, and it is the denominator of the
+    reported question-overhead ratio — so the number stays plausible while becoming
+    wrong. Assert real headroom instead of trusting the constant.
+    """
+    budget = len(kb.spec.elicitable_names())
+    worst = max(len(p.elicitation_ground(kb).oracle_sequence) for p in personas)
+    assert worst < budget, (
+        f"the longest oracle sequence is {worst} questions against a vocabulary of "
+        f"{budget} elicitable attributes — the sequence is at risk of truncation"
+    )
+
+
+# The date this repository started recording its fetches. Sources retrieved before it
+# predate the log and are exempt; everything after must be traceable to a row in it.
+FETCH_ERA = date(2026, 9, 8)
+
+
+def test_sources_from_the_fetch_era_have_a_retrieval_record(kb):
+    """Make "cited" checkable.
+
+    `test_every_scheme_cites_a_dated_source` can only assert that a URL is a string
+    starting with http, which a citation invented from memory satisfies just as well as
+    one that was read. This asserts the URL also appears in docs/retrieval-log.md, so a
+    scheme cannot enter the KB carrying a source nobody fetched.
+    """
+    log = (REPO_ROOT / "docs" / "retrieval-log.md").read_text(encoding="utf-8")
+    for scheme in kb:
+        for source in scheme.sources:
+            if source.retrieved < FETCH_ERA:
+                continue
+            assert source.url in log, (
+                f"{scheme.id} cites {source.url} dated {source.retrieved}, but that URL "
+                f"has no row in docs/retrieval-log.md"
+            )
+
+
+def test_no_source_is_dated_in_the_future(kb):
+    today = date.today()
+    for scheme in kb:
+        for source in scheme.sources:
+            assert source.retrieved <= today, (
+                f"{scheme.id} cites {source.url} as retrieved on {source.retrieved}"
+            )

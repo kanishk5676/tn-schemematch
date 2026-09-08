@@ -2,6 +2,7 @@ id: annai-theresa-orphan-marriage
 name: Annai Theresa Ninaivu Orphan Girls' Marriage Assistance Scheme
 name_ta: அன்னை தெரசா நினைவு அனாதைப் பெண்கள் திருமண உதவித் திட்டம்
 level: state
+jurisdiction: TN
 authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
 sectors: [women, marriage_assistance]
 benefit_type: cash_transfer

@@ -12,7 +12,12 @@ let facets = { levels: [], sectors: [] };
 const chosenSectors = new Set();
 let chosenLevel = null;
 
-const LEVEL_LABEL = { central: 'Central Government', state: 'Government of Tamil Nadu' };
+/* Display names come from the scheme, not from a table here. The KB is national, so a
+   hardcoded 'Government of Tamil Nadu' would mislabel every other state's schemes. */
+const govLabel = (scheme) => (scheme.level === 'central'
+  ? 'Central Government'
+  : `Government of ${scheme.jurisdiction_name || scheme.jurisdiction}`);
+const shortLabel = (scheme) => (scheme.level === 'central' ? 'Central' : scheme.jurisdiction);
 
 function matches(scheme) {
   if (chosenLevel && scheme.level !== chosenLevel) return false;
@@ -32,7 +37,7 @@ function render() {
     scheme.name_ta ? el('div', { class: 'ta' }, scheme.name_ta) : null,
     el('div', { class: 'sum' }, scheme.summary || scheme.benefit_prose || ''),
     el('div', { class: 'scheme-meta' },
-      el('span', { class: 'pill' }, scheme.level === 'central' ? 'Central' : 'TN'),
+      el('span', { class: 'pill' }, shortLabel(scheme)),
       el('span', { class: 'pill' }, `${scheme.n_attributes} attrs`),
       scheme.is_verified
         ? el('span', { class: 'badge ok' }, 'verified')
@@ -53,7 +58,7 @@ async function openScheme(id) {
 
   $('d-body').replaceChildren(
     el('div', { class: 'scheme-meta', style: 'margin-bottom:14px' },
-      el('span', { class: 'pill' }, LEVEL_LABEL[scheme.level] || scheme.level),
+      el('span', { class: 'pill' }, govLabel(scheme)),
       ...(scheme.sectors || []).map((s) => el('span', { class: 'pill' }, s.replace(/_/g, ' '))),
       el('span', { class: 'badge open' }, scheme.status)),
     scheme.benefit_prose ? el('p', {}, scheme.benefit_prose) : null,
@@ -80,7 +85,8 @@ function renderFacets() {
   $('levels').replaceChildren(...facets.levels.map((level) => {
     const input = el('input', { type: 'radio', name: 'level' });
     input.addEventListener('change', () => { chosenLevel = level; render(); });
-    return el('label', { class: 'facet' }, input, LEVEL_LABEL[level] || level);
+    return el('label', { class: 'facet' }, input,
+      level === 'central' ? 'Central Government' : 'State governments');
   }));
   $('sectors').replaceChildren(...facets.sectors.map(([sector, count]) => {
     const input = el('input', { type: 'checkbox' });

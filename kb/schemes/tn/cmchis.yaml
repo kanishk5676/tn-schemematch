@@ -2,6 +2,7 @@ id: cmchis
 name: Chief Minister's Comprehensive Health Insurance Scheme (CMCHIS)
 name_ta: முதலமைச்சரின் விரிவான மருத்துவக் காப்பீட்டுத் திட்டம்
 level: state
+jurisdiction: TN
 authority: Health and Family Welfare Department, Government of Tamil Nadu
 sectors: [health, insurance]
 benefit_type: insurance

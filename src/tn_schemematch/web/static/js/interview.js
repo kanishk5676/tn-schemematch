@@ -182,7 +182,8 @@ function schemeCard(scheme, { miss = false } = {}) {
     scheme.benefit_prose ? el('p', { class: 'benefit' }, scheme.benefit_prose.split('\n')[0]) : null);
 
   const meta = el('div', { class: 'scheme-meta' },
-    el('span', { class: 'pill' }, scheme.level === 'central' ? 'Central' : 'Tamil Nadu'),
+    el('span', { class: 'pill' },
+      scheme.level === 'central' ? 'Central' : (scheme.jurisdiction_name || scheme.jurisdiction)),
     ...(scheme.sectors || []).slice(0, 3).map((s) => el('span', { class: 'pill' }, s.replace(/_/g, ' '))),
     el('span', { class: 'badge open', title: 'no human has checked this rule against the Government Order' }, 'draft'));
   top.append(meta);

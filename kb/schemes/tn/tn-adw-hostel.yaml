@@ -2,6 +2,7 @@ id: tn-adw-hostel
 name: Free Boarding and Lodging in Government Hostels (Adi Dravidar and Tribal Welfare, Tamil Nadu)
 name_ta: அரசு விடுதிகளில் இலவச உணவு மற்றும் தங்குமிட வசதி
 level: state
+jurisdiction: TN
 authority: Adi Dravidar and Tribal Welfare Department, Government of Tamil Nadu
 sectors: [education, social_justice, in_kind]
 benefit_type: in_kind

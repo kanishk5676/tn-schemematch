@@ -2,6 +2,7 @@ id: tn-srilankan-refugee-pension
 name: Pension to Sri Lankan Tamil Refugees (Tamil Nadu)
 name_ta: இலங்கைத் தமிழ் அகதிகளுக்கான ஓய்வூதியம்
 level: state
+jurisdiction: TN
 authority: Revenue and Disaster Management Department, Government of Tamil Nadu
 sectors: [social_security, refugees]
 benefit_type: pension

@@ -2,6 +2,7 @@ id: dharmambal-widow-remarriage
 name: Dr. Dharmambal Ammaiyar Ninaivu Widow Remarriage Assistance Scheme
 name_ta: டாக்டர் தர்மாம்பாள் அம்மையார் நினைவு விதவை மறுமண உதவித் திட்டம்
 level: state
+jurisdiction: TN
 authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
 sectors: [women, marriage_assistance]
 benefit_type: cash_transfer

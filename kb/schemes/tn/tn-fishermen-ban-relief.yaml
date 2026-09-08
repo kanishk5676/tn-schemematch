@@ -2,6 +2,7 @@ id: tn-fishermen-ban-relief
 name: Relief Assistance to Marine Fishermen during the Fishing Ban Period (Tamil Nadu)
 name_ta: மீன்பிடி தடைக்காலத்தில் கடல் மீனவர்களுக்கான நிவாரண உதவி
 level: state
+jurisdiction: TN
 authority: Department of Fisheries and Fishermen Welfare, Government of Tamil Nadu
 sectors: [livelihood, fisheries, income_support]
 benefit_type: cash_transfer

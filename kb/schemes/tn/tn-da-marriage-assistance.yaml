@@ -2,6 +2,7 @@ id: tn-da-marriage-assistance
 name: Marriage Assistance for the Differently Abled (Tamil Nadu)
 name_ta: மாற்றுத்திறனாளிகள் திருமண உதவித் திட்டம்
 level: state
+jurisdiction: TN
 authority: Department for the Welfare of the Differently Abled, Government of Tamil Nadu
 sectors: [disability, marriage_assistance]
 benefit_type: cash_transfer

@@ -2,6 +2,7 @@ id: mrmbs
 name: Dr. Muthulakshmi Reddy Maternity Benefit Scheme
 name_ta: மருத்துவர் முத்துலட்சுமி ரெட்டி மகப்பேறு நிதி உதவித் திட்டம்
 level: state
+jurisdiction: TN
 authority: Health and Family Welfare Department, Government of Tamil Nadu
 sectors: [health, women, maternity]
 benefit_type: cash_transfer

@@ -33,7 +33,7 @@ from typing import Any, Mapping, Sequence
 
 from .attributes import AttributeSpec
 from .kb import Scheme, SchemeKB
-from .rules import Node, Verdict, numeric_boundaries, referenced_attributes
+from .rules import Node, Predicate, Verdict, numeric_boundaries, referenced_attributes
 
 __all__ = [
     "candidate_values",
@@ -58,13 +58,35 @@ _EPSILON = 1e-6
 def candidate_values(rule: Node, attr: str, spec: AttributeSpec) -> list[Any]:
     """Values worth testing for ``attr`` when probing ``rule``.
 
-    Categorical and boolean attributes get their full domain. Numeric attributes get
-    the domain endpoints plus a triple around each threshold the rule mentions —
-    enough to cross every comparison boundary in either direction.
+    Booleans get both values. Numeric attributes get the domain endpoints plus a triple
+    around each threshold the rule mentions — enough to cross every comparison boundary
+    in either direction.
+
+    Enums get the values the rule actually names, plus one witness standing for all the
+    rest. That reduction is **exact, not a heuristic**: an enum admits only
+    ``eq``/``ne``/``in``/``not_in`` — ordering operators are rejected at parse time — so
+    every predicate's verdict is a function of membership in its value set, and two
+    values that no predicate names are indistinguishable to the rule. Probing one of them
+    settles the question for all of them.
+
+    This is what keeps pivotality flat as the ``state`` domain grows with the KB. Probing
+    the full domain would make every state-scoped scheme cost one evaluation per state in
+    the country, for information that is the same every time.
     """
     attribute = spec[attr]
-    if attribute.type in {"bool", "enum"}:
+    if attribute.type == "bool":
         return list(attribute.values())
+
+    if attribute.type == "enum":
+        domain = list(attribute.values())
+        referenced: set[Any] = set()
+        for node in rule.walk():
+            if isinstance(node, Predicate) and node.attr == attr and node.value is not None:
+                referenced |= (set(node.value) if isinstance(node.value, (list, tuple))
+                               else {node.value})
+        named = [v for v in domain if v in referenced]
+        rest = [v for v in domain if v not in referenced]
+        return named + rest[:1]
 
     lo, hi = attribute.domain or (0.0, 1.0)
     probes: set[float] = {float(lo), float(hi)}
@@ -199,7 +221,7 @@ def oracle_question_sequence(
     known: Mapping[str, Any],
     full_profile: Mapping[str, Any],
     *,
-    max_questions: int = 40,
+    max_questions: int | None = None,
 ) -> list[str]:
     """Greedy shortest sequence of questions that settles every scheme.
 
@@ -211,6 +233,15 @@ def oracle_question_sequence(
     spec = kb.spec
     state = dict(known)
     asked: list[str] = []
+
+    # The cap is a safety stop, not a policy. Pinned at a literal it silently truncates
+    # once the KB grows past what that number covers, and a truncated oracle sequence
+    # does not fail — it just makes `oracle_n_questions` saturate, which quietly turns
+    # the denominator of the reported question-overhead ratio into a lie. Bounding it by
+    # the vocabulary instead means it can only bind when a sequence would repeat itself,
+    # which cannot happen: every iteration consumes one previously-unasked attribute.
+    if max_questions is None:
+        max_questions = len(spec.elicitable_names())
 
     settled_target = {s.id for s in kb if s.verdict(full_profile) is not Verdict.UNKNOWN}
 

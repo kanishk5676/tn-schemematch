@@ -22,3 +22,15 @@ __all__ = [
     "parse_rule",
     "__version__",
 ]
+
+# How many questions the benchmark's interview pipelines may ask before giving up.
+#
+# It is a function of the KB, not a taste: it has to cover the *minimal confirming*
+# question set, which grows with the number of schemes a person might plausibly qualify
+# for. It went 20 -> 40 when the KB went 10 -> 41. Re-derive it, don't guess it —
+# tests/test_systems.py measures the worst observed interview and asserts headroom.
+#
+# Distinct from the live web interview's budget, which is deliberately shorter (a citizen
+# on a screen will not answer forty questions) and honest about the consequence: schemes
+# left undetermined are reported as not eligible.
+DEFAULT_QUESTION_BUDGET = 40

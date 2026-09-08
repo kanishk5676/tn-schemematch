@@ -32,6 +32,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
+from .. import DEFAULT_QUESTION_BUDGET
 from ..attributes import SchemaError
 from ..elicitation import question_priority
 from ..kb import SchemeKB
@@ -77,7 +78,7 @@ class GroundingPipeline:
     # 20 silently truncated the interview and dropped schemes people qualified for. That
     # scaling is itself a result worth reporting, and it is the reason the elicitation
     # metrics are ratios against the oracle rather than raw counts.
-    max_questions: int = 40
+    max_questions: int = DEFAULT_QUESTION_BUDGET
     # Ask one question at a time and re-rank after each answer. Batching is tempting for a
     # UI, but every answer changes which question is most informative next: on the seed
     # personas, batches of three cost enough wasted questions to lose a scheme the citizen
@@ -210,7 +211,7 @@ class OracleExtractionPipeline:
     # 20 silently truncated the interview and dropped schemes people qualified for. That
     # scaling is itself a result worth reporting, and it is the reason the elicitation
     # metrics are ratios against the oracle rather than raw counts.
-    max_questions: int = 40
+    max_questions: int = DEFAULT_QUESTION_BUDGET
     # Ask one question at a time and re-rank after each answer. Batching is tempting for a
     # UI, but every answer changes which question is most informative next: on the seed
     # personas, batches of three cost enough wasted questions to lose a scheme the citizen

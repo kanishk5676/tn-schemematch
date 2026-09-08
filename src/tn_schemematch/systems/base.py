@@ -20,6 +20,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Protocol, runtime_checkable
 
+from .. import DEFAULT_QUESTION_BUDGET
 from ..attributes import AttributeSpec
 from ..kb import SchemeKB
 from ..personas import Persona
@@ -120,7 +121,7 @@ class SimulatedCitizen:
 
     persona: Persona
     spec: AttributeSpec
-    max_questions: int = 25
+    max_questions: int = DEFAULT_QUESTION_BUDGET
     asked: list[str] = field(default_factory=list)
 
     @property

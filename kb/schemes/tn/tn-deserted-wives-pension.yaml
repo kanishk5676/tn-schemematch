@@ -2,6 +2,7 @@ id: tn-deserted-wives-pension
 name: Pension to Destitute Deserted Wives (Tamil Nadu)
 name_ta: ஆதரவற்ற கணவரால் கைவிடப்பட்ட பெண்களுக்கான ஓய்வூதியத் திட்டம்
 level: state
+jurisdiction: TN
 authority: Revenue and Disaster Management Department, Government of Tamil Nadu
 sectors: [social_security, women]
 benefit_type: pension
