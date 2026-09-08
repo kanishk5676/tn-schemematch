@@ -1,0 +1,62 @@
+id: pmay-clss
+name: Pradhan Mantri Awas Yojana (Urban) — Credit Linked Subsidy for EWS and LIG
+name_ta: பிரதம மந்திரி வீட்டு வசதி திட்டம் (நகர்ப்புறம்)
+level: central
+authority: Ministry of Housing and Urban Affairs, Government of India
+sectors: [housing, urban, subsidy]
+benefit_type: subsidy
+status: draft
+
+summary: >
+  An interest subsidy on home loans for economically weaker section and lower income group
+  urban households that do not already own a pucca house anywhere in India.
+
+benefit_prose: >
+  An interest subsidy of between 3 and 6.5 percent on a home loan for up to 20 years,
+  credited up front to the loan account.
+
+eligibility_prose: >
+  For the economically weaker section the family income limit is Rs 3 lakh per annum and
+  for the lower income group Rs 6 lakh per annum. The beneficiary family must not own a
+  pucca dwelling unit in the name of any family member in any part of India, and must not
+  have availed any central or state government housing subsidy previously. The beneficiary's
+  maximum age is 70 years.
+
+eligibility:
+  all:
+    - {attr: residence_type, op: eq, value: urban}
+    - {attr: annual_family_income, op: lte, value: 600000, note: "EWS and LIG bands together"}
+    - {attr: age, op: between, value: [18, 70]}
+    - not: {attr: house_ownership, op: eq, value: owns_pucca,
+            note: "no pucca dwelling in the name of any family member, anywhere in India"}
+    - {attr: has_aadhaar, op: eq, value: true}
+
+documents:
+  - Aadhaar card
+  - Income certificate
+  - Affidavit of no pucca house owned by the family
+
+apply_url: https://pmay-urban.gov.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Pradhan_Mantri_Awas_Yojana
+    title: "Pradhan Mantri Awas Yojana"
+    publisher: Wikipedia
+    retrieved: 2026-09-04
+    note: "SECONDARY SOURCE for the EWS/LIG income bands, the no-existing-house condition and the age cap."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  KNOWN APPROXIMATION: the published condition is that no *family member anywhere in India*
+  owns a pucca house. house_ownership records only the applicant's own housing status, so
+  the encoded clause is weaker than the published one and will produce false positives for
+  an applicant living in a rented room whose family owns a house elsewhere. This is the
+  same class of family-scope problem that spouse_is_government_employee and
+  family_has_income_tax_payer were added to fix, and a family_owns_pucca_house attribute is
+  the obvious next addition.
+
+  TO VERIFY (human pass): whether the CLSS component is still open — the interest subsidy
+  window closed for some income bands and reopened under PMAY-U 2.0 with different terms.
+  A scheme that is closed to new applicants belongs at status deprecated, where recommending
+  it is scored as harm.

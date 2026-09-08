@@ -1,0 +1,67 @@
+id: pudhumai-penn
+name: Moovalur Ramamirtham Ammaiyar Higher Education Assurance Scheme (Pudhumai Penn Thittam)
+name_ta: புதுமைப் பெண் திட்டம்
+level: state
+authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
+sectors: [education, women]
+benefit_type: scholarship
+status: draft
+
+summary: >
+  Rs 1,000 per month to girl students who completed classes 6 to 12 in government or
+  government-aided schools, paid until they finish an undergraduate degree, diploma or
+  ITI course — designed to close the gap between school completion and higher education
+  enrolment for girls.
+
+benefit_prose: >
+  Rs 1,000 per month by direct benefit transfer, from enrolment in higher education until
+  the uninterrupted completion of the undergraduate degree, diploma or ITI course.
+
+eligibility_prose: >
+  Girl students who studied classes 6 to 12 in government schools, and from 15 July 2024
+  also in government-aided schools, in Tamil Nadu, and who have passed class 12 and are
+  currently enrolled in an undergraduate degree, professional course, diploma or ITI
+  course, are eligible. The student must have secured at least 33 percent in the previous
+  qualifying examination. Students enrolled in correspondence, distance education or open
+  university courses are not eligible.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: gender, op: eq, value: female}
+    - {attr: studied_in_government_school, op: eq, value: true}
+    - {attr: education_level, op: in, value: [higher_secondary, iti_diploma, undergraduate],
+       note: "must have completed class 12; those mid-course are recorded at their completed level"}
+    - {attr: enrolled_in_higher_education, op: eq, value: true}
+    - {attr: course_mode, op: eq, value: regular}
+    - {attr: previous_exam_percent, op: gte, value: 33}
+
+documents:
+  - Class 12 mark sheet
+  - Bonafide certificate from the higher education institution
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://penkalvi.tn.gov.in/
+
+sources:
+  - url: https://www.tnsocialwelfare.tn.gov.in/en/specilisationswoman-welfare/pudhumai-penn
+    title: "Pudhumai Penn — Social Welfare and Women Empowerment Department, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-08-15
+  - url: https://www.govtschemes.in/tamil-nadu-pudhumai-penn-scheme
+    title: "Tamil Nadu Pudhumai Penn Scheme"
+    retrieved: 2026-08-15
+    note: "Secondary source used for the 33 percent marks condition and the distance-education exclusion."
+
+notes: >
+  This scheme absorbed the older Moovalur Ramamirtham Ammaiyar Ninaivu Marriage Assistance
+  Scheme, which was discontinued from 2022-23 (see moovalur-marriage-assistance, marked
+  deprecated). Many aggregator pages still describe the marriage-assistance version under
+  the Moovalur name, so a query about "Moovalur scheme" is a genuine ambiguity trap for a
+  retrieval system and is worth building personas around.
+
+  Tamil Pudhalvan is the corresponding scheme for boys and is encoded separately.
+
+  TO VERIFY (human pass): whether the 33 percent condition applies at first enrolment only
+  or at each year's renewal, and whether ITI students face a different marks threshold.

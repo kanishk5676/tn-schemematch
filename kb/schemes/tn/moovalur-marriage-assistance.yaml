@@ -1,0 +1,60 @@
+id: moovalur-marriage-assistance
+name: Moovalur Ramamirtham Ammaiyar Ninaivu Marriage Assistance Scheme (discontinued)
+name_ta: மூவலூர் ராமாமிர்தம் அம்மையார் நினைவு திருமண உதவித் திட்டம்
+level: state
+authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
+sectors: [women, marriage_assistance]
+benefit_type: cash_transfer
+status: deprecated
+
+summary: >
+  Marriage assistance for brides from poor families who had completed schooling.
+  Discontinued from 2022-23 and replaced by the Higher Education Assurance Scheme,
+  which now operates as Pudhumai Penn Thittam.
+
+benefit_prose: >
+  Historically a one-time grant with a gold coin component for the marriage of an
+  eligible bride. No longer disbursed.
+
+eligibility_prose: >
+  Historically: the bride must have been a resident of Tamil Nadu, aged 18 or above, with
+  the bridegroom aged 21 or above; must have passed class 10 or above (class 5 for
+  Scheduled Tribe brides); and the family's annual income must not have exceeded the
+  prescribed ceiling. The scheme has been discontinued and no new applications are accepted.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: gender, op: eq, value: female}
+    - {attr: age, op: gte, value: 18}
+    - {attr: marital_status, op: eq, value: unmarried}
+    - {attr: annual_family_income, op: lte, value: 72000}
+    - any:
+        - {attr: education_level, op: in, value: [secondary, higher_secondary, iti_diploma, undergraduate, postgraduate, doctorate]}
+        - all:
+            - {attr: social_category, op: eq, value: ST}
+            - {attr: education_level, op: in, value: [primary, middle, secondary, higher_secondary, iti_diploma, undergraduate, postgraduate, doctorate]}
+
+documents:
+  - Marriage invitation or certificate
+  - Income certificate
+  - Educational certificates
+
+apply_url: ""
+
+sources:
+  - url: https://www.tnsocialwelfare.tn.gov.in/en/specilisationswoman-welfare/marriage-assistance-schemes
+    title: "Marriage Assistance Schemes — Social Welfare and Women Empowerment Department"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-08-15
+    note: "Records that the scheme was revamped into the Higher Education Assurance Scheme from 2022-23."
+
+notes: >
+  Retained in the KB precisely because it is dead. Discontinued schemes are heavily
+  represented in scraped web text and in model priors, and recommending one is a
+  particularly costly false positive: the citizen travels to a district office to apply
+  for something that no longer exists. Any system that returns this scheme for a live
+  query is wrong, and the benchmark should be able to say so.
+
+  Excluded from ground-truth eligible sets by the loader's status filter — see
+  SchemeKB.active() — but present in the retrieval corpus, which is the whole point.

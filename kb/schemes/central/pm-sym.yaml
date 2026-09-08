@@ -1,0 +1,57 @@
+id: pm-sym
+name: Pradhan Mantri Shram Yogi Maan-dhan (PM-SYM)
+name_ta: பிரதம மந்திரி ஷ்ரம் யோகி மான்-தன்
+level: central
+authority: Ministry of Labour and Employment, Government of India
+sectors: [social_security, unorganised_workers, pension]
+benefit_type: pension
+status: draft
+
+summary: >
+  A voluntary, contributory pension for unorganised-sector workers earning up to
+  Rs 15,000 a month, paying an assured Rs 3,000 a month from age 60.
+
+benefit_prose: >
+  An assured minimum pension of Rs 3,000 per month after the age of 60, with the
+  government matching the subscriber's monthly contribution.
+
+eligibility_prose: >
+  An unorganised worker aged between 18 and 40 years with a monthly income of Rs 15,000
+  or less. The scheme covers workers such as street vendors, rickshaw pullers,
+  construction workers, agricultural labourers, domestic workers and weavers. Workers
+  already covered under EPF, ESIC or the National Pension System, income tax payers, and
+  those receiving benefits from another government pension scheme are not eligible.
+
+eligibility:
+  all:
+    - {attr: age, op: between, value: [18, 40]}
+    - {attr: annual_family_income, op: lte, value: 180000,
+       note: "published ceiling is Rs 15,000 per month; the vocabulary holds income annually"}
+    - {attr: occupation, op: in, value: [daily_wage, agri_labourer, weaver, artisan, fisher, self_employed, homemaker, farmer],
+       note: "unorganised-sector occupations as listed in the source"}
+    - not: {attr: is_covered_by_epfo_esic_nps, op: eq, value: true}
+    - not: {attr: is_income_tax_payer, op: eq, value: true}
+    - {attr: receives_other_pension, op: eq, value: false}
+    - {attr: has_bank_account, op: eq, value: true}
+
+documents:
+  - Aadhaar card
+  - Savings bank or Jan Dhan account details
+  - Mobile number
+
+apply_url: https://maandhan.in/
+
+sources:
+  - url: https://www.pib.gov.in/PressReleasePage.aspx?PRID=2108082&reg=48&lang=2
+    title: "Pradhan Mantri Shram Yogi Maandhan Yojana — Press Information Bureau"
+    publisher: Press Information Bureau, Government of India
+    retrieved: 2026-09-04
+    note: "Source of the age band, the Rs 15,000 monthly income ceiling, and the EPF/ESIC/NPS and income-tax exclusions."
+
+notes: >
+  KNOWN APPROXIMATION: the published ceiling is on the *worker's* monthly income, while
+  the vocabulary's annual_family_income is a family figure. Converting Rs 15,000 a month
+  to Rs 1,80,000 a year is arithmetically right but scope-wrong: a worker earning
+  Rs 12,000 in a family earning Rs 25,000 is eligible under the scheme and ineligible
+  under this rule. Adding a personal-income attribute would fix it and is the recommended
+  resolution at the verification pass.

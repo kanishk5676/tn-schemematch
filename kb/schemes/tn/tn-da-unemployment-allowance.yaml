@@ -1,0 +1,49 @@
+id: tn-da-unemployment-allowance
+name: Unemployment Allowance for the Differently Abled (Tamil Nadu)
+name_ta: மாற்றுத்திறனாளிகளுக்கான வேலையில்லாத் திண்டாட்ட உதவித்தொகை
+level: state
+authority: Department for the Welfare of the Differently Abled, Government of Tamil Nadu
+sectors: [disability, income_support]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  A monthly allowance for unemployed differently abled persons registered with the
+  district employment exchange for at least one year.
+
+benefit_prose: >
+  Rs 600 to Rs 1,000 per month depending on educational qualification.
+
+eligibility_prose: >
+  Payable to differently abled persons aged 18 years and above who are unemployed and have
+  completed one year of registration with the employment exchange, and who are resident in
+  Tamil Nadu.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: age, op: gte, value: 18}
+    - {attr: disability_percent, op: gte, value: 40,
+       note: "the standard Indian certification threshold; the district page does not restate a percentage"}
+    - {attr: occupation, op: eq, value: unemployed}
+    - {attr: employment_exchange_registration_years, op: gte, value: 1}
+
+documents:
+  - National disability certificate
+  - Employment exchange registration card
+  - Aadhaar card
+
+apply_url: https://www.scd.tn.gov.in/
+
+sources:
+  - url: https://viluppuram.nic.in/differently-abled-welfare-schemes/
+    title: "Differently Abled Welfare Schemes — Viluppuram District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the age floor of 18, the one-year employment-exchange registration requirement and the Rs 600-1,000 range."
+
+notes: >
+  TO VERIFY (human pass): the 40 percent disability threshold is supplied from the general
+  Indian certification standard, not from the retrieved page, which states no percentage for
+  this scheme. It is flagged rather than left silent because a wrong threshold here changes
+  the answer for exactly the population the scheme exists for.

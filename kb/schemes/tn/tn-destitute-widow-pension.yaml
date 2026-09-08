@@ -1,0 +1,70 @@
+id: tn-widow-pension
+name: Tamil Nadu Destitute Widow Pension
+name_ta: ஆதரவற்ற விதவைகள் உதவித்தொகை
+level: state
+authority: Revenue and Disaster Management Department, Government of Tamil Nadu
+sectors: [social_security, women]
+benefit_type: pension
+status: draft
+
+summary: >
+  A monthly pension for destitute widows resident in Tamil Nadu who have no means of
+  support and hold negligible fixed assets.
+
+benefit_prose: >
+  Rs 1,000 per month, rising to Rs 1,500 per month at age 80, along with in-kind benefits
+  including free sarees at Pongal and Deepavali.
+
+eligibility_prose: >
+  The applicant must be a destitute widow aged 30 years or above and resident in Tamil
+  Nadu. The total value of fixed assets such as land or a house must not exceed
+  Rs 50,000. Widows aged 60 and above should instead apply under the Old Age Pension
+  Scheme. The applicant must not be in receipt of any other government pension.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: gender, op: eq, value: female}
+    - {attr: marital_status, op: eq, value: widowed}
+    - {attr: age, op: between, value: [30, 59], note: "60 and above are routed to the old age pension instead"}
+    - {attr: is_destitute, op: eq, value: true}
+    - {attr: fixed_assets_value, op: lte, value: 50000}
+    - {attr: receives_other_pension, op: eq, value: false}
+
+documents:
+  - Death certificate of the husband
+  - Income and asset certificate from the Village Administrative Officer
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://cra.tn.gov.in/eleg_schemes.php
+
+sources:
+  - url: https://cra.tn.gov.in/eleg_schemes.php
+    title: "Social Security Schemes — Commissionerate of Revenue Administration, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-08-15
+  - url: https://www.dtnext.in/explainer/how-to-apply-for-destitute-widow-pension-scheme-in-tamil-nadu-a-complete-guide
+    title: "How to apply for destitute widow pension scheme in Tamil Nadu: A complete guide"
+    publisher: DT Next
+    retrieved: 2026-08-15
+
+notes: >
+  VERIFICATION CONFLICT, opened 2026-09-04 and NOT resolved: this rule sets the minimum age
+  at 30, and a Tamil Nadu district administration page publishing the same cluster of
+  pensions gives the widow pension's minimum age as 40 (with the deserted-wives pension at
+  30 and the unmarried-women pension at 50). Forty is also the floor in the central IGNWPS,
+  encoded here as nsap-ignwps. If 40 is right, this rule is wrong for every destitute widow
+  aged 30 to 39 — it asserts eligibility they do not have, which is the expensive direction
+  of error. The rule is left at 30 pending the Government Order rather than changed on a
+  district page's authority, and no result involving widows in their thirties should be
+  reported until this is settled. See https://pudukkottai.nic.in/social-security-schemes/
+  (retrieved 2026-09-04).
+
+  The upper age bound is encoded because the two pensions are mutually exclusive routes,
+  not because a 62-year-old widow is unentitled to anything — she is directed to
+  tn-old-age-pension. Personas at ages 29, 30, 59 and 60 are deliberate boundary cases.
+
+  TO VERIFY (human pass): the exact fixed-asset ceiling, which several district pages
+  still quote at older figures, and whether the age floor is 30 or 18 following recent
+  revisions.

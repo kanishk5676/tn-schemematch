@@ -1,0 +1,105 @@
+id: kmut
+name: Kalaignar Magalir Urimai Thogai
+name_ta: கலைஞர் மகளிர் உரிமைத் தொகை
+level: state
+authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
+sectors: [women, income_support]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  Rs 1,000 per month paid directly to the woman recognised as the head of an eligible
+  Tamil Nadu family, as a rights-based entitlement rather than a targeted subsidy.
+
+benefit_prose: >
+  Rs 1,000 per month (Rs 12,000 per year) by direct benefit transfer to the bank account
+  of the eligible woman head of the family.
+
+eligibility_prose: >
+  A woman who has completed 21 years of age and is recognised as the head of the family
+  on the family card is eligible. Only one woman member per family card may receive the
+  entitlement. The annual family income must not exceed Rs 2.5 lakh. The family must not
+  own more than 5 acres of wet land (nanjai) or more than 10 acres of dry land (punjai),
+  must not own a four-wheeler (other than a tractor, autorickshaw or similar goods or
+  livelihood vehicle), and the household's annual electricity consumption must be below
+  3,600 units. Income tax payers and government employees, and their families, are excluded.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: gender, op: eq, value: female}
+    - {attr: age, op: gte, value: 21}
+    - {attr: is_head_of_household, op: eq, value: true}
+    - {attr: ration_card_type, op: ne, value: none, note: "entitlement attaches to a family card"}
+    - {attr: annual_family_income, op: lte, value: 250000,
+       note: "the guideline summary says both 'less than Rs 2.5 lakh' and 'income exceeding Rs 2.5 lakh ... ineligible'; the two agree everywhere except at exactly Rs 2,50,000, where lte is the generous reading"}
+    - {attr: wetland_acres, op: lte, value: 5.0, note: "'not exceeding 5 acres (wetland)' — inclusive, confirmed 2026-09-04"}
+    - {attr: dryland_acres, op: lte, value: 10.0, note: "'not exceeding 10 acres (dryland)' — inclusive, confirmed 2026-09-04"}
+    - {attr: owns_four_wheeler, op: eq, value: false,
+       note: "the guideline summary names cars, jeeps, tractors and heavy vehicles for personal use, with no livelihood carve-out"}
+    - {attr: annual_electricity_units, op: lt, value: 3600, note: "'below 3,600 units'"}
+    - not: {attr: family_has_income_tax_payer, op: eq, value: true,
+            note: "family-scoped: 'women with an annual family income exceeding Rs 2.5 lakh and who are income tax assesses'"}
+    - not: {attr: is_government_employee, op: eq, value: true}
+    - not: {attr: spouse_is_government_employee, op: eq, value: true,
+            note: "family-scoped: 'employees of Central and State governments' are excluded at family level"}
+
+documents:
+  - Family card (ration card)
+  - Aadhaar card
+  - Bank account passbook
+  - Income certificate
+
+apply_url: https://kmut.tn.gov.in/
+
+sources:
+  - url: https://www.tnsocialwelfare.tn.gov.in/
+    title: "Social Welfare and Women Empowerment Department, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-08-15
+    note: "Departmental landing page; the scheme guidelines GO is the target for the verification pass."
+  - url: https://www.thehindu.com/news/national/tamil-nadu/government-relaxes-eligibility-criteria-for-kalaignar-magalir-urimai-thogai/article67058322.ece
+    title: "Government fixes relaxed eligibility criteria for Kalaignar Magalir Urimai Thogai"
+    publisher: The Hindu
+    retrieved: 2026-08-15
+    note: "Reports the relaxed thresholds — income Rs 2.5 lakh, land and electricity ceilings."
+  - url: https://www.tnpscthervupettagam.com/currentaffairs-detail/kalaignar-magalir-urimai-thogai-%E2%80%93-guidelines
+    title: "Kalaignar Magalir Urimai Thogai — guidelines"
+    publisher: TNPSC Thervu Pettagam (unofficial digest of the scheme guidelines)
+    retrieved: 2026-09-04
+    note: "Verification-pass source: gives the land ceilings as 'not exceeding', names tractors among the disqualifying vehicles, and states the income-tax and government-employment exclusions at family level."
+
+notes: >
+  This scheme is the single best illustration of why matching is not retrieval. Every
+  clause is a threshold or a categorical gate, several are near-miss traps (5 acres wet
+  versus 10 acres dry; 3,600 electricity units), and the "head of the family" condition
+  is the kind of attribute a citizen never volunteers unprompted. A system that retrieves
+  this scheme correctly and then asserts eligibility has done almost none of the work.
+
+  VERIFICATION PASS 2026-09-04 (web sources, not yet a human sign-off). Of the three items
+  v0.1 flagged:
+
+  (a) LAND CEILINGS — RESOLVED as inclusive. The guideline summary reads "family land
+  holding not exceeding 5 acres (wetland) and 10 acres (dryland)", which is the lte the rule
+  already used. A persona holding exactly 5.0 wet acres is eligible.
+
+  (c) SCOPE OF THE EXCLUSIONS — RESOLVED as family-scoped, and the rule has been changed:
+  income tax is now tested with family_has_income_tax_payer, and government employment
+  against both the applicant and the spouse. This is a substantive change to who the KB
+  says is eligible — a woman whose husband is a government clerk was eligible under v0.1
+  and is not now.
+
+  (b) FOUR-WHEELER CARVE-OUT — NOT RESOLVED, and the sources now openly conflict. The
+  eligibility_prose in this file (from the departmental wording) carves out tractors,
+  autorickshaws and other livelihood vehicles; the guideline summary retrieved on
+  2026-09-04 names "cars, jeeps, tractors and heavy vehicles for personal use" as
+  disqualifying. The encoded rule follows the stricter reading — any four-wheeler
+  disqualifies — which will produce false negatives for a farming family owning a tractor.
+  This is the highest-value item left in this scheme's queue: tractor ownership is common
+  in exactly the population the scheme targets.
+
+  This scheme remains the single best illustration of why matching is not retrieval. Every
+  clause is a threshold or a categorical gate, several are near-miss traps (5 acres wet
+  versus 10 acres dry; 3,600 electricity units), and the "head of the family" condition is
+  the kind of attribute a citizen never volunteers unprompted. A system that retrieves this
+  scheme correctly and then asserts eligibility has done almost none of the work.

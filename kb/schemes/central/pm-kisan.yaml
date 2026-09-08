@@ -1,0 +1,90 @@
+id: pm-kisan
+name: Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)
+name_ta: பிரதம மந்திரி கிசான் சம்மான் நிதி
+level: central
+authority: Ministry of Agriculture and Farmers Welfare, Government of India
+sectors: [agriculture, income_support]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  Income support of Rs 6,000 per year, paid in three four-monthly instalments directly
+  into the bank account of every landholding farmer family, subject to a set of
+  affluence-based exclusions.
+
+benefit_prose: >
+  Rs 6,000 per year per landholding farmer family, transferred as three instalments of
+  Rs 2,000 by direct benefit transfer.
+
+eligibility_prose: >
+  All landholding farmer families — defined as a family comprising husband, wife and
+  minor children that owns cultivable land in the records of the concerned State or
+  Union Territory — are eligible. The following are excluded: institutional landholders;
+  present and former holders of constitutional posts; serving or former Ministers, MPs,
+  MLAs, MLCs, Mayors of municipal corporations and chairpersons of district panchayats;
+  serving or retired officers and employees of central or state government ministries,
+  offices, departments, PSUs and attached or autonomous bodies, and regular employees of
+  local bodies (excluding multi-tasking Class IV and Group D staff); superannuated or
+  retired pensioners drawing a monthly pension of Rs 10,000 or more (again excluding
+  Class IV and Group D staff); anyone who paid income tax in the last assessment year;
+  and professionals such as doctors, engineers, lawyers, chartered accountants and
+  architects who are registered with professional bodies and practising.
+
+eligibility:
+  all:
+    - {attr: land_owned_acres, op: gt, value: 0, note: "family must own cultivable land"}
+    - {attr: occupation, op: in, value: [farmer, agri_labourer, self_employed, homemaker, retired, daily_wage, weaver, artisan, fisher, unemployed],
+       note: "landholding is the operative test, not stated occupation; agricultural labourers who own land qualify"}
+    - {attr: age, op: gte, value: 18}
+    - not: {attr: held_constitutional_post, op: eq, value: true}
+    - not: {attr: is_registered_professional, op: eq, value: true}
+    - not: {attr: family_has_income_tax_payer, op: eq, value: true,
+            note: "family-scoped: the guidelines exclude a family any of whose members paid income tax in the last assessment year"}
+    - any:
+        - all:
+            - {attr: is_government_employee, op: eq, value: false}
+            - {attr: spouse_is_government_employee, op: eq, value: false}
+        - {attr: is_class_iv_employee, op: eq, value: true, note: "Class IV / Group D and multi-tasking staff are carved out of the exclusion"}
+    - any:
+        - {attr: monthly_pension_amount, op: lt, value: 10000}
+        - {attr: is_class_iv_employee, op: eq, value: true}
+
+documents:
+  - Aadhaar card
+  - Land record / chitta-adangal
+  - Bank account passbook
+
+apply_url: https://pmkisan.gov.in/
+
+sources:
+  - url: https://www.myscheme.gov.in/schemes/pm-kisan
+    title: "Pradhan Mantri Kisan Samman Nidhi — myScheme"
+    publisher: National Informatics Centre, Government of India
+    retrieved: 2026-08-15
+    note: "Primary reference for the exclusion list; to be re-checked against the PM-KISAN operational guidelines PDF."
+  - url: https://pmkisan.gov.in/
+    title: "PM-KISAN official portal"
+    publisher: Ministry of Agriculture and Farmers Welfare
+    retrieved: 2026-08-15
+
+notes: >
+  STALENESS WARNING, and a motivating example for this benchmark: the scheme originally
+  capped eligibility at 2 hectares of cultivable land, but that ceiling was withdrawn in
+  2019 and the scheme now covers all landholding farmer families regardless of size.
+  A large share of secondary sources — including several that would be scraped into a
+  retrieval corpus — still state the withdrawn 2-hectare limit. A RAG system reading that
+  prose will produce confident false negatives for farmers with more than 2 hectares.
+  The encoded rule follows the current guideline; the discrepancy is retained here
+  deliberately as an audit note.
+
+  VERIFIED 2026-09-04 (web pass, not yet a human sign-off): the exclusions ARE family-scoped.
+  The scheme defines a family as "the husband, wife, and any minor children", and the
+  exclusion list is written against any member of it. The rule now reads
+  family_has_income_tax_payer and tests both the applicant and the spouse for government
+  service; both attributes were added to the vocabulary for this. The same pass reconfirmed
+  that no land ceiling applies, which is the staleness trap recorded above.
+
+  STILL TO VERIFY (human pass): the Class IV carve-out is encoded as covering both the
+  government-service and the pension exclusions, following the wording of the operational
+  guidelines; and "minor children" means the family test should not propagate to adult
+  children living in the household, which the two-person spouse test approximates.

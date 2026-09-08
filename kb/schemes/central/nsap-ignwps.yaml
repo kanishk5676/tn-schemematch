@@ -1,0 +1,55 @@
+id: nsap-ignwps
+name: Indira Gandhi National Widow Pension Scheme (IGNWPS)
+name_ta: இந்திரா காந்தி தேசிய விதவை ஓய்வூதியத் திட்டம்
+level: central
+authority: Ministry of Rural Development, Government of India
+sectors: [social_security, women]
+benefit_type: pension
+status: draft
+
+summary: >
+  A monthly central pension for widows aged 40 to 59 belonging to below-poverty-line
+  households, paid through the states under the National Social Assistance Programme.
+
+benefit_prose: >
+  Rs 300 per month of central assistance (Rs 200 under the original norms, revised
+  subsequently), routinely topped up by state contributions.
+
+eligibility_prose: >
+  The applicant must be a widow aged 40 to 59 years belonging to a household below the
+  poverty line according to the criteria prescribed by the Government of India. On
+  attaining 60 years the beneficiary is transferred to the old age pension scheme.
+
+eligibility:
+  all:
+    - {attr: marital_status, op: eq, value: widowed}
+    - {attr: age, op: between, value: [40, 59], note: "at 60 the beneficiary moves to IGNOAPS"}
+    - {attr: is_bpl, op: eq, value: true, note: "BPL is an administrative list, not an income threshold"}
+    - {attr: receives_other_pension, op: eq, value: false,
+       note: "TO VERIFY: NSAP guidelines restrict duplicate social-security pensions; the exact wording must be checked"}
+
+documents:
+  - Death certificate of the husband
+  - BPL card or income certificate
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://nsap.nic.in/
+
+sources:
+  - url: https://nsap.nic.in/circular.do?method=aboutus
+    title: "About the National Social Assistance Programme (NSAP)"
+    publisher: Ministry of Rural Development, Government of India
+    retrieved: 2026-09-04
+    note: "States the 40-59 age band, the BPL condition, and the Rs 200 central rate."
+
+notes: >
+  TO VERIFY (human pass): (a) the current central rate, which the portal text still
+  reports at the original Rs 200 while several states publish revised figures; (b) whether
+  the receipt of another government pension is a disqualification in the NSAP guidelines
+  themselves or only in state implementation orders — the clause is encoded here on the
+  second reading and would need removing if the first is correct.
+
+  Note the deliberate overlap with tn-destitute-widow-pension: a Tamil Nadu widow may
+  satisfy both this and the state scheme, and how the two interact administratively is
+  exactly the sort of thing a citizen cannot be expected to know. The benchmark keeps both.

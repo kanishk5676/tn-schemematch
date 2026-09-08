@@ -1,0 +1,56 @@
+id: pm-svanidhi
+name: PM Street Vendor's AtmaNirbhar Nidhi (PM SVANidhi)
+name_ta: பிரதம மந்திரி தெரு வியாபாரிகள் ஆத்மநிர்பர் நிதி
+level: central
+authority: Ministry of Housing and Urban Affairs, Government of India
+sectors: [livelihood, credit, urban]
+benefit_type: loan
+status: draft
+
+summary: >
+  Collateral-free working capital loans in escalating cycles for urban street vendors
+  who hold a certificate of vending, with an interest subsidy for timely repayment.
+
+benefit_prose: >
+  A first-cycle working capital loan of Rs 10,000 repayable in twelve months, followed by
+  Rs 20,000 and Rs 50,000 cycles on successful repayment, with a 7 percent annual interest
+  subsidy and cashback for digital transactions.
+
+eligibility_prose: >
+  Street vendors in urban and peri-urban areas who were vending on or before 24 March 2020
+  as identified by the urban local body, and who hold a Certificate of Vending or a Letter
+  of Recommendation from the urban local body or town vending committee.
+
+eligibility:
+  all:
+    - {attr: residence_type, op: eq, value: urban, note: "urban and peri-urban vending; rural vendors are outside the scheme"}
+    - {attr: occupation, op: in, value: [self_employed, daily_wage],
+       note: "street vending is not its own value in the occupation vocabulary; the vending certificate is the operative test"}
+    - {attr: has_vending_certificate, op: eq, value: true}
+    - {attr: age, op: gte, value: 18}
+    - {attr: has_bank_account, op: eq, value: true}
+
+documents:
+  - Certificate of Vending or Letter of Recommendation
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://pmsvanidhi.mohua.gov.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Pradhan_Mantri_SVANidhi_Scheme
+    title: "Pradhan Mantri SVANidhi Scheme"
+    publisher: Wikipedia
+    retrieved: 2026-09-04
+    note: "SECONDARY SOURCE. The official portal blocks automated retrieval; the verification pass must replace this citation with the MoHUA scheme guidelines."
+
+notes: >
+  SECONDARY SOURCING — this scheme's rule rests on a Wikipedia article rather than the
+  scheme guideline, because pmsvanidhi.mohua.gov.in could not be retrieved. It must not be
+  treated as verified on this basis.
+
+  TO VERIFY (human pass): (a) the loan cycle amounts, which were revised upward in 2025 in
+  reporting that post-dates the retrieved article; (b) whether the 24 March 2020 vending
+  cut-off still governs new applications — it is a date condition about the vendor's
+  history that the attribute vocabulary cannot express, so the rule omits it and will
+  over-report eligibility for vendors who started later.

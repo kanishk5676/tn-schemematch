@@ -1,0 +1,63 @@
+id: mrmbs
+name: Dr. Muthulakshmi Reddy Maternity Benefit Scheme
+name_ta: மருத்துவர் முத்துலட்சுமி ரெட்டி மகப்பேறு நிதி உதவித் திட்டம்
+level: state
+authority: Health and Family Welfare Department, Government of Tamil Nadu
+sectors: [health, women, maternity]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  Maternity assistance of Rs 18,000 per pregnancy to compensate for wage loss and support
+  nutrition, paid in instalments to pregnant women in Tamil Nadu.
+
+benefit_prose: >
+  Rs 18,000 per pregnancy, comprising Rs 14,000 in cash paid in three instalments and two
+  nutrition kits worth Rs 2,000. Part of the amount is contributed by the central
+  government under Pradhan Mantri Matru Vandana Yojana.
+
+eligibility_prose: >
+  Pregnant women resident in Tamil Nadu who register the pregnancy through the Pregnancy
+  and Infant Cohort Monitoring and Evaluation portal or at an Anganwadi centre are
+  eligible. The scheme is universal within the state and applies no income ceiling.
+  Assistance is limited to the first two pregnancies.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: gender, op: eq, value: female}
+    - {attr: pregnancy_status, op: in, value: [pregnant, lactating]}
+    - {attr: age, op: gte, value: 18}
+    - {attr: pregnancy_order, op: lte, value: 2,
+       note: "'assistance is limited to the first two pregnancies' — encodable since v0.2 added pregnancy_order"}
+
+documents:
+  - PICME registration number
+  - Antenatal care card
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://picme.tn.gov.in/
+
+sources:
+  - url: https://picme.tn.gov.in/picme_public/mrmbs.pdf
+    title: "Dr. Muthulakshmi Reddy Maternity Benefit Scheme — PICME portal"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-08-15
+  - url: https://en.vikaspedia.in/viewcontent/schemesall/state-specific-schemes/welfare-schemes-of-tamil-nadu/dr-muthulakshmi-reddy-maternity-benefit-scheme
+    title: "Dr. Muthulakshmi Reddy Maternity Benefit Scheme — Vikaspedia"
+    publisher: Vikaspedia, Government of India
+    retrieved: 2026-08-15
+
+notes: >
+  A rare scheme with no income test, included deliberately as a counterweight: a KB in
+  which every rule has an income ceiling would let a system score well by always guessing
+  "poor qualifies, non-poor does not". Here a high-income pregnant woman in Tamil Nadu
+  genuinely qualifies, and a system that has learned the income heuristic will produce a
+  false negative.
+
+  MODELLING LIMITATION (v0.1) — RESOLVED at the 2026-09-04 verification pass: v0.2 adds the
+  pregnancy_order attribute, and the two-pregnancy limit is now encoded. Personas built
+  around a third pregnancy are in scope again, and are worth building: a third-pregnancy
+  persona in Tamil Nadu satisfies every surface cue for this scheme and fails it, which is
+  the trap shape this benchmark is short of.

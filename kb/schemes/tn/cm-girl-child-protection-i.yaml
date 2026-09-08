@@ -1,0 +1,63 @@
+id: cm-girl-child-protection-i
+name: Chief Minister's Girl Child Protection Scheme — Scheme I (single girl child)
+name_ta: முதலமைச்சரின் பெண் குழந்தை பாதுகாப்புத் திட்டம் — திட்டம் I
+level: state
+authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
+sectors: [women, child_welfare, savings]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  A fixed deposit in the name of a single girl child in a family with no son, released
+  with interest when she turns 18 having completed the tenth standard.
+
+benefit_prose: >
+  A deposit of Rs 50,000 in the girl child's name with Tamil Nadu Power Finance,
+  released with accrued interest at age 18 on completion of the SSLC examination.
+
+eligibility_prose: >
+  The family must have one girl child and no male child, the girl child having been born
+  on or after 1 August 2011, and a parent must have undergone a family planning
+  procedure. The annual family income must not exceed Rs 72,000. The deposit matures when
+  the girl completes the SSLC examination and attains 18 years of age.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: daughters_count, op: eq, value: 1}
+    - {attr: sons_count, op: eq, value: 0}
+    - {attr: has_undergone_family_planning, op: eq, value: true}
+    - {attr: annual_family_income, op: lte, value: 72000}
+
+documents:
+  - Birth certificate of the girl child
+  - Family planning certificate
+  - Income certificate
+  - Family card
+
+apply_url: https://tnsocialwelfare.tn.gov.in/
+
+sources:
+  - url: https://kancheepuram.nic.in/departments/social-welfare/
+    title: "Social Welfare — Kancheepuram District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the one-girl-no-son condition, the 1 August 2011 birth cut-off, the Rs 50,000 deposit and the SSLC/18-year maturity condition."
+  - url: https://tiruvarur.nic.in/departments/social/
+    title: "Social Welfare and Women Empowerment Department — Tiruvarur District"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the Rs 72,000 family income ceiling and a parental age condition."
+
+notes: >
+  The applicant modelled here is the PARENT, not the girl child: daughters_count and
+  sons_count are the parent's. A persona representing the girl herself would be scored
+  wrongly against this rule, and the persona generator therefore never sets these counts
+  for a persona under 18.
+
+  MODELLING LIMITATION: the 1 August 2011 birth cut-off is a fact about the child's date
+  of birth, which the vocabulary does not carry, so it is not encoded. The rule will
+  report eligible a parent whose only daughter was born earlier.
+
+  TO VERIFY (human pass): the Tiruvarur page adds "age ≤ 40" for the parent, which the
+  Kancheepuram page does not mention. Not encoded pending the primary order.

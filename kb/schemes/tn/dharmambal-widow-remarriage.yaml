@@ -1,0 +1,59 @@
+id: dharmambal-widow-remarriage
+name: Dr. Dharmambal Ammaiyar Ninaivu Widow Remarriage Assistance Scheme
+name_ta: டாக்டர் தர்மாம்பாள் அம்மையார் நினைவு விதவை மறுமண உதவித் திட்டம்
+level: state
+authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
+sectors: [women, marriage_assistance]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  Assistance for the remarriage of a widow aged 20 to 40, with no income ceiling.
+
+benefit_prose: >
+  Rs 15,000 in cash with a Rs 10,000 National Savings Certificate and an 8 gram gold coin,
+  or Rs 30,000 with a Rs 20,000 certificate for a degree or diploma holder.
+
+eligibility_prose: >
+  The applicant must be a widow remarrying, aged between 20 and 40 years. There is no
+  income ceiling for this scheme. The application must be made within six months of the
+  remarriage.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: gender, op: eq, value: female}
+    - {attr: marital_status, op: eq, value: widowed}
+    - {attr: age, op: between, value: [20, 40]}
+    - {attr: has_upcoming_marriage, op: eq, value: true}
+
+documents:
+  - Widow certificate
+  - Marriage registration certificate
+  - Age proof
+  - Bank account passbook
+
+apply_url: https://tnsocialwelfare.tn.gov.in/
+
+sources:
+  - url: https://kancheepuram.nic.in/departments/social-welfare/
+    title: "Social Welfare — Kancheepuram District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the 20-40 age band, the absence of an income ceiling and the six-month application window."
+  - url: https://tiruvarur.nic.in/departments/social/
+    title: "Social Welfare and Women Empowerment Department — Tiruvarur District"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "Corroborates the widow's minimum age of 20."
+
+notes: >
+  This scheme is the reason the benchmark keeps marital_status and is_widow as separate
+  things a query can leave unstated: a widow aged 35 with a high income qualifies here and
+  fails the destitute widow pension, and the surface cues ("widow", "Tamil Nadu", "woman")
+  are identical.
+
+  TO VERIFY (human pass): the Kancheepuram and Virudhunagar pages disagree on the second
+  party's age — one gives "groom age minimum 40", which reads like a transcription error
+  for the widow's own upper bound of 40. The encoded rule follows the 20-40 band for the
+  applicant and ignores the groom entirely.

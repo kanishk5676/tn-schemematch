@@ -1,0 +1,56 @@
+id: annai-theresa-orphan-marriage
+name: Annai Theresa Ninaivu Orphan Girls' Marriage Assistance Scheme
+name_ta: அன்னை தெரசா நினைவு அனாதைப் பெண்கள் திருமண உதவித் திட்டம்
+level: state
+authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
+sectors: [women, marriage_assistance]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  Marriage assistance for an orphaned or unsupported girl, with no income ceiling.
+
+benefit_prose: >
+  Rs 25,000 and an 8 gram gold coin, or Rs 50,000 and an 8 gram gold coin for a degree or
+  diploma holder.
+
+eligibility_prose: >
+  The bride must be a total orphan — both parents deceased — or otherwise unsupported, and
+  at least 18 years of age at the time of marriage. There is no income ceiling. The
+  application must be made within 40 days before the marriage.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: gender, op: eq, value: female}
+    - {attr: age, op: gte, value: 18}
+    - {attr: marital_status, op: eq, value: unmarried}
+    - {attr: has_upcoming_marriage, op: eq, value: true}
+    - {attr: is_orphan, op: eq, value: true}
+
+documents:
+  - Death certificates of both parents
+  - Age proof
+  - Marriage invitation
+  - Bank account passbook
+
+apply_url: https://tnsocialwelfare.tn.gov.in/
+
+sources:
+  - url: https://kancheepuram.nic.in/departments/social-welfare/
+    title: "Social Welfare — Kancheepuram District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the total-orphan condition, the age floor of 18 and the two assistance tiers."
+  - url: https://virudhunagar.nic.in/departments/social-welfare/
+    title: "Social Welfare — Virudhunagar District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States that there is no income ceiling and describes the beneficiary as a destitute female."
+
+notes: >
+  TO VERIFY (human pass): the district sources describe the beneficiary variously as a
+  "total orphan" and as "orphaned or unsupported". The rule encodes the stricter reading —
+  both parents deceased — because the looser one has no administrable test behind it and
+  encoding it would produce false positives for any unmarried woman describing herself as
+  unsupported.

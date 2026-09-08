@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}TN-SchemeMatch{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>&#127978;</text></svg>">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span>TN&#8209;SchemeMatch</span>
+  </a>
+  <nav class="nav">
+    <a href="/" class="{{ 'on' if page == 'interview' }}">Interview</a>
+    <a href="/schemes" class="{{ 'on' if page == 'schemes' }}">Schemes</a>
+    <a href="/dashboard" class="{{ 'on' if page == 'dashboard' }}">Dashboard</a>
+  </nav>
+  <div class="topmeta">
+    <span class="pill">{{ n_schemes }} schemes</span>
+    <span class="pill mono" title="model backend">{{ model }}</span>
+  </div>
+</header>
+<main>{% block body %}{% endblock %}</main>
+<footer class="foot">
+  Eligibility rules are encoded from published government sources and are
+  <strong>unverified draft data</strong>. This is a research demo, not advice.
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

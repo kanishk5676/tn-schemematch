@@ -1,0 +1,119 @@
+id: p005
+persona_sketch: >
+  Self-employed tailor in Salem who took a Mudra loan three years ago. She matches every
+  positive condition of PM Vishwakarma and is blocked by one exclusion clause — the prior
+  government credit — which is not something a citizen ever volunteers.
+
+profile:
+  age: 35
+  gender: female
+  marital_status: married
+  social_category: MBC
+  religion: hindu
+  state: TN
+  district: Salem
+  residence_type: urban
+
+  annual_family_income: 96000
+  is_income_tax_payer: false
+  is_government_employee: false
+  is_class_iv_employee: false
+  monthly_pension_amount: 0
+  is_registered_professional: false
+  held_constitutional_post: false
+  fixed_assets_value: 60000
+  annual_electricity_units: 1800
+  is_destitute: false
+  is_head_of_household: true
+
+  land_owned_acres: 0
+  wetland_acres: 0
+  dryland_acres: 0
+
+  ration_card_type: phh_rice
+  house_ownership: rented
+  owns_four_wheeler: false
+  family_size: 4
+
+  occupation: self_employed
+  education_level: secondary
+  studied_in_government_school: true
+  is_first_generation_learner: false
+  enrolled_in_higher_education: false
+  course_mode: not_applicable
+  previous_exam_percent: 0
+  traditional_trade: tailor
+  availed_govt_credit_scheme_last_5y: true
+
+  disability_percent: 0
+  pregnancy_status: not_applicable
+  receives_other_pension: false
+
+  has_aadhaar: true
+  has_bank_account: true
+  has_community_certificate: true
+
+  # --- attribute-spec v0.2 additions -------------------------------------
+  # Added when the KB grew past ten schemes. A persona must set every attribute the
+  # rules read, or its gold label is a guess (schemematch validate enforces this).
+  is_bpl: true
+  is_secc_deprived_household: true
+  has_lpg_connection: true
+  pregnancy_order: 0
+  daughters_count: 2
+  sons_count: 0
+  has_undergone_family_planning: true
+  is_orphan: false
+  is_daughter_of_widow: false
+  has_upcoming_marriage: false
+  is_inter_caste_marriage: false
+  years_since_desertion: 0
+  spouse_is_government_employee: false
+  family_has_income_tax_payer: false
+  is_covered_by_epfo_esic_nps: false
+  is_registered_unorganised_worker: true
+  has_mgnrega_job_card: false
+  has_vending_certificate: false
+  is_member_of_fishermen_cooperative: false
+  is_srilankan_tamil_refugee: false
+  is_inter_state_migrant: false
+  spouse_is_differently_abled: false
+  employment_exchange_registration_years: 0
+
+queries:
+  code_mixed: >-
+    naan veetla thaiyal velai pannuren, sontha thozhil thaan. machine vaanga
+    kastama irukku. enakku loan-o udhavi-yo edhachum kedaikuma?
+  english: >-
+    I do tailoring work from home, it's my own small business. I'm struggling to afford
+    a machine. Can I get any loan or assistance?
+
+stated_in_query:
+  - occupation
+  - traditional_trade
+  - gender
+
+annotation:
+  author: "seed (project author)"
+  validated_by: ""
+  validated_on: ""
+  codemix_naturalness: null
+  profile_plausibility: null
+  parallel_faithful: null
+  notes: >
+    SEED PERSONA — NOT YET NATIVELY VALIDATED.
+
+    Design intent: this persona exists because the metric-discrimination pilot found the
+    benchmark had no coverage of exclusion clauses. Every one of PM Vishwakarma's positive
+    conditions is met — the right age, one of the eighteen listed trades, self-employed in
+    the unorganised sector, not a government servant — and she is disqualified solely by
+    the clause excluding anyone who took a similar government credit-linked loan in the
+    past five years.
+
+    That makes her the cheapest possible probe for the failure mode that costs the most.
+    Exclusions only ever produce false positives when missed, and a prior Mudra loan is
+    exactly the kind of fact a citizen does not think to mention when asking about help
+    buying a sewing machine. A system must ask.
+
+    Gold set is CMCHIS and Kalaignar Magalir Urimai Thogai. Any system returning
+    pm-vishwakarma has missed the exclusion.

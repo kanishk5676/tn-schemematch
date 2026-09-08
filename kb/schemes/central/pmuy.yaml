@@ -1,0 +1,53 @@
+id: pmuy
+name: Pradhan Mantri Ujjwala Yojana (PMUY 2.0)
+name_ta: பிரதம மந்திரி உஜ்வலா திட்டம்
+level: central
+authority: Ministry of Petroleum and Natural Gas, Government of India
+sectors: [women, energy, in_kind]
+benefit_type: subsidy
+status: draft
+
+summary: >
+  A free LPG connection, with the first refill and stove, for adult women from poor
+  households that do not already hold a connection.
+
+benefit_prose: >
+  A deposit-free LPG connection with the first refill and a hotplate provided free of
+  cost, plus a targeted subsidy on refills.
+
+eligibility_prose: >
+  The applicant must be a woman who has attained 18 years of age. The adult woman must
+  belong to a poor household, established by a deprivation declaration in the prescribed
+  format. There should be no other LPG connection from any oil marketing company within
+  the same household.
+
+eligibility:
+  all:
+    - {attr: gender, op: eq, value: female}
+    - {attr: age, op: gte, value: 18}
+    - {attr: is_bpl, op: eq, value: true,
+       note: "'poor household, established by a deprivation declaration' is encoded as the BPL flag; see the note below"}
+    - not: {attr: has_lpg_connection, op: eq, value: true}
+
+documents:
+  - Aadhaar card
+  - Ration card or deprivation declaration
+  - Bank account passbook
+
+apply_url: https://www.pmuy.gov.in/
+
+sources:
+  - url: https://www.pmuy.gov.in/index.aspx
+    title: "Pradhan Mantri Ujjwala Yojana — official portal"
+    publisher: Ministry of Petroleum and Natural Gas, Government of India
+    retrieved: 2026-09-04
+    note: "Source of the three encoded conditions, quoted in eligibility_prose."
+
+notes: >
+  MODELLING LIMITATION: PMUY 2.0's "poor household" test is a self-declaration of
+  deprivation in a prescribed format, not membership of the BPL list, and the scheme also
+  admits women from seven named categories (SC/ST, PMAY-G beneficiaries, Antyodaya, forest
+  dwellers, most backward classes, tea garden tribes, islanders). The rule encodes it as
+  is_bpl, which is narrower than the published wording and will produce false negatives
+  for, say, an SC woman who is not on the BPL list. Widening it requires the category list
+  to be checked against the current guideline first.

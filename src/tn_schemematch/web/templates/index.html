@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Eligibility interview — TN-SchemeMatch{% endblock %}
+{% block body %}
+<div class="split">
+
+  <aside class="rail">
+    <div class="card">
+      <div class="eyebrow">Live verdict</div>
+      <div class="score">
+        <div class="score-row s-ok"><span class="score-n" id="n-ok">0</span><span class="score-l">eligible</span></div>
+        <div class="score-row s-no"><span class="score-n" id="n-no">0</span><span class="score-l">ruled out</span></div>
+        <div class="score-row s-open"><span class="score-n" id="n-open">&mdash;</span><span class="score-l">still open</span></div>
+      </div>
+      <div class="grid41" id="grid" aria-hidden="true"></div>
+      <div class="settled zero" id="settled">no answers yet</div>
+    </div>
+
+    <div class="card" id="profile-card" hidden>
+      <div class="eyebrow">What we know</div>
+      <div class="chips" id="profile-chips"></div>
+    </div>
+  </aside>
+
+  <div>
+    <!-- state 1: ask -->
+    <section id="ask" class="card">
+      <h2>Which welfare schemes can I get?</h2>
+      <p class="muted tiny" style="margin:-4px 0 14px">
+        Ask in Tamil, English, or a mix of both. The model reads your sentence and fills in
+        what it can; everything after that is decided by rules you can inspect.
+      </p>
+      <textarea id="query" placeholder="enakku ration card irukku, vivasayi, rendu ekkar nilam — enna scheme kedaikum?"></textarea>
+      <div class="row between" style="margin-top:12px">
+        <label class="switch" title="Turn off to run with no network at all">
+          <input type="checkbox" id="use-ai" checked>
+          <span>Use AI extraction</span>
+          <span class="badge ai">model</span>
+        </label>
+        <label class="switch tiny muted">
+          <span>Max questions</span>
+          <input type="number" id="maxq" value="15" min="3" max="40" style="width:64px;padding:5px 7px">
+        </label>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn primary big" id="go">Find my schemes</button>
+        <button class="btn ghost" id="skip-query">skip the question, just interview me</button>
+      </div>
+      <div class="eyebrow" style="margin-top:20px">Or try one</div>
+      <div class="samples" id="samples"></div>
+
+      <div id="personas-block" hidden>
+        <div class="eyebrow" style="margin-top:20px">
+          Or replay a benchmark persona <span class="badge det">no model, no network</span>
+        </div>
+        <div class="samples" id="personas"></div>
+      </div>
+    </section>
+
+    <!-- state 2: extraction -->
+    <section id="extract-card" class="card hidden" style="padding:0">
+      <div style="padding:14px 16px 0">
+        <div class="eyebrow" style="margin:0">
+          Step 1 &middot; reading the sentence <span class="badge ai">model</span>
+          <span id="extract-time" class="muted tiny"></span>
+        </div>
+      </div>
+      <div class="extract">
+        <div>
+          <h3>what the model returned</h3>
+          <pre id="raw-json">{}</pre>
+        </div>
+        <div>
+          <h3>what the rules will use</h3>
+          <div class="maps" id="normalized"></div>
+          <div class="dropped hidden" id="dropped"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- state 3: interview -->
+    <section id="interview" class="card hidden">
+      <div class="qhead">
+        <span class="qnum" id="qnum">Q1</span>
+        <span class="progress"><i id="progress-bar" style="width:0%"></i></span>
+        <span class="qnum muted" id="qbudget"></span>
+      </div>
+      <div class="qtext" id="qtext"></div>
+      <div class="qattr mono" id="qattr"></div>
+      <div class="why hidden" id="why"></div>
+
+      <div class="answers" id="answers"></div>
+      <div id="free" class="hidden" style="margin-top:6px">
+        <div class="numrow">
+          <input type="text" id="free-text" placeholder="answer in your own words — Tamil or English">
+          <button class="btn" id="free-go">Answer</button>
+        </div>
+      </div>
+      <div class="notice hidden" id="notice"></div>
+
+      <div class="row" style="margin-top:16px;gap:14px">
+        <button class="btn ghost" id="type-instead">type it instead</button>
+        <button class="btn ghost" id="skip-q">skip / I don't know</button>
+        <button class="btn ghost" id="finish" style="margin-left:auto">show my results now &rarr;</button>
+      </div>
+      <div class="receipt" id="receipt"></div>
+    </section>
+
+    <!-- state 4: results -->
+    <section id="results" class="hidden"></section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/interview.js') }}"></script>
+{% endblock %}

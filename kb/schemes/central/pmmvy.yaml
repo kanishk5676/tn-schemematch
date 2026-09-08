@@ -1,0 +1,72 @@
+id: pmmvy
+name: Pradhan Mantri Matru Vandana Yojana (PMMVY 2.0)
+name_ta: பிரதம மந்திரி மாத்ரு வந்தனா திட்டம்
+level: central
+authority: Ministry of Women and Child Development, Government of India
+sectors: [women, maternity, income_support]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  A conditional maternity benefit paid to pregnant and lactating women for the first
+  living child, and for a second child if that child is a girl.
+
+benefit_prose: >
+  Rs 5,000 in two instalments for the first child, and Rs 6,000 in a single instalment
+  for a second child who is a girl, paid by direct benefit transfer.
+
+eligibility_prose: >
+  The beneficiary must be between 18 years 7 months and 55 years of age at the time of
+  childbirth. The benefit is available for the first child, and for the second child only
+  if the second child is a girl. A beneficiary must additionally belong to at least one of
+  the qualifying categories: Scheduled Caste or Scheduled Tribe; a woman with a disability
+  of 40 percent or more; a BPL ration card holder; a beneficiary under Ayushman Bharat
+  PM-JAY; an e-Shram card holder; a woman farmer or the wife of a farmer holding a Kisan
+  Credit Card; an MGNREGA job card holder; a woman whose family income is below Rs 8 lakh;
+  or a ration card holder under the National Food Security Act.
+
+eligibility:
+  all:
+    - {attr: gender, op: eq, value: female}
+    - {attr: age, op: between, value: [19, 55],
+       note: "published floor is 18 years 7 months; encoded at 19 because age is held in completed years"}
+    - {attr: pregnancy_status, op: in, value: [pregnant, lactating]}
+    - {attr: pregnancy_order, op: lte, value: 2,
+       note: "first child, or second child if a girl — the girl condition is not encodable before the birth"}
+    - any:
+        - {attr: social_category, op: in, value: [SC, SCA, ST]}
+        - {attr: disability_percent, op: gte, value: 40}
+        - {attr: is_bpl, op: eq, value: true}
+        - {attr: is_registered_unorganised_worker, op: eq, value: true, note: "e-Shram card holder"}
+        - {attr: has_mgnrega_job_card, op: eq, value: true}
+        - {attr: annual_family_income, op: lt, value: 800000}
+        - {attr: ration_card_type, op: in, value: [aay, phh_rice], note: "NFSA ration card holder"}
+
+documents:
+  - MCP card / RCH registration
+  - Aadhaar card
+  - Bank account passbook
+  - Proof of one qualifying category
+
+apply_url: https://pmmvy.wcd.gov.in/
+
+sources:
+  - url: https://www.spniwcd.wcd.gov.in/pradhan-mantri-matru-vandana-yojna/faqs
+    title: "Pradhan Mantri Matru Vandana Yojana — frequently asked questions"
+    publisher: State PMU Nodal Institute, Ministry of Women and Child Development
+    retrieved: 2026-09-04
+    note: "Source of the age band, the first/second-child rule, the instalment amounts, and the qualifying-category list."
+
+notes: >
+  MODELLING LIMITATION: the second-child benefit is conditional on the child being a girl,
+  which cannot be evaluated from a profile describing a pregnancy. The rule admits any
+  second pregnancy and will therefore over-report eligibility for a woman expecting a
+  second child. Encoding the stricter reading would require a sex-of-the-unborn-child
+  attribute, which is not a thing a citizen can be asked in India, where prenatal sex
+  determination is a criminal offence.
+
+  TO VERIFY (human pass): whether women in regular government employment, or covered by
+  EPFO/ESIC or another maternity benefit law, are excluded. The earlier version of the
+  scheme carried that exclusion; the FAQ page retrieved does not restate it, and the rule
+  therefore does not encode it. If the exclusion survives in the 2.0 guidelines, the rule
+  as it stands produces false positives for salaried mothers.

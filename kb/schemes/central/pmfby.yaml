@@ -1,0 +1,54 @@
+id: pmfby
+name: Pradhan Mantri Fasal Bima Yojana (PMFBY)
+name_ta: பிரதம மந்திரி பயிர் காப்பீட்டுத் திட்டம்
+level: central
+authority: Ministry of Agriculture and Farmers Welfare, Government of India
+sectors: [agriculture, insurance]
+benefit_type: insurance
+status: draft
+
+summary: >
+  Voluntary crop insurance for farmers growing notified crops in notified areas, with the
+  farmer paying a capped share of the premium.
+
+benefit_prose: >
+  Insurance against yield loss for notified crops, with the farmer paying 2 percent of the
+  sum insured for kharif food crops, 1.5 percent for rabi, and 5 percent for annual
+  commercial and horticultural crops; the balance is subsidised.
+
+eligibility_prose: >
+  All farmers growing notified crops in a notified area during the season who have an
+  insurable interest in the crop are eligible. Enrolment has been entirely voluntary since
+  the 2020 kharif season, including for farmers who have taken crop loans.
+
+eligibility:
+  all:
+    - {attr: occupation, op: in, value: [farmer, agri_labourer],
+       note: "an insurable interest in a standing crop; sharecroppers and tenant farmers are covered by the scheme but not distinguishable in this vocabulary"}
+    - {attr: land_owned_acres, op: gt, value: 0}
+    - {attr: age, op: gte, value: 18}
+
+documents:
+  - Land records or tenancy agreement
+  - Sowing declaration
+  - Bank account passbook
+  - Aadhaar card
+
+apply_url: https://pmfby.gov.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Pradhan_Mantri_Fasal_Bima_Yojana
+    title: "Pradhan Mantri Fasal Bima Yojana"
+    publisher: Wikipedia
+    retrieved: 2026-09-04
+    note: "SECONDARY SOURCE for the eligibility wording and the voluntary-since-2020 change."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  MODELLING LIMITATION: the real gate is "a notified crop in a notified area during the
+  season", which is a property of the season and the district, not of the person. The rule
+  approximates it with landholding and occupation, so it will report eligible any farmer
+  who owns land, including one growing an unnotified crop. This scheme is therefore close to
+  a constant TRUE for landholding farmers in the benchmark, and any conclusion about a
+  system's handling of it says more about that approximation than about the system.

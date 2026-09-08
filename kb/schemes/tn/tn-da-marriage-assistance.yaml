@@ -1,0 +1,49 @@
+id: tn-da-marriage-assistance
+name: Marriage Assistance for the Differently Abled (Tamil Nadu)
+name_ta: மாற்றுத்திறனாளிகள் திருமண உதவித் திட்டம்
+level: state
+authority: Department for the Welfare of the Differently Abled, Government of Tamil Nadu
+sectors: [disability, marriage_assistance]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  Marriage assistance where a differently abled person marries, paid at a higher rate to
+  degree and diploma holders.
+
+benefit_prose: >
+  Rs 25,000 in cash and an 8 gram gold coin.
+
+eligibility_prose: >
+  Payable when a differently abled person marries, including where a differently abled
+  person marries another differently abled person. Resident in Tamil Nadu.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: disability_percent, op: gte, value: 40}
+    - {attr: age, op: gte, value: 18}
+    - {attr: has_upcoming_marriage, op: eq, value: true}
+
+documents:
+  - National disability certificate
+  - Marriage invitation or registration certificate
+  - Age proof
+  - Bank account passbook
+
+apply_url: https://www.scd.tn.gov.in/
+
+sources:
+  - url: https://viluppuram.nic.in/differently-abled-welfare-schemes/
+    title: "Differently Abled Welfare Schemes — Viluppuram District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "Lists marriage assistance of Rs 25,000 and 8 gram gold for differently abled persons, in a degree/diploma tier and a general tier."
+
+notes: >
+  The district page lists two variants — "disabled marrying disabled" and a degree/diploma
+  tier — without stating whether an able-bodied partner disqualifies the claim. The rule
+  does not read spouse_is_differently_abled, on the reading that the partner's status
+  selects the rate rather than eligibility. TO VERIFY: if the scheme in fact requires both
+  partners to be differently abled, this rule produces false positives, and the attribute
+  is already in the vocabulary to fix it.

@@ -1,0 +1,49 @@
+id: pmjjby
+name: Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY)
+name_ta: பிரதம மந்திரி ஜீவன் ஜோதி பீமா யோஜனா
+level: central
+authority: Department of Financial Services, Ministry of Finance, Government of India
+sectors: [insurance, social_security]
+benefit_type: insurance
+status: draft
+
+summary: >
+  A one-year renewable term life cover of Rs 2 lakh for bank account holders aged 18 to
+  50, at an annual premium of Rs 436.
+
+benefit_prose: >
+  Rs 2 lakh payable to the nominee on the death of the insured from any cause, for an
+  annual premium of Rs 436, renewable yearly and continuable to age 55.
+
+eligibility_prose: >
+  Available to individuals aged 18 to 50 years holding a bank account, with the account
+  linked to Aadhaar and the premium auto-debited. Cover runs from 1 June to 31 May and is
+  renewable annually up to the age of 55.
+
+eligibility:
+  all:
+    - {attr: age, op: between, value: [18, 50]}
+    - {attr: has_bank_account, op: eq, value: true}
+    - {attr: has_aadhaar, op: eq, value: true, note: "the account must be Aadhaar-linked"}
+
+documents:
+  - Bank account passbook
+  - Aadhaar card
+  - Consent-cum-declaration form
+
+apply_url: https://www.jansuraksha.gov.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Pradhan_Mantri_Jeevan_Jyoti_Bima_Yojana
+    title: "Pradhan Mantri Jeevan Jyoti Bima Yojana"
+    publisher: Wikipedia
+    retrieved: 2026-09-04
+    note: "SECONDARY SOURCE. jansuraksha.gov.in could not be retrieved; replace at verification."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  This scheme is deliberately near-universal among working-age adults with a bank account,
+  and it is in the KB for that reason: a benchmark made only of sharply-gated schemes would
+  not test whether a system can keep a broad eligibility alongside narrow ones without
+  either dropping it or letting it swamp the answer.

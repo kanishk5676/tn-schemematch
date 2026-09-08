@@ -1,0 +1,46 @@
+id: nsap-annapurna
+name: Annapurna Scheme
+name_ta: அன்னபூர்ணா திட்டம்
+level: central
+authority: Ministry of Rural Development, Government of India
+sectors: [social_security, elderly, food_security]
+benefit_type: in_kind
+status: draft
+
+summary: >
+  Free food grain for destitute senior citizens who are eligible for the old age pension
+  but are not receiving it.
+
+benefit_prose: >
+  10 kg of food grains per month, free of cost.
+
+eligibility_prose: >
+  Senior citizens aged 65 years or above who, though eligible for the Indira Gandhi
+  National Old Age Pension Scheme, are not receiving that pension.
+
+eligibility:
+  all:
+    - {attr: age, op: gte, value: 65}
+    - {attr: is_bpl, op: eq, value: true}
+    - {attr: receives_other_pension, op: eq, value: false,
+       note: "the scheme exists precisely for those eligible for but not drawing the old age pension"}
+
+documents:
+  - Age proof
+  - BPL card
+  - Family card
+
+apply_url: https://nsap.nic.in/
+
+sources:
+  - url: https://nsap.nic.in/circular.do?method=aboutus
+    title: "About the National Social Assistance Programme (NSAP)"
+    publisher: Ministry of Rural Development, Government of India
+    retrieved: 2026-09-04
+
+notes: >
+  TO VERIFY (human pass): the qualifying age. The NSAP page retrieved describes Annapurna
+  beneficiaries as senior citizens eligible for but not covered by IGNOAPS, and the
+  original 2000 scheme set 65 years while IGNOAPS now begins at 60. The rule uses 65,
+  the stricter reading. If the age was harmonised to 60 the encoded rule under-reports
+  eligibility for the 60-64 band.

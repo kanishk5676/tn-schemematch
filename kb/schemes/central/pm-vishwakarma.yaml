@@ -1,0 +1,77 @@
+id: pm-vishwakarma
+name: PM Vishwakarma
+name_ta: பிரதம மந்திரி விஸ்வகர்மா
+level: central
+authority: Ministry of Micro, Small and Medium Enterprises, Government of India
+sectors: [livelihood, skilling, credit]
+benefit_type: loan
+status: draft
+
+summary: >
+  End-to-end support for artisans and craftspeople in eighteen family-based traditional
+  trades: recognition, skill training with a stipend, a toolkit grant, and collateral-free
+  credit at a concessional rate.
+
+benefit_prose: >
+  PM Vishwakarma certificate and ID; skill training with a stipend of Rs 500 per day; a
+  toolkit incentive of Rs 15,000; collateral-free enterprise development loans of up to
+  Rs 1 lakh (first tranche) and Rs 2 lakh (second tranche) at 5 percent concessional
+  interest; and incentives for digital transactions and marketing support.
+
+eligibility_prose: >
+  An artisan or craftsperson working with hands and tools, engaged on a self-employment
+  basis in one of the eighteen listed family-based traditional trades in the unorganised
+  sector, is eligible for registration. The applicant must have completed 18 years of age
+  on the date of registration and must be engaged in the trade at the time of registration.
+  The applicant must not have availed a loan under a similar credit-based scheme of the
+  central or state government for enterprise development in the past five years — Mudra
+  and PM SVANidhi borrowers who have fully repaid are eligible. Registration is restricted
+  to one member per family, where family means husband, wife and unmarried children.
+  Persons in government service, and members of their families, are not eligible.
+
+eligibility:
+  all:
+    - {attr: age, op: gte, value: 18}
+    - {attr: traditional_trade, op: ne, value: none, note: "must be in one of the 18 listed trades"}
+    - {attr: occupation, op: in, value: [artisan, weaver, self_employed, daily_wage],
+       note: "self-employment in the unorganised sector"}
+    - not: {attr: is_government_employee, op: eq, value: true}
+    - not: {attr: spouse_is_government_employee, op: eq, value: true,
+            note: "the guideline says 'the person/family member should not be employed in government service'; family is defined as husband, wife and unmarried children"}
+    - not: {attr: availed_govt_credit_scheme_last_5y, op: eq, value: true}
+
+documents:
+  - Aadhaar card
+  - Bank account passbook
+  - Ration card
+  - Proof of engagement in the trade
+
+apply_url: https://pmvishwakarma.gov.in/
+
+sources:
+  - url: https://www.myscheme.gov.in/schemes/pm-vishwakarma
+    title: "PM Vishwakarma — myScheme"
+    publisher: National Informatics Centre, Government of India
+    retrieved: 2026-08-15
+  - url: https://pmvishwakarma.gov.in/
+    title: "PM Vishwakarma official portal"
+    publisher: Ministry of MSME
+    retrieved: 2026-08-15
+
+notes: >
+  PARTLY VERIFIED 2026-09-04 (web pass, not yet a human sign-off): the scheme guideline as
+  summarised by the Press Information Bureau states that "the person/family member should
+  not be employed in government service", and defines family as "Husband, Wife, and
+  unmarried children". The government-service exclusion is therefore now encoded at family
+  scope via spouse_is_government_employee, which was added to the vocabulary for it. The
+  v0.1 note below is retained because half of it still stands.
+
+  STILL A MODELLING LIMITATION: "the benefit of the scheme shall be restricted to one member
+  of the family only" is a fact about who else in the household has already claimed, not
+  about the applicant, and no attribute can express it from a single profile. The rule will
+  report eligible a second artisan in a family that has already enrolled one. This must be
+  stated in the paper's limitations rather than passed over.
+
+  STILL TO VERIFY (human pass): whether "unmarried children" extends the government-service
+  test beyond the spouse, in which case a family_has_government_employee attribute is needed
+  in place of the two-person approximation.

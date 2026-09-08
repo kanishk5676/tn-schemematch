@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Coverage and results — TN-SchemeMatch{% endblock %}
+{% block body %}
+<div class="card">
+  <h2 style="margin:0">Knowledge base coverage</h2>
+  <p class="muted tiny" style="margin:6px 0 14px">
+    What the rule KB contains, and how much of it has been checked by a human.
+  </p>
+  <div class="stat-grid" id="kb-stats"></div>
+</div>
+
+<div class="split" style="grid-template-columns:1fr 1fr;margin-top:14px">
+  <div class="card">
+    <h2>Schemes by sector</h2>
+    <div class="bars" id="sector-bars"></div>
+  </div>
+  <div class="card">
+    <h2>Most-read attributes</h2>
+    <p class="muted tiny" style="margin:-6px 0 12px">
+      How many schemes' rules depend on each attribute — the elicitation policy's leverage.
+    </p>
+    <div class="bars" id="attr-bars"></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2 style="margin:0 0 4px">Scored experiment runs</h2>
+  <p class="muted tiny" style="margin:0 0 14px">
+    False-positive rate is reported beside F1, never folded into it. A false negative means
+    someone does not hear about a benefit; a false positive sends them to a district office
+    for nothing. Averaging those together hides the error that costs a day of work.
+  </p>
+  <div id="runs"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

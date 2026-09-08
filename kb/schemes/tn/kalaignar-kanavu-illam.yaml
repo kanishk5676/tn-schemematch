@@ -1,0 +1,60 @@
+id: kalaignar-kanavu-illam
+name: Kalaignarin Kanavu Illam (rural housing scheme, Tamil Nadu)
+name_ta: கலைஞரின் கனவு இல்லம்
+level: state
+authority: Rural Development and Panchayat Raj Department, Government of Tamil Nadu
+sectors: [housing, rural]
+benefit_type: housing
+status: draft
+
+summary: >
+  A free 360 square foot concrete house for rural families in Tamil Nadu living in huts or
+  unsafe dwellings who do not own a pucca house.
+
+benefit_prose: >
+  A free concrete house of 360 square feet, at an estimated construction cost of Rs 3.50
+  lakh per house.
+
+eligibility_prose: >
+  The beneficiary must reside in Tamil Nadu, be currently living in a hut or an unsafe
+  dwelling, belong to the economically weaker sections, and must not own a permanent
+  (pucca) house anywhere in Tamil Nadu. Selection prioritises Scheduled Caste and Scheduled
+  Tribe families, widows, persons with disabilities and destitute women.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: residence_type, op: eq, value: rural}
+    - {attr: house_ownership, op: in, value: [owns_kutcha, homeless],
+       note: "'living in huts or unsafe dwellings', and by the same clause not owning a pucca house — the published exclusion is subsumed by this condition rather than encoded twice; see the notes"}
+
+documents:
+  - Family card
+  - Aadhaar card
+  - Land ownership or house site patta
+  - Certificate that no pucca house is owned
+
+apply_url: https://www.tnrd.gov.in/
+
+sources:
+  - url: https://www.dtnext.in/news/tamilnadu/tamil-nadus-kalaignar-kanavu-illam-housing-scheme-everything-you-need-to-know-to-apply
+    title: "Tamil Nadu's Kalaignar Kanavu Illam housing scheme: everything you need to know to apply"
+    publisher: DT Next
+    retrieved: 2026-09-04
+    note: "NEWS SOURCE. States the residence, hut-dwelling and no-pucca-house conditions, the 360 sq ft unit and the Rs 3.50 lakh cost, and the priority groups."
+
+notes: >
+  NEWS SOURCING — the conditions come from a newspaper explainer, not from the scheme
+  guidelines, and the retrieved article explicitly does not state whether an income ceiling
+  applies or whether government employees and income tax payers are excluded. Rural housing
+  schemes normally carry both. The rule therefore almost certainly under-constrains
+  eligibility and will produce false positives; that is a known defect, not an oversight.
+
+  A redundant `not: owns_pucca` clause was written here first, on the reasoning that it
+  mirrored the published wording and gave the exclusion-blind probe something to ignore.
+  It was removed once the persona set was built, because `coverage_gaps` showed why the
+  reasoning was wrong: the positive `house_ownership in [owns_kutcha, homeless]` clause
+  already excludes pucca owners, so relaxing the `not:` can never change a verdict. The
+  clause was dead — unreachable by any persona, permanently listed as an uncovered
+  exclusion, and misleading about what the benchmark tests. A duplicated condition is not
+  a stricter rule; it is noise that looks like coverage.

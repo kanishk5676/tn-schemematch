@@ -1,0 +1,59 @@
+id: tn-adw-free-house-site
+name: Free House Site Patta for Adi Dravidar and Tribal Families (Tamil Nadu)
+name_ta: ஆதிதிராவிடர் மற்றும் பழங்குடியினருக்கு இலவச வீட்டு மனைப் பட்டா
+level: state
+authority: Adi Dravidar and Tribal Welfare Department, Government of Tamil Nadu
+sectors: [housing, social_justice]
+benefit_type: in_kind
+status: draft
+
+summary: >
+  Three cents of house site land, free of cost, for Scheduled Caste and Scheduled Tribe
+  families without housing, subject to separate rural and urban income ceilings.
+
+benefit_prose: >
+  Three cents of land assigned free of cost as a house site.
+
+eligibility_prose: >
+  Scheduled Caste and Scheduled Tribe families without housing, with an annual income
+  ceiling of Rs 40,000 in rural areas and Rs 60,000 in urban areas.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: social_category, op: in, value: [SC, SCA, ST]}
+    - {attr: house_ownership, op: in, value: [rented, homeless, owns_kutcha],
+       note: "'families without housing' read as not owning a pucca house"}
+    - any:
+        - all:
+            - {attr: residence_type, op: eq, value: rural}
+            - {attr: annual_family_income, op: lte, value: 40000}
+        - all:
+            - {attr: residence_type, op: eq, value: urban}
+            - {attr: annual_family_income, op: lte, value: 60000}
+
+documents:
+  - Community certificate
+  - Income certificate
+  - Certificate of houselessness from the Village Administrative Officer
+
+apply_url: https://tnadw.tn.gov.in/
+
+sources:
+  - url: https://dharmapuri.nic.in/adi-dravidar-welfare/
+    title: "Adi Dravidar Welfare — Dharmapuri District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the SC/ST condition, the three cents of land, and the Rs 40,000 rural and Rs 60,000 urban income ceilings."
+
+notes: >
+  This is the KB's clearest example of a rule whose two branches interact: the income
+  ceiling depends on residence_type, so learning income alone can never settle the scheme
+  and learning residence alone can never settle it either. It is included partly to give
+  the elicitation ground truth a case where question order genuinely matters.
+
+  TO VERIFY (human pass): whether "families without housing" means owning no house at all,
+  which would exclude the owns_kutcha branch encoded here. The generous reading is encoded
+  and it is the one that risks false positives, contrary to the usual convention — flagged
+  deliberately because the stricter reading would exclude hut-dwellers, who are the
+  scheme's obvious intended beneficiaries.

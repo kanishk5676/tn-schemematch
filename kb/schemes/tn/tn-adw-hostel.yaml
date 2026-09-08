@@ -1,0 +1,53 @@
+id: tn-adw-hostel
+name: Free Boarding and Lodging in Government Hostels (Adi Dravidar and Tribal Welfare, Tamil Nadu)
+name_ta: அரசு விடுதிகளில் இலவச உணவு மற்றும் தங்குமிட வசதி
+level: state
+authority: Adi Dravidar and Tribal Welfare Department, Government of Tamil Nadu
+sectors: [education, social_justice, in_kind]
+benefit_type: in_kind
+status: draft
+
+summary: >
+  Free boarding and lodging in departmental hostels for Scheduled Caste and Scheduled
+  Tribe students from the fourth standard to college.
+
+benefit_prose: >
+  Free boarding and lodging, with mats, bed sheets, uniforms and a monthly miscellaneous
+  allowance of Rs 50 for school hostels and Rs 75 for college and ITI hostels.
+
+eligibility_prose: >
+  Scheduled Caste, Scheduled Tribe and Scheduled Caste converted to Christianity students
+  from the fourth standard to college whose annual family income is up to Rs 2 lakh, and
+  whose residence is at least five kilometres from the institution; the distance condition
+  is waived for girls.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: social_category, op: in, value: [SC, SCA, ST]}
+    - {attr: occupation, op: eq, value: student}
+    - {attr: annual_family_income, op: lte, value: 200000}
+
+documents:
+  - Community certificate
+  - Income certificate
+  - Bonafide certificate from the institution
+
+apply_url: https://tnadw.tn.gov.in/
+
+sources:
+  - url: https://dharmapuri.nic.in/adi-dravidar-welfare/
+    title: "Adi Dravidar Welfare — Dharmapuri District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the eligible categories, the fourth standard to college range, the Rs 2 lakh income ceiling and the five-kilometre distance condition waived for girls."
+
+notes: >
+  MODELLING LIMITATION: the five-kilometre distance condition, and its waiver for girls, is
+  not encoded — the vocabulary has no distance-to-institution attribute. The rule is
+  therefore more generous than the scheme for boys living close to their school. The
+  waiver-for-girls structure would be an interesting thing to test a system on and is worth
+  adding at the next vocabulary revision.
+
+  The occupation: student clause carries the "fourth standard to college" range, which is
+  a coarse substitute for a class-level attribute the vocabulary does not have.

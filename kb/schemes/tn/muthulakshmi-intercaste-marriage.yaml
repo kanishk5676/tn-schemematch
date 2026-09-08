@@ -1,0 +1,61 @@
+id: muthulakshmi-intercaste-marriage
+name: Dr. Muthulakshmi Reddy Ninaivu Inter-caste Marriage Assistance Scheme
+name_ta: டாக்டர் முத்துலட்சுமி ரெட்டி நினைவு கலப்புத் திருமண உதவித் திட்டம்
+level: state
+authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
+sectors: [social_justice, marriage_assistance]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  Assistance for a couple marrying across communities, one of whom belongs to a Scheduled
+  Caste, with no income ceiling.
+
+benefit_prose: >
+  Rs 15,000 in cash with a Rs 10,000 National Savings Certificate and an 8 gram gold coin,
+  or Rs 30,000 with a Rs 20,000 certificate for degree or diploma holders.
+
+eligibility_prose: >
+  The marriage must be between partners belonging to different communities, one of whom
+  belongs to a Scheduled Caste. The bride must be at least 18 years of age and the groom
+  at least 21. There is no income ceiling. The application must be made within two years
+  of the registration of the marriage.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: age, op: gte, value: 18}
+    - {attr: has_upcoming_marriage, op: eq, value: true}
+    - {attr: is_inter_caste_marriage, op: eq, value: true}
+    - {attr: marital_status, op: in, value: [unmarried, married],
+       note: "the two-year post-registration window means a recently married applicant is still in scope"}
+
+documents:
+  - Marriage registration certificate
+  - Community certificates of both partners
+  - Age proof
+  - Joint bank account passbook
+
+apply_url: https://tnsocialwelfare.tn.gov.in/
+
+sources:
+  - url: https://virudhunagar.nic.in/departments/social-welfare/
+    title: "Social Welfare — Virudhunagar District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the different-community condition, the SC/BC/OC framing, the absence of an income ceiling and the two-year window."
+  - url: https://kancheepuram.nic.in/departments/social-welfare/
+    title: "Social Welfare — Kancheepuram District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+
+notes: >
+  The requirement that one partner belong to a Scheduled Caste is folded into
+  is_inter_caste_marriage rather than tested against the applicant's own social_category,
+  because the scheme admits couples where either partner is the SC partner. Testing
+  social_category directly would wrongly exclude a non-SC applicant marrying an SC partner.
+
+  TO VERIFY (human pass): the Virudhunagar page describes the condition as "one partner
+  must belong to SC/BC/OC category; partners from different communities", which is not the
+  same as requiring an SC partner, and is close to vacuous as written. The primary
+  Government Order must settle which reading governs.

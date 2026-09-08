@@ -1,0 +1,57 @@
+id: tn-unmarried-women-pension
+name: Pension to Destitute Unmarried Poor Women (Tamil Nadu)
+name_ta: ஆதரவற்ற திருமணமாகாத ஏழைப் பெண்களுக்கான ஓய்வூதியம்
+level: state
+authority: Revenue and Disaster Management Department, Government of Tamil Nadu
+sectors: [social_security, women]
+benefit_type: pension
+status: draft
+
+summary: >
+  A monthly pension for destitute unmarried women aged 50 and above in Tamil Nadu with
+  negligible fixed assets.
+
+benefit_prose: >
+  Rs 1,000 per month, with the in-kind benefits attached to the state social security
+  pensions.
+
+eligibility_prose: >
+  The applicant must be an unmarried destitute woman aged 50 years or above, resident in
+  Tamil Nadu, whose fixed assets do not exceed Rs 50,000.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: gender, op: eq, value: female}
+    - {attr: marital_status, op: eq, value: unmarried}
+    - {attr: age, op: gte, value: 50}
+    - {attr: is_destitute, op: eq, value: true}
+    - {attr: fixed_assets_value, op: lte, value: 50000,
+       note: "the district source says 'not exceeding Rs 50,000' for this scheme and 'less than Rs 50,000' for the others; the wording difference is preserved rather than harmonised"}
+    - {attr: receives_other_pension, op: eq, value: false}
+
+documents:
+  - Certificate of unmarried status from the Village Administrative Officer
+  - Income and asset certificate
+  - Age proof
+  - Bank account passbook
+
+apply_url: https://cra.tn.gov.in/eleg_schemes.php
+
+sources:
+  - url: https://pudukkottai.nic.in/social-security-schemes/
+    title: "Social Security Schemes — Pudukkottai District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the minimum age of 50, the destitution condition, the Rs 50,000 asset ceiling and the Rs 1,000 monthly rate."
+
+notes: >
+  This scheme completes a set the KB was missing. Tamil Nadu runs parallel destitution
+  pensions for widows, deserted wives, unmarried women, the elderly and the disabled, and
+  they differ only in a marital-status or age clause on an otherwise identical rule. That
+  makes them the KB's densest cluster of near-neighbours: a 52-year-old destitute woman is
+  eligible under exactly one of them, and which one depends on a fact ("I never married")
+  that no query volunteers.
+
+  The `receives_other_pension` clause is carried over from the sibling schemes; the
+  Pudukkottai page does not restate it for any of them. TO VERIFY across the whole cluster.

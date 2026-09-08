@@ -1,0 +1,60 @@
+id: pmjay
+name: Ayushman Bharat Pradhan Mantri Jan Arogya Yojana (PM-JAY)
+name_ta: ஆயுஷ்மான் பாரத் பிரதம மந்திரி ஜன ஆரோக்ய யோஜனா
+level: central
+authority: National Health Authority, Ministry of Health and Family Welfare, Government of India
+sectors: [health, insurance]
+benefit_type: insurance
+status: draft
+
+summary: >
+  Cashless hospital cover of Rs 5 lakh per family per year for households identified as
+  deprived under the SECC 2011 criteria, extended since 2024 to everyone aged 70 and above
+  regardless of income.
+
+benefit_prose: >
+  Rs 5 lakh per family per year of cashless secondary and tertiary hospital care at
+  empanelled public and private hospitals, with no restriction on family size or age and
+  pre-existing conditions covered from day one. Beneficiaries aged 70 and above receive an
+  additional Rs 5 lakh cover of their own.
+
+eligibility_prose: >
+  Households identified as deprived under the Socio Economic and Caste Census 2011,
+  covering approximately the bottom 50 percent of the population, are eligible. Since
+  September 2024 all senior citizens aged 70 years and above are eligible irrespective of
+  their economic background or income from pension or savings.
+
+eligibility:
+  any:
+    - {attr: is_secc_deprived_household, op: eq, value: true}
+    - {attr: age, op: gte, value: 70, note: "the 2024 extension, which is explicitly income-blind"}
+
+documents:
+  - Aadhaar card
+  - Ration card or family identification
+  - Ayushman card
+
+apply_url: https://pmjay.gov.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Ayushman_Bharat_Yojana
+    title: "Ayushman Bharat Yojana"
+    publisher: Wikipedia
+    retrieved: 2026-09-04
+    note: "SECONDARY SOURCE for the SECC-2011 basis, the Rs 5 lakh cover and the September 2024 extension to those aged 70 and above."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  This scheme is in the KB for a specific reason beyond coverage: Tamil Nadu implements
+  PM-JAY through its own CMCHIS rather than as a separate card, so a citizen in Tamil Nadu
+  who satisfies this rule may in practice be served under cmchis. A system that returns
+  both is not obviously wrong, and a system that returns neither is. How the pair is scored
+  is a question the error analysis has to address rather than assume away, and it is the
+  reason both are encoded instead of one standing in for the other.
+
+  MODELLING LIMITATION: the SECC deprivation criteria are seven specific deprivation
+  indicators plus occupational categories, not a single flag. is_secc_deprived_household
+  collapses them, which makes the attribute unaskable in practice — a citizen does not know
+  whether they are on the list. That is itself a real finding about the scheme and should be
+  discussed rather than engineered away.

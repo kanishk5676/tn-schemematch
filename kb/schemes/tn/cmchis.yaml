@@ -1,0 +1,76 @@
+id: cmchis
+name: Chief Minister's Comprehensive Health Insurance Scheme (CMCHIS)
+name_ta: முதலமைச்சரின் விரிவான மருத்துவக் காப்பீட்டுத் திட்டம்
+level: state
+authority: Health and Family Welfare Department, Government of Tamil Nadu
+sectors: [health, insurance]
+benefit_type: insurance
+status: draft
+
+summary: >
+  Cashless hospitalisation cover of up to Rs 5 lakh per family per year at empanelled
+  government and private hospitals, for low-income Tamil Nadu families.
+
+benefit_prose: >
+  Up to Rs 5,00,000 per family per year on a floater basis, covering more than 1,000
+  procedures, 8 follow-up treatments and 52 diagnostic tests at empanelled hospitals.
+
+eligibility_prose: >
+  The family's annual income must be less than Rs 1,20,000, certified by the Village
+  Administrative Officer or a revenue authority. The applicant must be a resident of Tamil
+  Nadu whose name appears on the family ration card. Sri Lankan Tamil refugees and eligible
+  Sri Lankan Tamils covered under the relevant Government Orders, and migrants from other
+  states resident in Tamil Nadu for at least six months holding a valid migration
+  certificate, are also covered.
+
+eligibility:
+  any:
+    - all:
+        - {attr: state, op: eq, value: TN}
+        - {attr: annual_family_income, op: lt, value: 120000, note: "'annual family income must be below Rs 1,20,000'"}
+        - {attr: ration_card_type, op: ne, value: none, note: "name must appear on a family card"}
+    - all:
+        - {attr: is_srilankan_tamil_refugee, op: eq, value: true}
+        - {attr: state, op: eq, value: TN, note: "resident in a Tamil Nadu camp; no income limit applies to this route"}
+    - all:
+        - {attr: is_inter_state_migrant, op: eq, value: true}
+        - {attr: state, op: eq, value: TN, note: "resident in Tamil Nadu; the six-month duration is not encodable"}
+
+documents:
+  - Family card (ration card)
+  - Income certificate from the Village Administrative Officer
+  - Aadhaar card
+
+apply_url: https://www.cmchistn.com/
+
+sources:
+  - url: https://www.cmchistn.com/
+    title: "Chief Minister's Comprehensive Health Insurance Scheme — official portal"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-08-15
+  - url: https://www.policybazaar.com/health-insurance/govt-scheme/chief-minister-comprehensive-health-insurance-scheme/
+    title: "CMCHIS Scheme: Benefits, Eligibility and Rs 5 Lakh Health Coverage Details"
+    retrieved: 2026-08-15
+    note: "Secondary source for the Rs 1.2 lakh income ceiling. Re-read 2026-09-04 at the verification pass, which confirmed the ceiling as 'below Rs 1,20,000' (hence the strict lt), and supplied the refugee and inter-state-migrant routes and the fact that no income limit applies to refugees."
+
+notes: >
+  A short rule with a low income ceiling, which makes it a useful control: systems that
+  over-return schemes tend to return CMCHIS for anyone in Tamil Nadu, ignoring the ceiling
+  entirely. Personas just above Rs 1,20,000 are cheap, high-signal false-positive probes.
+
+  MODELLING LIMITATION (v0.1) — RESOLVED at the 2026-09-04 verification pass. v0.1 could not
+  encode the Sri Lankan Tamil refugee and inter-state migrant routes, because the vocabulary
+  had no refugee or migration status, and recorded that this silently removed some of the
+  populations least well served by existing tooling. v0.2 adds is_srilankan_tamil_refugee
+  and is_inter_state_migrant, and the rule is now a three-branch disjunction: the
+  income-tested resident route, the refugee route (to which no income limit applies), and
+  the inter-state migrant route.
+
+  STILL NOT ENCODED: the migrant route requires six months' residence in Tamil Nadu and a
+  valid migration certificate. Neither is expressible, so that branch is more generous than
+  the scheme. The refugee branch likewise omits the requirement of a camp-issued
+  identity document.
+
+  The scheme remains a useful control for over-returning systems: they tend to return CMCHIS
+  for anyone in Tamil Nadu, ignoring the ceiling entirely, and personas just above
+  Rs 1,20,000 are cheap, high-signal false-positive probes.

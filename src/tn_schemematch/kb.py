@@ -1,0 +1,451 @@
+"""Scheme knowledge base: loading, validation, and the two views of a scheme.
+
+Every scheme carries two representations of the same eligibility conditions:
+
+* ``eligibility_prose`` — the wording as published by the issuing department. This
+  is what the RAG baseline retrieves over, and it is also the audit trail: a
+  reviewer can read the prose beside the encoded rule and check they agree.
+* ``eligibility`` — a machine-readable rule (see :mod:`tn_schemematch.rules`) that
+  the grounding pipeline evaluates deterministically.
+
+Keeping both, from the same dated source, is what lets us attribute a system's
+errors to *reasoning* rather than to the two systems having seen different facts.
+
+Provenance is mandatory, not decorative. Welfare rules change — income ceilings get
+revised, schemes get renamed or merged — so every scheme records the URL it was read
+from, the date it was read, and whether a human has verified the encoded rule against
+that source. ``verified: false`` schemes are excluded from benchmark releases by
+default; see :meth:`SchemeKB.verified`.
+"""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any, Iterable, Iterator, Mapping
+
+import yaml
+
+from .attributes import AttributeSpec, default_spec
+from .rules import Node, RuleError, Verdict, evaluate, parse_rule, referenced_attributes
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+DEFAULT_KB_DIR = _REPO_ROOT / "kb" / "schemes"
+
+SCHEME_LEVELS = {"central", "state"}
+SCHEME_STATUSES = {"draft", "verified", "deprecated"}
+BENEFIT_TYPES = {"cash_transfer", "pension", "subsidy", "insurance", "loan",
+                 "in_kind", "scholarship", "housing", "service", "training"}
+
+
+class KBError(ValueError):
+    """Raised when a scheme file is malformed or fails validation."""
+
+
+# ------------------------------------------------------------------- provenance
+
+
+@dataclass(frozen=True)
+class Source:
+    """One dated citation backing a scheme's encoded rules."""
+
+    url: str
+    title: str
+    retrieved: date
+    publisher: str | None = None
+    note: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        out = {"url": self.url, "title": self.title, "retrieved": self.retrieved.isoformat()}
+        if self.publisher:
+            out["publisher"] = self.publisher
+        if self.note:
+            out["note"] = self.note
+        return out
+
+
+# ----------------------------------------------------------------------- scheme
+
+
+@dataclass
+class Scheme:
+    """A single welfare scheme, in both prose and rule form."""
+
+    id: str
+    name: str
+    level: str                      # central | state
+    eligibility: Node               # parsed rule AST
+    eligibility_prose: str          # verbatim eligibility wording from the source
+    summary: str = ""
+    name_ta: str = ""
+    authority: str = ""
+    sectors: tuple[str, ...] = ()
+    benefit_type: str = "service"
+    benefit_prose: str = ""
+    documents: tuple[str, ...] = ()
+    apply_url: str = ""
+    status: str = "draft"
+    verified_on: date | None = None
+    verified_by: str = ""
+    sources: tuple[Source, ...] = ()
+    notes: str = ""
+    raw_rule: Any = None            # the un-parsed rule, for round-tripping
+    source_file: Path | None = None
+
+    # -- behaviour ----------------------------------------------------------
+
+    def decide(self, profile: Mapping[str, Any]):
+        """Evaluate this scheme's rule against a profile. Returns a ``Trace``."""
+        return evaluate(self.eligibility, profile)
+
+    def verdict(self, profile: Mapping[str, Any]) -> Verdict:
+        return self.decide(profile).verdict
+
+    @property
+    def attributes(self) -> set[str]:
+        """Attributes this scheme's rule reads."""
+        return referenced_attributes(self.eligibility)
+
+    @property
+    def is_verified(self) -> bool:
+        return self.status == "verified"
+
+    def retrieval_text(self) -> str:
+        """The prose blob the RAG baseline indexes.
+
+        Deliberately contains everything a well-built retrieval system would have:
+        withholding text here would make the baseline a straw man.
+        """
+        parts = [
+            f"Scheme: {self.name}",
+            f"Tamil name: {self.name_ta}" if self.name_ta else "",
+            f"Implemented by: {self.authority}" if self.authority else "",
+            f"Level: {'Central Government' if self.level == 'central' else 'Government of Tamil Nadu'}",
+            f"Sectors: {', '.join(self.sectors)}" if self.sectors else "",
+            f"Summary: {self.summary}" if self.summary else "",
+            f"Benefit: {self.benefit_prose}" if self.benefit_prose else "",
+            f"Eligibility: {self.eligibility_prose}",
+            f"Documents required: {', '.join(self.documents)}" if self.documents else "",
+        ]
+        return "\n".join(p for p in parts if p)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "name_ta": self.name_ta,
+            "level": self.level,
+            "authority": self.authority,
+            "sectors": list(self.sectors),
+            "benefit_type": self.benefit_type,
+            "summary": self.summary,
+            "benefit_prose": self.benefit_prose,
+            "eligibility_prose": self.eligibility_prose,
+            "eligibility": self.eligibility.to_dict(),
+            "documents": list(self.documents),
+            "apply_url": self.apply_url,
+            "status": self.status,
+            "verified_on": self.verified_on.isoformat() if self.verified_on else None,
+            "verified_by": self.verified_by,
+            "sources": [s.to_dict() for s in self.sources],
+            "notes": self.notes,
+        }
+
+
+# --------------------------------------------------------------------------- KB
+
+
+@dataclass
+class SchemeKB:
+    """A collection of schemes, typed against one attribute spec."""
+
+    schemes: dict[str, Scheme] = field(default_factory=dict)
+    spec: AttributeSpec = field(default_factory=default_spec)
+
+    def __iter__(self) -> Iterator[Scheme]:
+        return iter(self.schemes.values())
+
+    def __len__(self) -> int:
+        return len(self.schemes)
+
+    def __getitem__(self, scheme_id: str) -> Scheme:
+        try:
+            return self.schemes[scheme_id]
+        except KeyError:
+            raise KBError(f"no scheme with id {scheme_id!r}") from None
+
+    def __contains__(self, scheme_id: str) -> bool:
+        return scheme_id in self.schemes
+
+    def ids(self) -> list[str]:
+        return sorted(self.schemes)
+
+    def verified(self) -> "SchemeKB":
+        """The release view: verified schemes only."""
+        return SchemeKB({k: v for k, v in self.schemes.items() if v.is_verified}, self.spec)
+
+    def active(self) -> "SchemeKB":
+        """Schemes that are still open for application.
+
+        Ground truth is computed over this view. Deprecated schemes stay in the KB and
+        in the retrieval corpus on purpose — recommending a discontinued scheme sends a
+        citizen to a district office for nothing, so it must be counted as a false
+        positive rather than quietly dropped from the evaluation.
+        """
+        return SchemeKB(
+            {k: v for k, v in self.schemes.items() if v.status != "deprecated"}, self.spec
+        )
+
+    def deprecated_ids(self) -> list[str]:
+        return sorted(k for k, v in self.schemes.items() if v.status == "deprecated")
+
+    def filter(self, *, level: str | None = None, sector: str | None = None) -> "SchemeKB":
+        out = {
+            k: v for k, v in self.schemes.items()
+            if (level is None or v.level == level) and (sector is None or sector in v.sectors)
+        }
+        return SchemeKB(out, self.spec)
+
+    # -- the core operation -------------------------------------------------
+
+    def match(self, profile: Mapping[str, Any]) -> dict[Verdict, list[str]]:
+        """Partition all schemes by verdict against ``profile``.
+
+        With a fully-specified profile this is the benchmark's ground truth. With a
+        partial profile it is the state of knowledge mid-conversation, and the
+        UNDETERMINED bucket is what elicitation has to shrink.
+        """
+        buckets: dict[Verdict, list[str]] = {v: [] for v in Verdict}
+        for scheme in self:
+            buckets[scheme.verdict(profile)].append(scheme.id)
+        for key in buckets:
+            buckets[key].sort()
+        return buckets
+
+    def eligible_ids(self, profile: Mapping[str, Any]) -> list[str]:
+        """Schemes the profile definitively qualifies for."""
+        return self.match(profile)[Verdict.TRUE]
+
+    def attribute_usage(self) -> dict[str, list[str]]:
+        """attribute -> schemes that read it. Useful for coverage reporting."""
+        usage: dict[str, list[str]] = {}
+        for scheme in self:
+            for attr in scheme.attributes:
+                usage.setdefault(attr, []).append(scheme.id)
+        return {k: sorted(v) for k, v in sorted(usage.items())}
+
+    def coverage_report(self) -> dict[str, Any]:
+        """Summary statistics for the KB — reported in the paper's resource section."""
+        usage = self.attribute_usage()
+        by_level: dict[str, int] = {}
+        by_sector: dict[str, int] = {}
+        by_status: dict[str, int] = {}
+        for scheme in self:
+            by_level[scheme.level] = by_level.get(scheme.level, 0) + 1
+            by_status[scheme.status] = by_status.get(scheme.status, 0) + 1
+            for sector in scheme.sectors:
+                by_sector[sector] = by_sector.get(sector, 0) + 1
+        clause_counts = [
+            sum(1 for _ in scheme.eligibility.walk()) for scheme in self
+        ] or [0]
+        return {
+            "n_schemes": len(self),
+            "by_level": dict(sorted(by_level.items())),
+            "by_sector": dict(sorted(by_sector.items(), key=lambda kv: -kv[1])),
+            "by_status": dict(sorted(by_status.items())),
+            "attributes_used": len(usage),
+            "attributes_declared": len(self.spec.names()),
+            "unused_attributes": sorted(set(self.spec.names()) - set(usage)),
+            "mean_rule_nodes": round(sum(clause_counts) / max(len(clause_counts), 1), 2),
+            "max_rule_nodes": max(clause_counts),
+        }
+
+    # -- serialization ------------------------------------------------------
+
+    def to_json(self, path: str | Path) -> Path:
+        """Write the flat JSON export — the released artifact form of the KB."""
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "attribute_spec_version": self.spec.version,
+            "generated": datetime.now().date().isoformat(),
+            "n_schemes": len(self),
+            "schemes": [s.to_dict() for s in sorted(self, key=lambda s: s.id)],
+        }
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return path
+
+
+# ---------------------------------------------------------------------- loading
+
+
+_REQUIRED_FIELDS = ("id", "name", "level", "eligibility", "eligibility_prose")
+
+
+def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
+    """Load and validate one scheme YAML file."""
+    spec = spec or default_spec()
+    path = Path(path)
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise KBError(f"{path.name}: invalid YAML — {exc}") from None
+    if not isinstance(raw, Mapping):
+        raise KBError(f"{path.name}: expected a mapping at the top level")
+
+    missing = [f for f in _REQUIRED_FIELDS if not raw.get(f)]
+    if missing:
+        raise KBError(f"{path.name}: missing required field(s) {missing}")
+
+    level = raw["level"]
+    if level not in SCHEME_LEVELS:
+        raise KBError(f"{path.name}: level must be one of {sorted(SCHEME_LEVELS)}, got {level!r}")
+
+    status = raw.get("status", "draft")
+    if status not in SCHEME_STATUSES:
+        raise KBError(f"{path.name}: status must be one of {sorted(SCHEME_STATUSES)}, got {status!r}")
+
+    benefit_type = raw.get("benefit_type", "service")
+    if benefit_type not in BENEFIT_TYPES:
+        raise KBError(
+            f"{path.name}: benefit_type must be one of {sorted(BENEFIT_TYPES)}, got {benefit_type!r}"
+        )
+
+    try:
+        rule = parse_rule(raw["eligibility"], spec)
+    except RuleError as exc:
+        raise KBError(f"{path.name}: {exc}") from None
+
+    sources = tuple(_parse_source(s, path) for s in (raw.get("sources") or []))
+    if status == "verified" and not sources:
+        raise KBError(f"{path.name}: a scheme marked 'verified' must cite at least one source")
+
+    return Scheme(
+        id=str(raw["id"]),
+        name=str(raw["name"]),
+        name_ta=str(raw.get("name_ta") or ""),
+        level=level,
+        authority=str(raw.get("authority") or ""),
+        sectors=tuple(raw.get("sectors") or ()),
+        benefit_type=benefit_type,
+        summary=str(raw.get("summary") or "").strip(),
+        benefit_prose=str(raw.get("benefit_prose") or "").strip(),
+        eligibility_prose=str(raw["eligibility_prose"]).strip(),
+        eligibility=rule,
+        documents=tuple(raw.get("documents") or ()),
+        apply_url=str(raw.get("apply_url") or ""),
+        status=status,
+        verified_on=_parse_date(raw.get("verified_on"), path, "verified_on"),
+        verified_by=str(raw.get("verified_by") or ""),
+        sources=sources,
+        notes=str(raw.get("notes") or "").strip(),
+        raw_rule=raw["eligibility"],
+        source_file=path,
+    )
+
+
+def _parse_source(raw: Mapping[str, Any], path: Path) -> Source:
+    for required in ("url", "title", "retrieved"):
+        if not raw.get(required):
+            raise KBError(f"{path.name}: source missing {required!r}")
+    return Source(
+        url=str(raw["url"]),
+        title=str(raw["title"]),
+        retrieved=_parse_date(raw["retrieved"], path, "sources[].retrieved"),
+        publisher=raw.get("publisher"),
+        note=raw.get("note"),
+    )
+
+
+def _parse_date(value: Any, path: Path, field_name: str) -> date | None:
+    if value in (None, ""):
+        return None
+    if isinstance(value, date):
+        return value
+    try:
+        return datetime.strptime(str(value), "%Y-%m-%d").date()
+    except ValueError:
+        raise KBError(f"{path.name}: {field_name} must be YYYY-MM-DD, got {value!r}") from None
+
+
+def load_kb(
+    directory: str | Path | None = None,
+    spec: AttributeSpec | None = None,
+    *,
+    verified_only: bool = False,
+) -> SchemeKB:
+    """Load every ``*.yaml`` scheme under ``directory`` (recursively)."""
+    spec = spec or default_spec()
+    directory = Path(directory) if directory else DEFAULT_KB_DIR
+    if not directory.exists():
+        raise KBError(f"KB directory not found: {directory}")
+
+    schemes: dict[str, Scheme] = {}
+    for path in sorted(directory.rglob("*.yaml")):
+        scheme = load_scheme(path, spec)
+        if scheme.id in schemes:
+            other = schemes[scheme.id].source_file
+            raise KBError(f"duplicate scheme id {scheme.id!r} in {path.name} and {other.name}")
+        schemes[scheme.id] = scheme
+
+    kb = SchemeKB(schemes, spec)
+    return kb.verified() if verified_only else kb
+
+
+def validate_kb(kb: SchemeKB) -> list[str]:
+    """Structural checks that go beyond per-file parsing. Returns a list of problems.
+
+    The important one is the last: with a *fully* specified profile no scheme may
+    return UNDETERMINED. If one does, its rule reads an attribute that personas can
+    never supply, and any ground-truth label computed from it would be silently wrong.
+    """
+    problems: list[str] = []
+    spec = kb.spec
+
+    for scheme in kb:
+        if not scheme.summary:
+            problems.append(f"{scheme.id}: empty summary (weakens the RAG baseline unfairly)")
+        if scheme.status == "verified" and not scheme.verified_on:
+            problems.append(f"{scheme.id}: marked verified but has no verified_on date")
+        if scheme.level == "state" and "state" not in scheme.attributes:
+            problems.append(
+                f"{scheme.id}: state scheme whose rule never constrains 'state' — "
+                "non-TN personas would wrongly match"
+            )
+        for attr in scheme.attributes:
+            if attr not in spec:
+                problems.append(f"{scheme.id}: references undeclared attribute {attr!r}")
+
+    # Total-knowledge check
+    saturated = _saturated_profile(spec)
+    for scheme in kb:
+        if scheme.verdict(saturated) is Verdict.UNKNOWN:
+            unresolved = sorted(
+                p.attr for p in scheme.decide(saturated).unknown_predicates()
+            )
+            problems.append(
+                f"{scheme.id}: UNDETERMINED under a fully-specified profile "
+                f"(unresolved: {unresolved})"
+            )
+    return problems
+
+
+def _saturated_profile(spec: AttributeSpec) -> dict[str, Any]:
+    """A profile with every declared attribute set to some in-domain value."""
+    profile: dict[str, Any] = {}
+    for name, attr in spec.attributes.items():
+        if attr.type == "bool":
+            profile[name] = False
+        elif attr.type == "number":
+            lo, hi = attr.domain or (0.0, 1.0)
+            profile[name] = float(lo)
+        elif attr.type == "enum" and attr.domain:
+            profile[name] = attr.domain[0]
+    return profile
+
+
+def iter_scheme_files(directory: str | Path | None = None) -> Iterable[Path]:
+    directory = Path(directory) if directory else DEFAULT_KB_DIR
+    return sorted(directory.rglob("*.yaml"))

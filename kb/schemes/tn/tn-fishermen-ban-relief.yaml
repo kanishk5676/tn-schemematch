@@ -1,0 +1,60 @@
+id: tn-fishermen-ban-relief
+name: Relief Assistance to Marine Fishermen during the Fishing Ban Period (Tamil Nadu)
+name_ta: மீன்பிடி தடைக்காலத்தில் கடல் மீனவர்களுக்கான நிவாரண உதவி
+level: state
+authority: Department of Fisheries and Fishermen Welfare, Government of Tamil Nadu
+sectors: [livelihood, fisheries, income_support]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  A cash relief paid to marine fishing families in the coastal districts during the annual
+  61-day fishing ban.
+
+benefit_prose: >
+  Rs 2,000 to Rs 5,000 per family for the ban period.
+
+eligibility_prose: >
+  Marine fishermen families holding a valid family ration card, resident in a coastal
+  district, during the 61-day annual fishing ban period.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: occupation, op: eq, value: fisher}
+    - {attr: ration_card_type, op: in, value: [aay, phh_rice, nphh_sugar, nphh_no_commodity],
+       note: "'valid family card' — any class of card, but not 'none'"}
+    - {attr: district, op: in,
+       value: [Chennai, Chengalpattu, Cuddalore, Kanyakumari, Mayiladuthurai, Nagapattinam,
+               Pudukkottai, Ramanathapuram, Thanjavur, Thoothukudi, Tiruvallur, Tirunelveli,
+               Tiruvarur, Tenkasi, Villupuram],
+       note: "marine fishing is confined to the coastal districts; see the note on the district list"}
+
+documents:
+  - Family card
+  - Fishermen identity card
+  - Bank account passbook
+
+apply_url: https://www.fisheries.tn.gov.in/
+
+sources:
+  - url: https://cuddalore.nic.in/fisheries/
+    title: "Fisheries — Cuddalore District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States that relief during the 61-day ban period goes to marine fishermen families with valid ration cards, at Rs 2,000-5,000 per family."
+
+notes: >
+  TO VERIFY (human pass): the district list is constructed, not quoted. The source states
+  the scheme is for marine fishermen without listing districts, and the list encoded here is
+  the set of Tamil Nadu districts with a sea coast — which is a geographical fact, not a
+  scheme condition, and the two can differ (Villupuram's coastline is short; Tenkasi is
+  inland since the 2019 reorganisation and is included here in error unless the department
+  says otherwise). This clause must be replaced with the department's own list. It is
+  encoded despite that because it is the only scheme in the KB that exercises the district
+  attribute at all, and a benchmark where no rule reads district would silently stop testing
+  district-scoped reasoning.
+
+  MODELLING LIMITATION: inland fishermen are excluded by the occupation-plus-district test
+  even though the department runs a parallel inland scheme, and the ban period itself is a
+  date condition the vocabulary cannot express.

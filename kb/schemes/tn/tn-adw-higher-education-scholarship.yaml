@@ -1,0 +1,51 @@
+id: tn-adw-higher-education-scholarship
+name: Higher Education Scholarship for SC/ST Students (Tamil Nadu)
+name_ta: உயர்கல்வி உதவித்தொகை — ஆதிதிராவிடர் நலத்துறை
+level: state
+authority: Adi Dravidar and Tribal Welfare Department, Government of Tamil Nadu
+sectors: [education, scholarship, social_justice]
+benefit_type: scholarship
+status: draft
+
+summary: >
+  An annual scholarship for Scheduled Caste and Scheduled Tribe students in degree,
+  polytechnic, postgraduate and professional courses.
+
+benefit_prose: >
+  Rs 7,500 a year for degree and polytechnic students and Rs 8,000 a year for
+  postgraduate and professional course students.
+
+eligibility_prose: >
+  Scheduled Caste and Scheduled Tribe students enrolled in degree or professional courses
+  whose family income does not exceed Rs 2 lakh per annum.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: social_category, op: in, value: [SC, SCA, ST]}
+    - {attr: enrolled_in_higher_education, op: eq, value: true}
+    - {attr: education_level, op: in, value: [higher_secondary, iti_diploma, undergraduate, postgraduate],
+       note: "degree, polytechnic, postgraduate and professional courses — so the student has at least completed higher secondary"}
+    - {attr: annual_family_income, op: lte, value: 200000}
+
+documents:
+  - Community certificate
+  - Income certificate
+  - Bonafide certificate
+  - Previous year mark sheet
+
+apply_url: https://tnadw.tn.gov.in/
+
+sources:
+  - url: https://dharmapuri.nic.in/adi-dravidar-welfare/
+    title: "Adi Dravidar Welfare — Dharmapuri District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the SC/ST condition, the degree/professional course condition, the Rs 2 lakh income ceiling and the annual amounts."
+
+notes: >
+  Deliberately overlaps tn-adw-post-matric-scholarship, which has a higher income ceiling
+  and a broader course condition. The pair is a threshold test: a student from a family
+  earning Rs 2,20,000 qualifies for one and not the other, and no cue in a citizen's query
+  reveals which side of Rs 2 lakh they fall on. TO VERIFY whether the two are in fact
+  alternative components of one scheme, in which case they should be merged.

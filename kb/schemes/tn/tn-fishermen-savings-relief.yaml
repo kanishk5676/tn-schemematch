@@ -1,0 +1,47 @@
+id: tn-fishermen-savings-relief
+name: National Marine Fishermen Savings-cum-Relief Scheme (Tamil Nadu)
+name_ta: தேசிய கடல் மீனவர் சேமிப்பு மற்றும் நிவாரணத் திட்டம்
+level: state
+authority: Department of Fisheries and Fishermen Welfare, Government of Tamil Nadu
+sectors: [livelihood, fisheries, social_security]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  A matched savings scheme for members of fishermen and fisherwomen cooperative societies
+  below the poverty line, repaid with government contribution during the lean season.
+
+benefit_prose: >
+  Rs 1,500 to Rs 4,500 for fishermen and Rs 4,500 for fisherwomen, including the state
+  contribution.
+
+eligibility_prose: >
+  Members of fishermen and fisherwomen cooperative societies who are below the poverty
+  line.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: is_member_of_fishermen_cooperative, op: eq, value: true}
+    - {attr: is_bpl, op: eq, value: true}
+
+documents:
+  - Cooperative society membership certificate
+  - BPL / family card
+  - Bank account passbook
+
+apply_url: https://www.fisheries.tn.gov.in/
+
+sources:
+  - url: https://cuddalore.nic.in/fisheries/
+    title: "Fisheries — Cuddalore District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States membership of a fishermen or fisherwomen cooperative society and below-poverty-line status as the eligibility conditions."
+
+notes: >
+  Note what this rule does NOT read: occupation. Membership of a cooperative society is the
+  test the scheme actually applies, and a fisherwoman who dries and sells fish is a member
+  without being recorded as occupation: fisher. Encoding occupation here would have
+  excluded her — the sort of quiet substitution of a plausible proxy for the published
+  condition that this KB's conventions exist to prevent.

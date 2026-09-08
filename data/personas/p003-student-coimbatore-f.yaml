@@ -1,0 +1,116 @@
+id: p003
+persona_sketch: >
+  First-year undergraduate in Coimbatore who came through a government school with 78
+  percent in class 12. Qualifies for Pudhumai Penn. Her family income sits just above the
+  CMCHIS ceiling, and she is two years under the Kalaignar Magalir age floor.
+
+profile:
+  age: 19
+  gender: female
+  marital_status: unmarried
+  social_category: BC
+  religion: hindu
+  state: TN
+  district: Coimbatore
+  residence_type: urban
+
+  annual_family_income: 150000
+  is_income_tax_payer: false
+  is_government_employee: false
+  is_class_iv_employee: false
+  monthly_pension_amount: 0
+  is_registered_professional: false
+  held_constitutional_post: false
+  fixed_assets_value: 300000
+  annual_electricity_units: 2100
+  is_destitute: false
+  is_head_of_household: false
+
+  land_owned_acres: 0
+  wetland_acres: 0
+  dryland_acres: 0
+
+  ration_card_type: phh_rice
+  house_ownership: owns_pucca
+  owns_four_wheeler: false
+  family_size: 4
+
+  occupation: student
+  education_level: higher_secondary
+  studied_in_government_school: true
+  is_first_generation_learner: true
+  enrolled_in_higher_education: true
+  course_mode: regular
+  previous_exam_percent: 78
+  traditional_trade: none
+  availed_govt_credit_scheme_last_5y: false
+
+  disability_percent: 0
+  pregnancy_status: not_applicable
+  receives_other_pension: false
+
+  has_aadhaar: true
+  has_bank_account: true
+  has_community_certificate: true
+
+  # --- attribute-spec v0.2 additions -------------------------------------
+  # Added when the KB grew past ten schemes. A persona must set every attribute the
+  # rules read, or its gold label is a guess (schemematch validate enforces this).
+  is_bpl: false
+  is_secc_deprived_household: false
+  has_lpg_connection: true
+  pregnancy_order: 0
+  daughters_count: 0
+  sons_count: 0
+  has_undergone_family_planning: false
+  is_orphan: false
+  is_daughter_of_widow: false
+  has_upcoming_marriage: false
+  is_inter_caste_marriage: false
+  years_since_desertion: 0
+  spouse_is_government_employee: false
+  family_has_income_tax_payer: false
+  is_covered_by_epfo_esic_nps: false
+  is_registered_unorganised_worker: false
+  has_mgnrega_job_card: false
+  has_vending_certificate: false
+  is_member_of_fishermen_cooperative: false
+  is_srilankan_tamil_refugee: false
+  is_inter_state_migrant: false
+  spouse_is_differently_abled: false
+  employment_exchange_registration_years: 0
+
+queries:
+  code_mixed: >-
+    naan government school la thaan padichen, 12th la 78 percent vangunen. ippo college
+    first year padikren. enakku edhachum scholarship kedaikuma?
+  english: >-
+    I studied in a government school and got 78 percent in class 12. I am in the first
+    year of college now. Can I get any scholarship?
+
+stated_in_query:
+  - studied_in_government_school
+  - previous_exam_percent
+  - education_level
+  - enrolled_in_higher_education
+  - occupation
+
+annotation:
+  author: "seed (project author)"
+  validated_by: ""
+  validated_on: ""
+  codemix_naturalness: null
+  profile_plausibility: null
+  parallel_faithful: null
+  notes: >
+    SEED PERSONA — NOT YET NATIVELY VALIDATED.
+
+    Design intent: paired with p004, whose query is word-for-word identical and whose
+    profile differs only in gender. Neither query states gender, so a system must ask for
+    it. If it answers without asking, its choice between Pudhumai Penn and Tamil Pudhalvan
+    is a guess, and one of the two personas will get a false positive. This pair isolates
+    a categorical constraint from every other source of difficulty — same wording, same
+    schemes retrieved, one attribute apart.
+
+    The Rs 1,50,000 family income is deliberately just above the CMCHIS ceiling of
+    Rs 1,20,000.

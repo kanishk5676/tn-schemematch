@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Scheme knowledge base — TN-SchemeMatch{% endblock %}
+{% block body %}
+<div class="browser">
+  <aside class="rail">
+    <div class="card">
+      <div class="eyebrow">Search</div>
+      <input type="text" id="q" placeholder="name, Tamil name, authority…">
+      <div class="eyebrow" style="margin-top:16px">Level</div>
+      <div class="facets" id="levels"></div>
+      <div class="eyebrow" style="margin-top:16px">Sector</div>
+      <div class="facets" id="sectors"></div>
+      <button class="btn ghost" id="clear" style="margin-top:12px">clear filters</button>
+    </div>
+  </aside>
+
+  <div>
+    <div class="card" style="margin-bottom:14px">
+      <h2 style="margin:0">The rule knowledge base</h2>
+      <p class="muted tiny" style="margin:6px 0 0">
+        Each scheme carries the eligibility wording from its published source beside the
+        machine-readable rule encoded from it. Open one and read them side by side &mdash;
+        that comparison is the audit this project is built to support.
+      </p>
+      <div class="muted tiny" id="count" style="margin-top:10px"></div>
+    </div>
+    <div class="scheme-grid" id="grid"></div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <div class="dlg-head">
+    <div style="flex:1">
+      <h2 id="d-name" style="margin:0 0 3px"></h2>
+      <div class="muted" id="d-ta"></div>
+    </div>
+    <button class="btn" id="d-close">Close</button>
+  </div>
+  <div class="dlg-body" id="d-body"></div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/schemes.js') }}"></script>
+{% endblock %}

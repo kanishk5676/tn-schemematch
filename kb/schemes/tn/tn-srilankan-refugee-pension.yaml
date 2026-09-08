@@ -1,0 +1,52 @@
+id: tn-srilankan-refugee-pension
+name: Pension to Sri Lankan Tamil Refugees (Tamil Nadu)
+name_ta: இலங்கைத் தமிழ் அகதிகளுக்கான ஓய்வூதியம்
+level: state
+authority: Revenue and Disaster Management Department, Government of Tamil Nadu
+sectors: [social_security, refugees]
+benefit_type: pension
+status: draft
+
+summary: >
+  A monthly pension for destitute Sri Lankan Tamil refugees living in Tamil Nadu camps,
+  administered alongside the state's other social security pensions.
+
+benefit_prose: >
+  A monthly pension at the rates set for the state social security pensions.
+
+eligibility_prose: >
+  Payable to Sri Lankan Tamil refugees resident in Tamil Nadu who are destitute and are
+  not in receipt of another government pension.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: is_srilankan_tamil_refugee, op: eq, value: true}
+    - {attr: is_destitute, op: eq, value: true}
+    - {attr: receives_other_pension, op: eq, value: false}
+
+documents:
+  - Refugee camp identity card
+  - Destitution certificate
+  - Bank account passbook
+
+apply_url: https://cra.tn.gov.in/eleg_schemes.php
+
+sources:
+  - url: https://cra.tn.gov.in/eleg_schemes.php
+    title: "Social Security Schemes — Commissionerate of Revenue Administration, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "Lists 'Pension to Sri Lankan refugees' among the state-funded social security schemes; the page does not state the detailed conditions."
+
+notes: >
+  THIN SOURCING — the Commissionerate page names this scheme but does not publish its
+  conditions, and the rule is assembled from the conditions common to the surrounding state
+  pensions (destitution, no other pension). Age and asset conditions may well apply and are
+  not encoded.
+
+  It is in the KB for a reason that matters more than its own numbers: cmchis.yaml recorded
+  as a modelling limitation that the vocabulary could not express refugee status, which
+  silently removed one of the least well-served populations from the benchmark entirely.
+  Adding is_srilankan_tamil_refugee makes that population representable, and this scheme is
+  the first rule that reads it.

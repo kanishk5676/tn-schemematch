@@ -1,0 +1,261 @@
+{
+  "generated": "2026-09-08T20:15:50",
+  "metadata": {
+    "backend": "none",
+    "model": "claude-sonnet-5",
+    "temperature": 0.0,
+    "top_k": 8,
+    "kb_verified": false,
+    "personas_validated": false,
+    "n_schemes": 42,
+    "n_personas": 12,
+    "subset": true
+  },
+  "summary": {
+    "grounding[oracle_extraction]|code_mixed": {
+      "n_runs": 12,
+      "n_errors": 0,
+      "precision": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 2.336841547607098,
+        "sd": 0.48663587469135117,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 1.0683629481964834,
+        "sd": 0.11304758760504671,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 22.916666666666668,
+        "sd": 6.907944482239053,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      }
+    },
+    "grounding[oracle_extraction]|english": {
+      "n_runs": 12,
+      "n_errors": 0,
+      "precision": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 2.336841547607098,
+        "sd": 0.48663587469135117,
+        "n_scored": 11,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 1.0683629481964834,
+        "sd": 0.11304758760504671,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 22.916666666666668,
+        "sd": 6.907944482239053,
+        "n_scored": 12,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 12,
+        "n_skipped": 0
+      }
+    }
+  },
+  "rq2_codemix_delta": {
+    "grounding[oracle_extraction]": [
+      {
+        "metric": "f1",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 12,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "fpr",
+        "mean_code_mixed": 0.0,
+        "mean_english": 0.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 11,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "exact_match",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 12,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "recall",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 12,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "retrieval_recall",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 11,
+        "p_two_sided": 1.0,
+        "significant": false
+      }
+    ]
+  }
+}

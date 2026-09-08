@@ -1,0 +1,52 @@
+id: tn-da-maintenance-allowance
+name: Maintenance Allowance for Persons with Severe Disability (Tamil Nadu)
+name_ta: கடுமையான மாற்றுத்திறனாளிகளுக்கான பராமரிப்பு உதவித்தொகை
+level: state
+authority: Department for the Welfare of the Differently Abled, Government of Tamil Nadu
+sectors: [disability, social_security]
+benefit_type: pension
+status: draft
+
+summary: >
+  A monthly maintenance allowance for persons in Tamil Nadu with severe disability,
+  intellectual disability, muscular dystrophy or cured leprosy.
+
+benefit_prose: >
+  Rs 1,500 per month.
+
+eligibility_prose: >
+  Payable to persons with severe disability of 75 percent and above, and to persons with
+  intellectual disability, muscular dystrophy or cured leprosy certified at 40 percent and
+  above, resident in Tamil Nadu.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: disability_percent, op: gte, value: 75,
+       note: "the 75 percent 'severe disability' route; the 40 percent routes are condition-specific and the vocabulary has no disability-type attribute"}
+
+documents:
+  - National disability certificate
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://www.scd.tn.gov.in/
+
+sources:
+  - url: https://viluppuram.nic.in/differently-abled-welfare-schemes/
+    title: "Differently Abled Welfare Schemes — Viluppuram District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "Lists the maintenance allowance at Rs 1,500 for severe disability at 75 percent and above, and separately for intellectual disability, muscular dystrophy and cured leprosy at 40 percent and above."
+
+notes: >
+  MODELLING LIMITATION, and it excludes real beneficiaries: the scheme's 40-percent routes
+  are gated on the *type* of disability (intellectual disability, muscular dystrophy, cured
+  leprosy), and the vocabulary records only a percentage. The rule therefore encodes the 75
+  percent route alone and will report ineligible a person with a 50 percent intellectual
+  disability who in fact qualifies. Fixing this needs a disability_type attribute, which is
+  the recommended addition at the verification pass.
+
+  TO VERIFY (human pass): whether an income ceiling applies. The district page states none,
+  which is unusual for a Tamil Nadu social security payment and should be checked against
+  the departmental order.

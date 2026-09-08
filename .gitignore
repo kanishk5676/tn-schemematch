@@ -1,0 +1,29 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Generated KB artifacts (rebuild with `python scripts/build_kb.py`)
+kb/build/*.json
+kb/build/*.jsonl
+
+# Model run outputs (large, regenerable)
+data/runs/**/raw/
+*.log
+
+# Secrets
+.env
+*.key
+
+# Working directories, not artifacts
+.trash/
+.snapshots/          # gold-set snapshots for scripts/gold_diff.py
+.cache/              # fetched source bodies, kept as retrieval evidence
+.DS_Store

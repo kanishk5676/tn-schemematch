@@ -1,0 +1,55 @@
+id: tn-ambedkar-merit-scholarship
+name: Dr. Ambedkar National Merit Scholarship (Tamil Nadu)
+name_ta: டாக்டர் அம்பேத்கர் தேசிய தகுதி உதவித்தொகை
+level: state
+authority: Adi Dravidar and Tribal Welfare Department, Government of Tamil Nadu
+sectors: [education, scholarship, social_justice]
+benefit_type: scholarship
+status: draft
+
+summary: >
+  A merit award for the highest-scoring Scheduled Caste and Scheduled Tribe students in the
+  tenth and twelfth standard state examinations, restricted to low-income families.
+
+benefit_prose: >
+  Rs 60,000, Rs 50,000 and Rs 40,000 for the first, second and third ranks at state level.
+
+eligibility_prose: >
+  Awarded to the top three Scheduled Caste and Scheduled Tribe students at state level in
+  the tenth or twelfth standard examinations whose family income is less than Rs 1 lakh.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: social_category, op: in, value: [SC, SCA, ST]}
+    - {attr: education_level, op: in, value: [secondary, higher_secondary]}
+    - {attr: annual_family_income, op: lt, value: 100000, note: "source says 'income < Rs 1 lakh', hence a strict lt"}
+    - {attr: previous_exam_percent, op: gte, value: 90,
+       note: "a proxy for 'top three at state level', which is a rank, not a mark — see the notes"}
+
+documents:
+  - Community certificate
+  - Income certificate
+  - Mark sheet
+
+apply_url: https://tnadw.tn.gov.in/
+
+sources:
+  - url: https://dharmapuri.nic.in/adi-dravidar-welfare/
+    title: "Adi Dravidar Welfare — Dharmapuri District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the top-three-at-state-level condition, the income ceiling below Rs 1 lakh and the three award amounts."
+
+notes: >
+  KNOWN APPROXIMATION, and the most explicit one in the KB: the scheme's condition is a
+  RANK — the top three students in the state — which is not a property of an applicant's
+  profile at all, since it depends on everyone else's marks. The rule substitutes a
+  90 percent mark threshold. That substitution is wrong in both directions, and any
+  eligibility this scheme contributes to a gold label should be read as "plausibly in
+  contention", not "entitled".
+
+  It is encoded rather than dropped because rank-based and quota-based schemes are common in
+  Indian welfare, and a benchmark that silently omits every scheme whose condition is
+  competitive would misrepresent the domain. The honest handling is to keep it, flag it here,
+  and exclude it from any headline number — which is what the verification queue records.

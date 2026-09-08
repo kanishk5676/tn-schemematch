@@ -1,0 +1,117 @@
+id: p002
+persona_sketch: >
+  Recently widowed woman in Madurai, head of her family card, earning about Rs 7,000 a
+  month from daily wage work. Qualifies for the women's entitlement and health cover, but
+  not for the widow pension — she has an income, so she is not destitute.
+
+profile:
+  age: 38
+  gender: female
+  marital_status: widowed
+  social_category: SC
+  religion: hindu
+  state: TN
+  district: Madurai
+  residence_type: urban
+
+  annual_family_income: 84000
+  is_income_tax_payer: false
+  is_government_employee: false
+  is_class_iv_employee: false
+  monthly_pension_amount: 0
+  is_registered_professional: false
+  held_constitutional_post: false
+  fixed_assets_value: 40000
+  annual_electricity_units: 1200
+  is_destitute: false
+  is_head_of_household: true
+
+  land_owned_acres: 0
+  wetland_acres: 0
+  dryland_acres: 0
+
+  ration_card_type: phh_rice
+  house_ownership: rented
+  owns_four_wheeler: false
+  family_size: 3
+
+  occupation: daily_wage
+  education_level: secondary
+  studied_in_government_school: true
+  is_first_generation_learner: true
+  enrolled_in_higher_education: false
+  course_mode: not_applicable
+  previous_exam_percent: 0
+  traditional_trade: none
+  availed_govt_credit_scheme_last_5y: false
+
+  disability_percent: 0
+  pregnancy_status: not_applicable
+  receives_other_pension: false
+
+  has_aadhaar: true
+  has_bank_account: true
+  has_community_certificate: true
+
+  # --- attribute-spec v0.2 additions -------------------------------------
+  # Added when the KB grew past ten schemes. A persona must set every attribute the
+  # rules read, or its gold label is a guess (schemematch validate enforces this).
+  is_bpl: true
+  is_secc_deprived_household: true
+  has_lpg_connection: true
+  pregnancy_order: 0
+  daughters_count: 1
+  sons_count: 1
+  has_undergone_family_planning: true
+  is_orphan: false
+  is_daughter_of_widow: false
+  has_upcoming_marriage: false
+  is_inter_caste_marriage: false
+  years_since_desertion: 0
+  spouse_is_government_employee: false
+  family_has_income_tax_payer: false
+  is_covered_by_epfo_esic_nps: false
+  is_registered_unorganised_worker: true
+  has_mgnrega_job_card: false
+  has_vending_certificate: false
+  is_member_of_fishermen_cooperative: false
+  is_srilankan_tamil_refugee: false
+  is_inter_state_migrant: false
+  spouse_is_differently_abled: false
+  employment_exchange_registration_years: 0
+
+queries:
+  code_mixed: >-
+    en kanavar போன வருஷம் இறந்துட்டார். ippo naan thaan family head, rendu pasanga
+    irukanga. maasam 7000 mattum thaan varum. enakku edhavadhu udhavi kedaikuma?
+  english: >-
+    My husband died last year. I am the head of the family now, with two children.
+    I only earn about 7,000 a month. Is there any assistance I can get?
+
+stated_in_query:
+  - gender
+  - marital_status
+  - is_head_of_household
+  - annual_family_income
+  - family_size
+
+annotation:
+  author: "seed (project author)"
+  validated_by: ""
+  validated_on: ""
+  codemix_naturalness: null
+  profile_plausibility: null
+  parallel_faithful: null
+  notes: >
+    SEED PERSONA — NOT YET NATIVELY VALIDATED.
+
+    Design intent: this is the false-positive trap the whole benchmark is built around.
+    Every surface cue points at the destitute widow pension — widowed, low income, female
+    — and she does not qualify for it, because she has a regular income and so fails the
+    destitution test. A system that pattern-matches on "widow" will send her to a district
+    office for nothing. The correct behaviour is either to ask whether she is certified
+    destitute, or to leave the pension out.
+
+    The query mixes Tamil script and romanized Tamil in one sentence, which is ordinary in
+    real messages and rare in existing benchmarks. Keep that mixture; do not normalize it
+    to one script during validation.

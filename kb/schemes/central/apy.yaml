@@ -1,0 +1,52 @@
+id: apy
+name: Atal Pension Yojana (APY)
+name_ta: அடல் ஓய்வூதியத் திட்டம்
+level: central
+authority: Pension Fund Regulatory and Development Authority, Government of India
+sectors: [pension, social_security]
+benefit_type: pension
+status: draft
+
+summary: >
+  A contributory pension for bank account holders aged 18 to 40, paying a guaranteed
+  Rs 1,000 to Rs 5,000 a month from age 60 depending on the slab chosen.
+
+benefit_prose: >
+  A guaranteed monthly pension of Rs 1,000, 2,000, 3,000, 4,000 or 5,000 from the age of
+  60, funded by monthly contributions made until then.
+
+eligibility_prose: >
+  The minimum eligible age to join is 18 years and the maximum is 40 years, requiring a
+  minimum contribution period of 20 years. Contributions are auto-debited from the
+  subscriber's linked bank account and Aadhaar is the primary identification document.
+
+eligibility:
+  all:
+    - {attr: age, op: between, value: [18, 40]}
+    - {attr: has_bank_account, op: eq, value: true}
+    - {attr: has_aadhaar, op: eq, value: true}
+
+documents:
+  - Bank account passbook
+  - Aadhaar card
+  - Mobile number
+
+apply_url: https://npscra.nsdl.co.in/scheme-details.php
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Atal_Pension_Yojana
+    title: "Atal Pension Yojana"
+    publisher: Wikipedia
+    retrieved: 2026-09-04
+    note: "SECONDARY SOURCE for the 18-40 age band, the bank-account requirement and the pension slabs."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  TO VERIFY (human pass): income tax payers have been barred from *enrolling* in APY since
+  a 2022 notification. The retrieved source does not state this, and under the rule-writing
+  convention that every clause must point at wording in a cited source, the exclusion is
+  NOT encoded. It almost certainly should be: as it stands the rule will report an
+  income-tax-paying 30-year-old as eligible, which is a false positive of exactly the kind
+  this benchmark is built to count. This is the single highest-priority item in the
+  verification queue.

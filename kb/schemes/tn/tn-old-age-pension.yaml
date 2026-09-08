@@ -1,0 +1,56 @@
+id: tn-old-age-pension
+name: Indira Gandhi National Old Age Pension Scheme (Tamil Nadu)
+name_ta: இந்திரா காந்தி தேசிய முதியோர் ஓய்வூதியத் திட்டம்
+level: state
+authority: Revenue and Disaster Management Department, Government of Tamil Nadu
+sectors: [social_security, elderly]
+benefit_type: pension
+status: draft
+
+summary: >
+  A monthly pension for destitute senior citizens in Tamil Nadu with no source of income
+  and negligible fixed assets, administered by the state with central assistance.
+
+benefit_prose: >
+  Rs 1,000 per month, with in-kind benefits including free sarees or dhotis at Pongal and
+  Deepavali and subsidised rice.
+
+eligibility_prose: >
+  The applicant must be aged 60 years or above, destitute, without any income or source of
+  income, and resident in Tamil Nadu. Fixed assets such as land or a house must be valued
+  at less than Rs 50,000. The applicant must not be in receipt of any other government
+  pension.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: age, op: gte, value: 60}
+    - {attr: is_destitute, op: eq, value: true}
+    - {attr: fixed_assets_value, op: lt, value: 50000}
+    - {attr: receives_other_pension, op: eq, value: false}
+
+documents:
+  - Age proof
+  - Income and asset certificate from the Village Administrative Officer
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://cra.tn.gov.in/eleg_schemes.php
+
+sources:
+  - url: https://cra.tn.gov.in/eleg_schemes.php
+    title: "Social Security Schemes — Commissionerate of Revenue Administration, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-08-15
+  - url: https://www.myscheme.gov.in/schemes/ignoapstn
+    title: "Indira Gandhi National Old Age Pension Scheme — Tamil Nadu (myScheme)"
+    publisher: National Informatics Centre, Government of India
+    retrieved: 2026-08-15
+
+notes: >
+  Note the asymmetry with tn-widow-pension: the asset test here is encoded as a strict
+  "less than Rs 50,000" and there as "not exceeding Rs 50,000", following the differing
+  wording of the two sources. A persona holding assets of exactly Rs 50,000 therefore
+  separates the two schemes. Whether that asymmetry is real or a wording artefact is
+  exactly the kind of question the human verification pass must settle — and until it is
+  settled, no persona should be built on that boundary.

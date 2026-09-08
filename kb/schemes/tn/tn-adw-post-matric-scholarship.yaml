@@ -1,0 +1,54 @@
+id: tn-adw-post-matric-scholarship
+name: Post-Matric Scholarship with Maintenance Allowance (Adi Dravidar and Tribal Welfare, Tamil Nadu)
+name_ta: மேல்நிலைக் கல்வி உதவித்தொகை — ஆதிதிராவிடர் நலத்துறை
+level: state
+authority: Adi Dravidar and Tribal Welfare Department, Government of Tamil Nadu
+sectors: [education, scholarship, social_justice]
+benefit_type: scholarship
+status: draft
+
+summary: >
+  A monthly maintenance scholarship for Scheduled Caste and Scheduled Tribe students
+  studying beyond the tenth standard, subject to a family income ceiling.
+
+benefit_prose: >
+  Rs 230 to Rs 550 per month for day scholars and Rs 380 to Rs 1,200 per month for
+  hostellers, in addition to fee reimbursement.
+
+eligibility_prose: >
+  Scheduled Caste and Scheduled Tribe students studying beyond the tenth standard whose
+  family income is up to Rs 2.50 lakh per annum.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: social_category, op: in, value: [SC, SCA, ST]}
+    - {attr: enrolled_in_higher_education, op: eq, value: true}
+    - {attr: annual_family_income, op: lte, value: 250000}
+    - {attr: has_community_certificate, op: eq, value: true}
+
+documents:
+  - Community certificate
+  - Income certificate
+  - Bonafide certificate from the institution
+  - Bank account passbook
+
+apply_url: https://tnadw.tn.gov.in/
+
+sources:
+  - url: https://dharmapuri.nic.in/adi-dravidar-welfare/
+    title: "Adi Dravidar Welfare — Dharmapuri District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the SC/ST condition, study beyond the tenth standard, the Rs 2.50 lakh income ceiling and the day-scholar and hosteller rates."
+
+notes: >
+  The scheme's own wording also covers "Scheduled Castes converted to Christianity", a
+  category the social_category vocabulary does not carry — a converted SC student is
+  recorded as christian under religion with whatever category their certificate states.
+  Whether the rule should read religion at all is a question for the verification pass; as
+  encoded it will report ineligible some students the scheme covers.
+
+  TO VERIFY (human pass): whether course_mode matters. Central post-matric scholarships
+  exclude distance and correspondence study; this page does not say, and the rule does not
+  encode it.

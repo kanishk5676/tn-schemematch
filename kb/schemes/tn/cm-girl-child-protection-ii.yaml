@@ -1,0 +1,54 @@
+id: cm-girl-child-protection-ii
+name: Chief Minister's Girl Child Protection Scheme — Scheme II (two girl children)
+name_ta: முதலமைச்சரின் பெண் குழந்தை பாதுகாப்புத் திட்டம் — திட்டம் II
+level: state
+authority: Social Welfare and Women Empowerment Department, Government of Tamil Nadu
+sectors: [women, child_welfare, savings]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  A fixed deposit for each of two girl children in a family with no son, released with
+  interest when each turns 18 having completed the tenth standard.
+
+benefit_prose: >
+  A deposit of Rs 25,000 in the name of each of the two girl children with Tamil Nadu
+  Power Finance, released with accrued interest at age 18 on completion of the SSLC
+  examination.
+
+eligibility_prose: >
+  The family must have two girl children and no male child, both born on or after
+  1 August 2011, and a parent must have undergone a family planning procedure. The annual
+  family income must not exceed Rs 72,000.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: daughters_count, op: eq, value: 2}
+    - {attr: sons_count, op: eq, value: 0}
+    - {attr: has_undergone_family_planning, op: eq, value: true}
+    - {attr: annual_family_income, op: lte, value: 72000}
+
+documents:
+  - Birth certificates of both girl children
+  - Family planning certificate
+  - Income certificate
+  - Family card
+
+apply_url: https://tnsocialwelfare.tn.gov.in/
+
+sources:
+  - url: https://kancheepuram.nic.in/departments/social-welfare/
+    title: "Social Welfare — Kancheepuram District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "States the two-girls-no-son condition, the birth cut-off and the Rs 25,000 per child deposit."
+
+notes: >
+  Deliberately encoded as a separate scheme from cm-girl-child-protection-i rather than as
+  a disjunction inside one rule. The two are mutually exclusive on daughters_count, which
+  makes them a natural minimal pair for the benchmark: a family with one daughter and a
+  family with two differ in exactly one integer and have disjoint answers, and no surface
+  cue in a citizen's query distinguishes them.
+
+  Same modelling limitation as Scheme I: the 1 August 2011 birth cut-off is not encodable.

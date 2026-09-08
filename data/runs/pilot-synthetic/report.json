@@ -1,0 +1,1448 @@
+{
+  "generated": "2026-08-16T01:44:54",
+  "metadata": {
+    "backend": "none",
+    "model": "none",
+    "n_schemes": 10,
+    "n_personas": 5,
+    "kb_verified": false,
+    "personas_validated": false,
+    "metric_checks_passed": true
+  },
+  "summary": {
+    "ablation:no_elicitation|code_mixed": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "ablation:no_elicitation|english": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "probe:abstain|code_mixed": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "probe:abstain|english": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "probe:exclusion_blind|code_mixed": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 0.9333333333333333,
+        "sd": 0.14907119849998599,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 0.96,
+        "sd": 0.08944271909999157,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 0.8,
+        "sd": 0.4472135954999579,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": 0.06666666666666667,
+        "sd": 0.14907119849998599,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "probe:exclusion_blind|english": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 0.9333333333333333,
+        "sd": 0.14907119849998599,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 0.96,
+        "sd": 0.08944271909999157,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 0.8,
+        "sd": 0.4472135954999579,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": 0.06666666666666667,
+        "sd": 0.14907119849998599,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "probe:oracle|code_mixed": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "probe:oracle|english": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "probe:threshold_blind|code_mixed": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 0.6666666666666666,
+        "sd": 0.2041241452319315,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 0.7866666666666666,
+        "sd": 0.13662601021279466,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 0.2,
+        "sd": 0.44721359549995804,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": 0.3333333333333333,
+        "sd": 0.2041241452319315,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "probe:threshold_blind|english": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 0.6666666666666666,
+        "sd": 0.2041241452319315,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 0.7866666666666666,
+        "sd": 0.13662601021279466,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 0.2,
+        "sd": 0.44721359549995804,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": 0.3333333333333333,
+        "sd": 0.2041241452319315,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 1.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "probe:topical[k=5]|code_mixed": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 0.28,
+        "sd": 0.10954451150103323,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 0.9,
+        "sd": 0.22360679774997902,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 0.4190476190476191,
+        "sd": 0.14045601146431075,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": 0.72,
+        "sd": 0.10954451150103325,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 0.9,
+        "sd": 0.22360679774997902,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 0.9,
+        "sd": 0.22360679774997902,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    },
+    "probe:topical[k=5]|english": {
+      "n_runs": 5,
+      "n_errors": 0,
+      "precision": {
+        "mean": 0.28,
+        "sd": 0.10954451150103323,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "recall": {
+        "mean": 0.9,
+        "sd": 0.22360679774997902,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "f1": {
+        "mean": 0.4190476190476191,
+        "sd": 0.14045601146431075,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "exact_match": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "fpr": {
+        "mean": 0.72,
+        "sd": 0.10954451150103325,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "harmful_fpr": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_recall": {
+        "mean": 0.9,
+        "sd": 0.22360679774997902,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "matching_recall": {
+        "mean": 0.9,
+        "sd": 0.22360679774997902,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "retrieval_gap": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_precision": {
+        "mean": null,
+        "sd": null,
+        "n_scored": 0,
+        "n_skipped": 0
+      },
+      "question_overhead": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "question_overhead_exhaustive": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "n_questions": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      },
+      "elicitation_sufficient_rate": {
+        "mean": 0.0,
+        "sd": 0.0,
+        "n_scored": 5,
+        "n_skipped": 0
+      }
+    }
+  },
+  "rq2_codemix_delta": {
+    "ablation:no_elicitation": [
+      {
+        "metric": "f1",
+        "mean_code_mixed": 0.0,
+        "mean_english": 0.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "exact_match",
+        "mean_code_mixed": 0.0,
+        "mean_english": 0.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "recall",
+        "mean_code_mixed": 0.0,
+        "mean_english": 0.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "retrieval_recall",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      }
+    ],
+    "probe:abstain": [
+      {
+        "metric": "f1",
+        "mean_code_mixed": 0.0,
+        "mean_english": 0.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "exact_match",
+        "mean_code_mixed": 0.0,
+        "mean_english": 0.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "recall",
+        "mean_code_mixed": 0.0,
+        "mean_english": 0.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "retrieval_recall",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      }
+    ],
+    "probe:exclusion_blind": [
+      {
+        "metric": "f1",
+        "mean_code_mixed": 0.96,
+        "mean_english": 0.96,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "fpr",
+        "mean_code_mixed": 0.06666666666666667,
+        "mean_english": 0.06666666666666667,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "exact_match",
+        "mean_code_mixed": 0.8,
+        "mean_english": 0.8,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "recall",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "retrieval_recall",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      }
+    ],
+    "probe:oracle": [
+      {
+        "metric": "f1",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "fpr",
+        "mean_code_mixed": 0.0,
+        "mean_english": 0.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "exact_match",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "recall",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "retrieval_recall",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      }
+    ],
+    "probe:threshold_blind": [
+      {
+        "metric": "f1",
+        "mean_code_mixed": 0.7866666666666666,
+        "mean_english": 0.7866666666666666,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "fpr",
+        "mean_code_mixed": 0.3333333333333333,
+        "mean_english": 0.3333333333333333,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "exact_match",
+        "mean_code_mixed": 0.2,
+        "mean_english": 0.2,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "recall",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "retrieval_recall",
+        "mean_code_mixed": 1.0,
+        "mean_english": 1.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      }
+    ],
+    "probe:topical[k=5]": [
+      {
+        "metric": "f1",
+        "mean_code_mixed": 0.4190476190476191,
+        "mean_english": 0.4190476190476191,
+        "delta": 0.0,
+        "ci95": [
+          -0.17142857142857146,
+          0.17142857142857146
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "fpr",
+        "mean_code_mixed": 0.72,
+        "mean_english": 0.72,
+        "delta": 0.0,
+        "ci95": [
+          -0.12000000000000004,
+          0.12000000000000004
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "exact_match",
+        "mean_code_mixed": 0.0,
+        "mean_english": 0.0,
+        "delta": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "recall",
+        "mean_code_mixed": 0.9,
+        "mean_english": 0.9,
+        "delta": 0.0,
+        "ci95": [
+          -0.3,
+          0.3
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      },
+      {
+        "metric": "retrieval_recall",
+        "mean_code_mixed": 0.9,
+        "mean_english": 0.9,
+        "delta": 0.0,
+        "ci95": [
+          -0.3,
+          0.3
+        ],
+        "n_pairs": 5,
+        "p_two_sided": 1.0,
+        "significant": false
+      }
+    ]
+  }
+}

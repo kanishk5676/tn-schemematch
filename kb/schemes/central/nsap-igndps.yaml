@@ -1,0 +1,57 @@
+id: nsap-igndps
+name: Indira Gandhi National Disability Pension Scheme (IGNDPS)
+name_ta: இந்திரா காந்தி தேசிய மாற்றுத்திறனாளிகள் ஓய்வூதியத் திட்டம்
+level: central
+authority: Ministry of Rural Development, Government of India
+sectors: [social_security, disability]
+benefit_type: pension
+status: draft
+
+summary: >
+  A monthly central pension for persons aged 18 to 59 with severe or multiple
+  disabilities who belong to below-poverty-line households.
+
+benefit_prose: >
+  Rs 300 per month of central assistance for beneficiaries aged 18 to 79, commonly
+  supplemented by the implementing state.
+
+eligibility_prose: >
+  The applicant must be aged 18 to 59 years, belong to a household below the poverty
+  line, and have a severe or multiple disability — that is, a disability of 80 percent
+  or more as certified under the disability certification rules.
+
+eligibility:
+  all:
+    - {attr: age, op: between, value: [18, 59]}
+    - {attr: is_bpl, op: eq, value: true}
+    - {attr: disability_percent, op: gte, value: 80,
+       note: "'severe and multiple disability' is read as the 80 percent certification threshold"}
+
+documents:
+  - Disability certificate
+  - BPL card
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://nsap.nic.in/
+
+sources:
+  - url: https://nsap.nic.in/circular.do?method=aboutus
+    title: "About the National Social Assistance Programme (NSAP)"
+    publisher: Ministry of Rural Development, Government of India
+    retrieved: 2026-09-04
+    note: "States the 18-59 band, BPL condition, and 'severe and multiple disabilities'."
+  - url: https://pudukkottai.nic.in/social-security-schemes/
+    title: "Social Security Schemes — Pudukkottai District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "State implementation of IGNDPS; quantifies the disability requirement as 80 percent or above and the minimum age as 18."
+
+notes: >
+  PARTLY RESOLVED 2026-09-04: the 80 percent figure began as an inference from the phrase
+  "severe and multiple disabilities", which the NSAP page does not quantify. A Tamil Nadu
+  district page publishing the state's implementation of the same scheme states "disability
+  level 80% or above" explicitly, which corroborates the reading. The clause is kept at 80. The Tamil Nadu differently-abled schemes in this KB use 40 and 75 percent
+  thresholds, so the three must be reconciled against their primary orders before any
+  number derived from this scheme is reported. Encoded at the stricter reading, which
+  risks false negatives rather than false positives.

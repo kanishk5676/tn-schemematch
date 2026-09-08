@@ -1,0 +1,75 @@
+id: tn-deserted-wives-pension
+name: Pension to Destitute Deserted Wives (Tamil Nadu)
+name_ta: ஆதரவற்ற கணவரால் கைவிடப்பட்ட பெண்களுக்கான ஓய்வூதியத் திட்டம்
+level: state
+authority: Revenue and Disaster Management Department, Government of Tamil Nadu
+sectors: [social_security, women]
+benefit_type: pension
+status: draft
+
+summary: >
+  A monthly pension for destitute women aged 30 and above who have been deserted by their
+  husbands for at least five years, or who are legally separated.
+
+benefit_prose: >
+  Rs 1,000 per month, with the in-kind benefits attached to the state social security
+  pensions.
+
+eligibility_prose: >
+  The applicant must be a destitute woman aged at least 30 years who has been abandoned by
+  her husband for a minimum of five years, or who is legally divorced or holds a legal
+  separation certificate from a court. The value of immovable property must not exceed
+  Rs 50,000.
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: TN}
+    - {attr: gender, op: eq, value: female}
+    - {attr: age, op: gte, value: 30}
+    - {attr: is_destitute, op: eq, value: true}
+    - {attr: fixed_assets_value, op: lte, value: 50000,
+       note: "'must not exceed', hence lte — contrast tn-old-age-pension, whose source says 'less than'"}
+    - any:
+        - {attr: marital_status, op: eq, value: divorced}
+        - all:
+            - {attr: marital_status, op: eq, value: deserted}
+            - {attr: years_since_desertion, op: gte, value: 5}
+    - {attr: receives_other_pension, op: eq, value: false}
+
+documents:
+  - Desertion certificate from the Village Administrative Officer, or decree of divorce
+  - Income and asset certificate
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://cra.tn.gov.in/eleg_schemes.php
+
+sources:
+  - url: https://cra.tn.gov.in/eleg_schemes.php
+    title: "Social Security Schemes — Commissionerate of Revenue Administration, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "Lists the destitute deserted wives pension among the state-funded social security schemes."
+  - url: https://pudukkottai.nic.in/social-security-schemes/
+    title: "Social Security Schemes — Pudukkottai District, Government of Tamil Nadu"
+    publisher: Government of Tamil Nadu
+    retrieved: 2026-09-04
+    note: "Official corroboration of every number in the rule: minimum age 30, destitution, fixed assets below Rs 50,000, 'legally divorced or deserted for not less than 5 years', Rs 1,000 a month."
+  - url: https://tamileserviceinfo.blogspot.com/2020/10/deserted-woman-pension-destitute.html
+    title: "Destitute Deserted Wives Pension Scheme — application guide"
+    publisher: tamileserviceinfo (unofficial)
+    retrieved: 2026-09-04
+    note: "WEAK SOURCE. Supplies the numeric conditions — age 30, five years of desertion, Rs 50,000 property ceiling, Rs 1,000 a month — which the official page does not state. Must be replaced with the Government Order."
+
+notes: >
+  SOURCING UPGRADED 2026-09-04: the rule was first written from an unofficial application
+  guide, because the Commissionerate page lists the scheme without its conditions. A
+  district administration page has since been found that states every number independently
+  — age 30, destitution, assets below Rs 50,000, "legally divorced or deserted for not less
+  than 5 years", Rs 1,000 a month — and the two agree exactly. Both citations are kept so
+  that the agreement is visible rather than asserted. The Government Order is still the
+  target for the human pass.
+
+  The five-year desertion clause is the only use of years_since_desertion in the KB, and it
+  is a genuine elicitation trap: "my husband left me" settles marital_status but not the
+  duration, so a system that stops there will assert eligibility it cannot support.
