@@ -1,0 +1,63 @@
+id: nsap-ignoaps
+name: Indira Gandhi National Old Age Pension Scheme (IGNOAPS)
+name_ta: இந்திரா காந்தி தேசிய முதியோர் ஓய்வூதியத் திட்டம்
+level: central
+authority: Ministry of Rural Development, Government of India
+sectors: [social_security, elderly, pension]
+benefit_type: pension
+status: draft
+
+summary: >
+  A monthly central pension for people aged 60 and above belonging to below-poverty-line
+  households, paid through the states under the National Social Assistance Programme.
+
+benefit_prose: >
+  Rs 200 per month of central assistance for beneficiaries aged 60 to 79, rising to
+  Rs 500 per month at 80. States routinely add a contribution of their own on top.
+
+eligibility_prose: >
+  All individuals aged 60 years and above who live below the poverty line, as identified
+  by the criteria prescribed by the Government of India, are eligible to apply.
+
+eligibility:
+  all:
+    - {attr: age, op: gte, value: 60}
+    - {attr: is_bpl, op: eq, value: true, note: "BPL is an administrative list, not an income threshold"}
+
+documents:
+  - Age proof
+  - BPL card
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://nsap.nic.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/National_Social_Assistance_Scheme
+    title: "National Social Assistance Scheme"
+    publisher: Wikipedia
+    retrieved: 2026-09-08
+    note: "SECONDARY SOURCE. nsap.nic.in did not resolve on 2026-09-08 (DNS failure), so the
+      primary portal could not be re-read for this scheme. States the age-60 threshold, the
+      BPL condition and the Rs 200 / Rs 500 central rates."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  This is the parent scheme of the NSAP family and its absence was a real gap: the KB
+  already carried IGNWPS, IGNDPS and Annapurna, all three of which reference the old age
+  pension in their own wording, while the pension itself was missing.
+
+  TO VERIFY (human pass): whether receipt of another government pension disqualifies an
+  applicant. Its sibling IGNWPS encodes such a clause on a second reading of the state
+  implementation orders; no wording in the source retrieved here supports one for IGNOAPS,
+  so per the authoring rule — every clause needs a source — it is deliberately not encoded.
+  If the guidelines do exclude duplicate pensions, this rule is over-inclusive.
+
+  MODELLING LIMITATION: the two-tier rate (Rs 200 below 80, Rs 500 at 80 and above) is a
+  benefit amount, not an eligibility condition, so it is recorded in benefit_prose only.
+  The rule cannot express "eligible, but for how much".
+
+  Note the deliberate interaction with nsap-annapurna, which exists precisely for people
+  eligible for this pension but not drawing it. A BPL person aged 65 or over will match
+  both, which is correct: eligibility for the two is not mutually exclusive, only receipt is.

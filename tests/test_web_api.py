@@ -75,10 +75,28 @@ def test_extraction_failure_still_yields_a_usable_session(kb, spec):
 # ------------------------------------------------------------------- the loop
 
 
+def a_valid_answer(question):
+    """An in-domain value for whatever the interview asked.
+
+    Deriving it from the question's own form metadata rather than pinning a literal is
+    the point. Which attribute ranks first is a function of the KB — it was `state` at 41
+    schemes and became `age` at 45, because the schemes added all read age — so a test
+    that hardcodes an answer is testing the ranking, not the endpoint, and breaks every
+    time the KB grows. The form contract is what this test is actually about.
+    """
+    if question["type"] == "bool":
+        return True
+    if question["type"] == "enum":
+        return question["options"][0]["value"]
+    return question["min"]
+
+
 def test_answer_advances_and_updates_the_board(client):
     start = client.post("/api/session", json={"query": "", "use_ai": False}).get_json()
-    sid, attr = start["session_id"], start["question"]["attr"]
-    body = client.post(f"/api/session/{sid}/answer", json={"attr": attr, "value": "TN"}).get_json()
+    sid, question = start["session_id"], start["question"]
+    attr = question["attr"]
+    body = client.post(f"/api/session/{sid}/answer",
+                       json={"attr": attr, "value": a_valid_answer(question)}).get_json()
     assert body["accepted"] and body["source"] == "form"
     assert body["question"]["attr"] != attr
 

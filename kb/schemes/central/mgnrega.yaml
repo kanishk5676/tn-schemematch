@@ -1,0 +1,65 @@
+id: mgnrega
+name: Mahatma Gandhi National Rural Employment Guarantee Act (MGNREGA)
+name_ta: மகாத்மா காந்தி தேசிய ஊரக வேலைவாய்ப்பு உறுதித் திட்டம்
+level: central
+authority: Ministry of Rural Development, Government of India
+sectors: [livelihood, rural, social_security]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  A statutory guarantee of a hundred days of paid unskilled manual work in a financial year
+  to every rural household whose adult members volunteer for it.
+
+benefit_prose: >
+  At least 100 days of guaranteed wage employment per household per financial year, at the
+  notified minimum wage, with work provided within 5 km of the applicant's residence. If
+  work is not provided within 15 days of application, an unemployment allowance is payable.
+
+eligibility_prose: >
+  Every household in rural areas whose adult members volunteer to do unskilled manual work
+  is entitled to at least one hundred days of assured and guaranteed wage employment in a
+  financial year.
+
+eligibility:
+  all:
+    - {attr: residence_type, op: eq, value: rural,
+       note: "the guarantee is rural by statute; the urban equivalents are state schemes"}
+    - {attr: age, op: gte, value: 18, note: "'adult members' of the household"}
+
+documents:
+  - Job card application with photograph
+  - Aadhaar card
+  - Proof of residence in the gram panchayat
+  - Bank or post office account passbook
+
+apply_url: https://nrega.nic.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/National_Rural_Employment_Guarantee_Act,_2005
+    title: "National Rural Employment Guarantee Act, 2005"
+    publisher: Wikipedia
+    retrieved: 2026-09-08
+    note: "SECONDARY SOURCE. nrega.nic.in returned HTTP 404 for its documented entry point
+      on 2026-09-08. States the rural household entitlement, the adult-member condition and
+      the hundred-day guarantee."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  DELIBERATELY NOT ENCODED: has_mgnrega_job_card. Holding a job card is the administrative
+  result of registering under this Act, not a precondition for being entitled to register.
+  Requiring it would make the rule circular — it would report that the scheme is available
+  only to people already receiving it, and would tell a citizen who most needs to hear
+  about MGNREGA that they do not qualify. The attribute stays in the vocabulary because
+  other schemes legitimately use job-card holding as a proxy for rural poverty.
+
+  MODELLING LIMITATION: the entitlement is household-scoped ("every household whose adult
+  members volunteer"), and is approximated here by an applicant-level age test. The
+  vocabulary cannot express "some adult in this household", the same limitation already
+  recorded against PM-KISAN's family-scoped exclusions.
+
+  STILL NOT ENCODED: willingness to do unskilled manual work. It is a statement of intent
+  rather than a fact about the applicant, and nothing in the attribute space could carry
+  it honestly. The consequence is that this rule is broad — which is faithful to a statute
+  whose whole design is to be broad.

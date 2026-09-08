@@ -1,0 +1,71 @@
+id: jsy
+name: Janani Suraksha Yojana (JSY)
+name_ta: ஜனனி சுரக்ஷா யோஜனா
+level: central
+authority: Ministry of Health and Family Welfare, Government of India
+sectors: [health, maternity, women]
+benefit_type: cash_transfer
+status: draft
+
+summary: >
+  Cash assistance to encourage institutional delivery, paid to pregnant women who deliver
+  in a government or accredited health facility under the National Health Mission.
+
+benefit_prose: >
+  In high-performing states, Rs 700 for a rural mother and Rs 600 for an urban mother. In
+  low-performing states, Rs 1,400 rural and Rs 1,000 urban. A woman below the poverty line
+  delivering at home receives Rs 500.
+
+eligibility_prose: >
+  In Low Performing States all pregnant women delivering in government health facilities
+  are eligible for the cash benefit. In High Performing States the benefit is restricted to
+  women who are Below Poverty Line or who belong to a Scheduled Caste or Scheduled Tribe.
+  The benefit is available irrespective of the mother's age and the number of children she
+  has.
+
+eligibility:
+  all:
+    - {attr: gender, op: eq, value: female}
+    - {attr: pregnancy_status, op: eq, value: pregnant}
+    - any:
+        - {attr: is_bpl, op: eq, value: true}
+        - {attr: social_category, op: in, value: [SC, SCA, ST],
+           note: "the High Performing State route; SCA is Tamil Nadu's Arunthathiyar sub-quota within SC"}
+
+documents:
+  - JSY card or MCP card
+  - BPL certificate or caste certificate
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://nhm.gov.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Janani_Suraksha_Yojana
+    title: "Janani Suraksha Yojana"
+    publisher: Wikipedia
+    retrieved: 2026-09-08
+    note: "SECONDARY SOURCE. States the Low/High Performing State split, the BPL-or-SC/ST
+      restriction in High Performing States, the absence of any age or birth-order
+      condition, and the rural/urban cash amounts."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  MODELLING LIMITATION, and the first place the national KB and the Tamil Nadu persona set
+  pull against each other. This scheme's eligibility depends on whether the applicant's
+  state is classified Low Performing or High Performing — a property of the state, not of
+  the applicant, and the vocabulary has no attribute for it. The rule encodes the High
+  Performing reading, which is the stricter one: in a Low Performing State every pregnant
+  woman delivering institutionally qualifies, with no BPL or caste condition at all.
+
+  That choice is exactly right for every persona currently in the benchmark, all of whom
+  are Tamil Nadu residents and Tamil Nadu is a High Performing State. It will be
+  under-inclusive the moment a persona from Bihar, Uttar Pradesh, Odisha, Rajasthan or
+  Madhya Pradesh is added. Encoding it the other way round would produce false positives
+  instead, which is the worse error for this benchmark, so the strict reading stands.
+
+  STILL NOT ENCODED: delivery in a government or accredited facility. It is a condition on
+  the delivery, which has not happened yet at the moment a citizen asks what they qualify
+  for, so it is not something an eligibility interview can establish. The rule therefore
+  reports who may claim if they deliver institutionally, which is the useful question.

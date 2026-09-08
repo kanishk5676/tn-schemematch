@@ -1,0 +1,56 @@
+id: pmsby
+name: Pradhan Mantri Suraksha Bima Yojana (PMSBY)
+name_ta: பிரதம மந்திரி சுரக்ஷா பீமா யோஜனா
+level: central
+authority: Department of Financial Services, Ministry of Finance, Government of India
+sectors: [insurance, social_security]
+benefit_type: insurance
+status: draft
+
+summary: >
+  A government-backed accidental death and disability cover for bank account holders aged
+  18 to 70, at a premium of Rs 20 a year debited automatically from the account.
+
+benefit_prose: >
+  Rs 2 lakh on accidental death or total permanent disability, and Rs 1 lakh on partial
+  permanent disability, for an annual premium of Rs 20.
+
+eligibility_prose: >
+  Savings bank account holders between 18 and 70 years of age who give consent to join and
+  to enable auto-debit of the premium. Cover runs from 1 June to 31 May and is renewable
+  annually.
+
+eligibility:
+  all:
+    - {attr: age, op: between, value: [18, 70]}
+    - {attr: has_bank_account, op: eq, value: true}
+    - {attr: has_aadhaar, op: eq, value: true, note: "the account must be Aadhaar-linked"}
+
+documents:
+  - Bank account passbook
+  - Aadhaar card
+  - Consent-cum-declaration form
+
+apply_url: https://www.jansuraksha.gov.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Pradhan_Mantri_Suraksha_Bima_Yojana
+    title: "Pradhan Mantri Suraksha Bima Yojana"
+    publisher: Wikipedia
+    retrieved: 2026-09-08
+    note: "SECONDARY SOURCE. jansuraksha.gov.in failed TLS certificate verification on
+      2026-09-08, the same retrieval failure already recorded against PMJJBY. States the
+      18-70 age band, the Rs 20 premium and the Rs 2 lakh / Rs 1 lakh cover."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  MODELLING LIMITATION: the 45-day waiting period between enrolment and claim eligibility
+  is a condition on the claim, not on joining, and is not encoded. A system that reported
+  this scheme to someone who joined last week would not be wrong about their eligibility
+  to enrol.
+
+  Deliberately near-universal among working-age account holders, and paired with PMJJBY,
+  which shares the structure but caps at 50 rather than 70. The pair is a useful test of
+  whether a system reads an age band precisely rather than approximately: a 60-year-old
+  qualifies for one and not the other.

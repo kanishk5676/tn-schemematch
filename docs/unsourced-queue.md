@@ -13,3 +13,4 @@ loader never sees them.
 
 | scheme | jurisdiction | attempted source(s) | outcome | date |
 |---|---|---|---|---|
+| Sukanya Samriddhi Yojana | central | india.gov.in/spotlight/sukanya-samriddhi-yojana (403); en.wikipedia.org/wiki/Sukanya_Samriddhi_Account (200, content usable) | **Sourced, but blocked on vocabulary.** The rule needs the youngest daughter's age; the vocabulary has `daughters_count` but no age. Encoding it without that clause would admit every family with an adult daughter — an inclusion over-reach producing false positives. Held until a second girl-child scheme needs the same attribute, which makes the back-fill across 247 personas worth paying. | 2026-09-08 |
