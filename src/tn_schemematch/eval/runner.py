@@ -95,7 +95,15 @@ def score_results(
     """Score every run against ground truth."""
     active = kb.active()
     deprecated = kb.deprecated_ids()
-    grounds = {p.id: p.elicitation_ground(kb) for p in personas}
+    # Materialise first: `results` is an Iterable, and we need to know which personas
+    # were actually run before deciding whose ground truth to compute.
+    results = list(results)
+    # One elicitation ground costs a full oracle question sequence — O(questions x
+    # schemes x attributes). Computing it for all 247 personas in order to score two
+    # results was ~7s a call, and it scales with the KB, so it gets worse exactly as
+    # the KB grows.
+    wanted = {r.persona_id for r in results}
+    grounds = {p.id: p.elicitation_ground(kb) for p in personas if p.id in wanted}
     gold = personas.gold(kb)
 
     scored: list[PersonaScore] = []

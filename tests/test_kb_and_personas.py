@@ -198,3 +198,68 @@ def test_necessary_questions_exclude_derived_attributes(kb, sample_personas):
         ground = persona.elicitation_ground(kb)
         for attr in ground.necessary:
             assert kb.spec[attr].elicitable
+
+
+# --------------------------------------------------------------- expansion tripwires
+#
+# These three cost almost nothing and all pass today. They exist because the KB is about
+# to triple, and each guards a failure that is otherwise silent or reported far from its
+# cause.
+
+
+def test_every_persona_sets_every_non_derived_attribute(spec, personas):
+    """The front-line back-fill guard.
+
+    Adding an attribute to the vocabulary obliges every persona to carry it, or its gold
+    label becomes a guess. Today that only surfaces via the settle test, and only once
+    some rule actually reads the attribute — which can be several batches after the
+    omission, with an error message about the *scheme* rather than the persona. This
+    fails immediately, on declaration, and names the personas.
+    """
+    expected = {name for name, attr in spec.attributes.items() if not attr.is_derived}
+    for persona in personas:
+        missing = expected - set(persona.profile)
+        assert not missing, f"{persona.id} does not set {sorted(missing)}"
+
+
+def test_base_profile_covers_the_vocabulary(spec):
+    """The persona generator must know about every attribute the spec declares.
+
+    If it does not, every generated candidate is rejected for leaving schemes
+    undetermined, the run writes fewer personas than asked for, and the retire step then
+    deletes the ones it failed to replace. The benchmark shrinks and the suite stays
+    green, because a smaller benchmark is still a consistent one.
+    """
+    import random
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    from generate_personas import base_profile
+
+    expected = {name for name, attr in spec.attributes.items() if not attr.is_derived}
+    actual = set(base_profile(random.Random(0)))
+    assert actual == expected, (
+        f"generator misses {sorted(expected - actual)}; "
+        f"generator invents {sorted(actual - expected)}"
+    )
+
+
+# Three files predate the filename==id convention. Renaming them would invalidate every
+# data/runs artifact, both hardcoded-id tests and the docs, for cosmetic gain — so they are
+# pinned here instead, and the set is closed: it may shrink, never grow.
+LEGACY_FILENAME_MISMATCHES = frozenset({"kmut", "mrmbs", "tn-widow-pension"})
+
+
+def test_scheme_filename_matches_its_id(kb):
+    """`id` comes from inside the file, so a filename can drift from it unnoticed.
+
+    At 42 schemes that is a curiosity. At 110, hunting for the file that defines a
+    scheme id becomes routine, and three exceptions become thirty.
+    """
+    for scheme in kb:
+        if scheme.id in LEGACY_FILENAME_MISMATCHES:
+            continue
+        assert scheme.source_file.stem == scheme.id, (
+            f"{scheme.source_file.name} declares id {scheme.id!r}"
+        )

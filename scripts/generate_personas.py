@@ -976,6 +976,17 @@ def main() -> int:
 
     left_behind = [f for f in stale if f not in written_files]
     if left_behind:
+        # Retiring is how ids from a larger previous run are stopped from reappearing.
+        # But if this run under-produced — because base_profile() is missing a key the
+        # spec now declares, so every candidate is rejected — then retiring deletes the
+        # personas the short run failed to replace, and the benchmark silently shrinks.
+        # A short run is a bug in the generator, never a licence to delete.
+        if written < args.n:
+            print(f"REFUSING TO RETIRE: wrote {written} of {args.n} requested sampled "
+                  f"personas, so {len(left_behind)} existing file(s) were left in place.\n"
+                  f"         A short run usually means base_profile() does not cover the "
+                  f"attribute spec. Fix that before regenerating.")
+            return 1
         retire(left_behind)
 
     personas = load_personas()
