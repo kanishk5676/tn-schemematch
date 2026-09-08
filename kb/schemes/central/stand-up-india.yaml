@@ -1,0 +1,70 @@
+id: stand-up-india
+name: Stand-Up India
+name_ta: ஸ்டாண்ட்-அப் இந்தியா
+level: central
+authority: Department of Financial Services, Ministry of Finance, Government of India
+sectors: [credit, livelihood, social_justice, women]
+benefit_type: loan
+status: draft
+
+summary: >
+  Bank loans between Rs 10 lakh and Rs 1 crore for Scheduled Caste, Scheduled Tribe and
+  women entrepreneurs setting up a new enterprise outside the farm sector.
+
+benefit_prose: >
+  A composite bank loan of between Rs 10 lakh and Rs 1 crore for a greenfield enterprise in
+  manufacturing, trading or services, from every scheduled commercial bank branch.
+
+eligibility_prose: >
+  The scheme supports entrepreneurship among women and Scheduled Caste and Scheduled Tribe
+  communities, financing loans between Rs 10 lakh and Rs 1 crore for setting up a
+  greenfield enterprise in the manufacturing, trading or services sector.
+
+eligibility:
+  all:
+    - {attr: age, op: gte, value: 18}
+    - {attr: occupation, op: eq, value: self_employed,
+       note: "MODELLING LIMITATION: the scheme finances a *greenfield* enterprise, i.e. a new
+              one. Running a business is the closest the vocabulary comes; see notes."}
+    - any:
+        - {attr: social_category, op: in, value: [SC, SCA, ST],
+           note: "SCA is Tamil Nadu's Arunthathiyar sub-quota within SC"}
+        - {attr: gender, op: eq, value: female}
+
+documents:
+  - Community certificate, where applying under the SC/ST route
+  - Project report for the proposed enterprise
+  - Proof of identity and address
+  - Bank account passbook
+
+apply_url: https://www.standupmitra.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Stand-Up_India
+    title: "Stand-Up India"
+    publisher: Wikipedia
+    retrieved: 2026-09-08
+    note: "SECONDARY SOURCE. States the SC/ST-and-women target group, the Rs 10 lakh to
+      Rs 1 crore loan band, and the greenfield manufacturing/trading/services condition. It
+      states no minimum age and no shareholding condition; both are absent from the rule
+      for that reason."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  MODELLING LIMITATION, and the load-bearing one: "greenfield" means a *new* enterprise,
+  and the vocabulary cannot distinguish someone starting a business from someone already
+  running one. The rule uses occupation == self_employed, which is over-inclusive for
+  existing businesses and under-inclusive for the unemployed person the scheme is arguably
+  most designed to help. Both errors are named here rather than smoothed over.
+
+  Dropping the clause altogether was the alternative and is worse: without it the rule
+  would assert that every Scheduled Caste person and every woman in the country qualifies
+  for a Rs 10 lakh business loan. That is a false positive of exactly the kind this
+  benchmark exists to measure, so an imperfect proxy with a stated limitation is preferred
+  to a clean rule that is wrong.
+
+  TO VERIFY (human pass): the minimum age, and the condition — reported elsewhere but not
+  in the source retrieved — that in a non-individual enterprise at least 51 per cent of the
+  shareholding must be held by an SC/ST or woman entrepreneur. Neither is encoded, because
+  neither appears in wording that was actually read.

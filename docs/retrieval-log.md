@@ -32,3 +32,15 @@ log and are exempt; their provenance is recorded in
 | 2026-09-08 | https://www.pib.gov.in/PressReleasePage.aspx?PRID=1946976 | HTTP 403 | (probe) |
 | 2026-09-08 | https://www.myscheme.gov.in/schemes/gls | 200 but client-rendered; no scheme content in HTML | (probe) |
 | 2026-09-08 | https://sevasindhuservices.karnataka.gov.in/ | TLS: unable to verify first certificate | (probe) |
+| 2026-09-08 | https://en.wikipedia.org/wiki/Rashtriya_Swasthya_Bima_Yojana | 200 OK — eligibility + discontinuation extracted | rsby |
+| 2026-09-08 | https://en.wikipedia.org/wiki/Kasturba_Gandhi_Balika_Vidyalaya | 200 OK — eligibility extracted | kgbv |
+| 2026-09-08 | https://en.wikipedia.org/wiki/Stand-Up_India | 200 OK — eligibility extracted | stand-up-india |
+| 2026-09-08 | https://en.wikipedia.org/wiki/Pradhan_Mantri_Awas_Yojana | 200 OK — urban only; duplicates pmay-clss, not added | (pmay-g) |
+| 2026-09-08 | https://en.wikipedia.org/wiki/Pradhan_Mantri_Jan_Dhan_Yojana | 200 OK — too thin to encode, not added | (pmjdy) |
+| 2026-09-08 | https://en.wikipedia.org/wiki/List_of_schemes_of_the_government_of_India | 200 OK — used to find correct article titles | (index) |
+| 2026-09-08 | https://en.wikipedia.org/wiki/Deendayal_Antyodaya_Yojana | HTTP 404 | (day-nrlm) |
+| 2026-09-08 | https://en.wikipedia.org/wiki/Pradhan_Mantri_Kisan_Maandhan_Yojana | HTTP 404 | (pm-kisan-maandhan) |
+| 2026-09-08 | https://en.wikipedia.org/wiki/Rashtriya_Vayoshri_Yojana | HTTP 404 | (rvy) |
+| 2026-09-08 | https://pmaymis.gov.in/ | 200 OK — woman-ownership clause only, no income thresholds | (pmay-u probe) |
+| 2026-09-08 | https://pmvishwakarma.gov.in/ | 200 OK — confirms the existing pm-vishwakarma encoding | (pm-vishwakarma) |
+| 2026-09-08 | https://pmkisan.gov.in/ | 200 OK — confirms the existing pm-kisan exclusions | (pm-kisan) |

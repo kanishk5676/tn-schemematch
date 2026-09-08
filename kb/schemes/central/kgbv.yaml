@@ -1,0 +1,72 @@
+id: kgbv
+name: Kasturba Gandhi Balika Vidyalaya (KGBV)
+name_ta: கஸ்தூர்பா காந்தி பாலிகா வித்யாலயா
+level: central
+authority: Department of School Education and Literacy, Ministry of Education, Government of India
+sectors: [education, women, child_welfare]
+benefit_type: in_kind
+status: draft
+
+summary: >
+  Residential upper-primary schools for girls from disadvantaged communities in
+  educationally backward blocks, providing free boarding alongside schooling.
+
+benefit_prose: >
+  A free place at a residential school with boarding facilities at elementary level,
+  including books, uniforms and meals.
+
+eligibility_prose: >
+  Seventy-five per cent of enrolment is reserved for girls from Scheduled Caste, Scheduled
+  Tribe, Other Backward Class and minority communities, and the remaining twenty-five per
+  cent for girls from families below the poverty line. Schools are established in blocks
+  with a concentration of tribal population, low female literacy, or many girls out of
+  school.
+
+eligibility:
+  all:
+    - {attr: gender, op: eq, value: female}
+    - {attr: education_level, op: in, value: [primary, middle],
+       note: "'residential schools with boarding facilities at elementary level'; the source
+              states no grade or age range, so the level attained is the operative test"}
+    - any:
+        - {attr: social_category, op: in, value: [SC, SCA, ST, MBC, DNC, BC, BCM],
+           note: "the 75 per cent reservation for SC, ST, OBC and minority communities"}
+        - {attr: is_bpl, op: eq, value: true, note: "the remaining 25 per cent"}
+
+documents:
+  - Community certificate
+  - BPL card, where claiming under the below-poverty-line quota
+  - Transfer certificate from the previous school
+  - Aadhaar card
+
+apply_url: https://samagra.education.gov.in/
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Kasturba_Gandhi_Balika_Vidyalaya
+    title: "Kasturba Gandhi Balika Vidyalaya"
+    publisher: Wikipedia
+    retrieved: 2026-09-08
+    note: "SECONDARY SOURCE. States the 75/25 split between disadvantaged-community and BPL
+      girls, the elementary residential model, and the block-selection criteria."
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  MODELLING LIMITATION: the scheme is block-scoped — schools exist only in educationally
+  backward blocks with low female literacy — and the vocabulary has no sub-district
+  geography. The rule therefore reports eligibility on the applicant's own characteristics
+  and ignores whether a KGBV exists near her, which makes it over-inclusive. `district` was
+  not used for this: its domain is Tamil Nadu's 38 districts, and block-level backwardness
+  is not a district-level property in any case.
+
+  MODELLING LIMITATION: "minority communities" is a religion-based route, and the rule
+  approximates it through the social_category taxonomy, where BCM is Tamil Nadu's Backward
+  Class Muslim category. Christian, Sikh, Buddhist, Jain and Parsi girls outside a backward
+  class would not match, though the scheme covers them. The `religion` attribute exists and
+  is read by no rule in this KB; deriving a portable is_minority_community from it is the
+  obvious fix and is the right moment to add one.
+
+  TO VERIFY (human pass): whether the 75/25 split is an enrolment quota administered at the
+  school, in which case it is not an eligibility condition at all and this rule is
+  structurally wrong — a BPL girl from a forward community is eligible either way, and only
+  the quota she is counted against differs.

@@ -1,0 +1,62 @@
+id: rsby
+name: Rashtriya Swasthya Bima Yojana (RSBY) (discontinued)
+name_ta: ராஷ்ட்ரிய ஸ்வஸ்த்ய பீமா யோஜனா
+level: central
+authority: Ministry of Labour and Employment, Government of India
+sectors: [health, insurance, social_security]
+benefit_type: insurance
+status: deprecated
+
+summary: >
+  A cashless hospitalisation cover for below-poverty-line families, discontinued in
+  2018-19 when it was subsumed into Ayushman Bharat PM-JAY.
+
+benefit_prose: >
+  Provided inpatient medical care of up to Rs 30,000 per family per year at empanelled
+  hospitals, for a registration fee of Rs 30. Covered the head of household, spouse and up
+  to three dependants.
+
+eligibility_prose: >
+  Every below-poverty-line family holding a yellow ration card was entitled to enrol. The
+  smart card covered the head of the household, the spouse, and up to three dependent
+  children or parents.
+
+eligibility:
+  all:
+    - {attr: is_bpl, op: eq, value: true, note: "'every below poverty line family holding a yellow ration card'"}
+
+documents:
+  - BPL ration card
+  - Biometric enrolment at the district camp
+
+apply_url: ""
+
+sources:
+  - url: https://en.wikipedia.org/wiki/Rashtriya_Swasthya_Bima_Yojana
+    title: "Rashtriya Swasthya Bima Yojana"
+    publisher: Wikipedia
+    retrieved: 2026-09-08
+    note: "SECONDARY SOURCE. States the BPL-and-yellow-card condition, the Rs 30,000 annual
+      cover, the Rs 30 registration fee, and — the reason this scheme is here — that
+      'In 2018-19, RSBY was subsumed into Ayushman Bharat PM-JAY. Consequently it no longer
+      exists as a standalone programme.'"
+
+notes: >
+  SECONDARY SOURCING — see the source note. Not to be treated as verified.
+
+  DISCONTINUED, and retained deliberately. This is the second dead scheme in the KB, after
+  moovalur-marriage-assistance, and it is here for the same reason: it ran nationally for a
+  decade, it is still described in the present tense across a large share of the web, and a
+  retrieval corpus scraped today will still surface it. Recommending it is the most costly
+  single error available to a system — a citizen travels to a district office for a scheme
+  that no longer exists — and harmful_recommendation_rate exists to catch exactly that.
+
+  Having two deprecated schemes rather than one matters for that metric. With a single
+  target, a system could avoid the penalty by learning one scheme id; with two, spread
+  across a state marriage grant and a central health cover, avoiding it requires actually
+  tracking whether a scheme is live.
+
+  MODELLING LIMITATION: the yellow-ration-card condition is folded into is_bpl. Tamil
+  Nadu's card classes do not include a yellow card, and the vocabulary's ration_card_type
+  is Tamil Nadu's own taxonomy, so the card colour cannot be expressed nationally. is_bpl
+  carries the substance of the test.
