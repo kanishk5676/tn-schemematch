@@ -48,7 +48,13 @@ function renderRuns(runs) {
     return el('div', { style: 'margin-bottom:22px' },
       el('div', { class: 'row', style: 'margin-bottom:8px' },
         el('span', { class: 'mono tiny' }, run.dir),
-        el('span', { class: 'pill' }, `model: ${meta.model || 'none'}`),
+        /* Show the backend, not just the model name. run_experiment.py records --model
+           even when --backend none, so a rules-only run would otherwise display
+           "model: claude-sonnet-5" and read as though a model had been called. */
+        el('span', { class: 'pill' },
+           (meta.backend && meta.backend !== 'none')
+             ? `model: ${meta.model || 'unknown'}`
+             : 'rules only — no model called'),
         el('span', { class: 'pill' }, `${meta.n_personas ?? '?'} personas`),
         meta.kb_verified ? el('span', { class: 'badge ok' }, 'kb verified')
           : el('span', { class: 'badge open' }, 'kb unverified — not reportable')),
