@@ -22,8 +22,14 @@ data/runs/**/raw/
 .env
 *.key
 
-# Working directories, not artifacts
+# Working directories, not artifacts.
+# NOTE: gitignore has no trailing-comment syntax — a comment after a pattern on the same
+# line becomes part of the pattern and silently matches nothing. Keep comments on their
+# own lines.
 .trash/
-.snapshots/          # gold-set snapshots for scripts/gold_diff.py
-.cache/              # fetched source bodies, kept as retrieval evidence
+# gold-set baselines for scripts/gold_diff.py
+.snapshots/
+# fetched source bodies, kept as retrieval evidence
+.cache/
 .DS_Store
+.claude/launch.json
