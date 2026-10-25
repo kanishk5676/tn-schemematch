@@ -45,6 +45,7 @@ class Session:
     chat: list[dict[str, Any]] = field(default_factory=list)
     transcript: list[dict[str, Any]] = field(default_factory=list)
     last_eligible: list[str] | None = None
+    lock: Any = field(default_factory=threading.Lock, repr=False)
 
 
 class SessionStore:

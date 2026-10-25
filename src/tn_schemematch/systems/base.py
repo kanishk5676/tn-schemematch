@@ -96,7 +96,7 @@ class ScriptedBlock:
         except KeyError:
             raise AttributeError(name) from None
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self, **_: Any) -> dict[str, Any]:
         return dict(self._data)
 
 

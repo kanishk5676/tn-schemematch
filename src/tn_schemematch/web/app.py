@@ -24,10 +24,11 @@ from ..elicitation import resolving_power
 from ..interview import Interview
 from ..kb import DEFAULT_KB_DIR, load_kb
 from ..rules import Verdict
-from ..serialize import scheme_detail, scheme_summary
+from ..serialize import filter_cards, scheme_detail, scheme_summary
 from ..systems.base import LLMClient
 from ..vault import DEFAULT_VAULT_DIR, VaultError
 from .http import error as _error
+from .chat_api import register_chat_api
 from .profiles_api import register_document_api, register_profile_api
 from .state import AppContext, SessionStore
 
@@ -89,6 +90,7 @@ def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
     _register_catalogue_api(app, ctx)
     register_profile_api(app, ctx)
     register_document_api(app, ctx)
+    register_chat_api(app, ctx)
 
     @app.errorhandler(413)
     def too_large(_exc):
@@ -369,16 +371,8 @@ def _register_catalogue_api(app: Flask, ctx: AppContext) -> None:
 
     @app.get("/api/schemes")
     def schemes():
-        cards = ctx.scheme_cards
-        level = request.args.get("level")
-        sector = request.args.get("sector")
-        query = (request.args.get("q") or "").strip().lower()
-        if level:
-            cards = [c for c in cards if c["level"] == level]
-        if sector:
-            cards = [c for c in cards if sector in c["sectors"]]
-        if query:
-            cards = [c for c in cards if query in json.dumps(c, ensure_ascii=False).lower()]
+        cards = filter_cards(ctx.scheme_cards, level=request.args.get("level"),
+                             sector=request.args.get("sector"), query=request.args.get("q"))
         sectors: dict[str, int] = {}
         for card in ctx.scheme_cards:
             for name in card["sectors"]:

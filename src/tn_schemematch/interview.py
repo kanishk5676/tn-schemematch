@@ -331,8 +331,10 @@ class Interview:
         return AnswerOutcome(attr=attr, value=value, source=source, accepted=True,
                              settled=settled)
 
-    def answer_value(self, state: InterviewState, attr: str, value: Any) -> AnswerOutcome:
-        """Answer from a typed control. Canonicalized, never sent to the model."""
+    def answer_value(self, state: InterviewState, attr: str, value: Any, *,
+                     source: str = "form") -> AnswerOutcome:
+        """Answer from a typed control (or a value the assistant recorded). Canonicalized
+        deterministically, never sent to the model."""
         problem = self._validate(attr)
         if problem:
             return AnswerOutcome(attr=attr, source="rejected", message=problem)
@@ -342,7 +344,7 @@ class Interview:
             return AnswerOutcome(attr=attr, source="rejected", message=str(exc))
         if canonical is None:
             return self.skip(state, attr)
-        return self._commit(state, attr, canonical, "form")
+        return self._commit(state, attr, canonical, source)
 
     def answer_text(self, state: InterviewState, attr: str, raw: str) -> AnswerOutcome:
         """Answer in free text — the path that accepts Tamil and improvised units."""

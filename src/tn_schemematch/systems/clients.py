@@ -89,7 +89,7 @@ class AnthropicClient:
 
     def _request(self, *, system: str, messages: list[dict[str, Any]],
                  effort: str | None = None, output_format: dict[str, Any] | None = None,
-                 tools: list[dict[str, Any]] | None = None) -> Any:
+                 tools: list[dict[str, Any]] | None = None, cache: bool = False) -> Any:
         """One Messages call. Returns the raw response after checking for a refusal."""
         output_config: dict[str, Any] = {"effort": effort or self.effort}
         if output_format is not None:
@@ -103,6 +103,10 @@ class AnthropicClient:
         }
         if tools:
             kwargs["tools"] = tools
+        if cache:
+            # Automatic caching of the longest stable prefix: tools, system prompt and the
+            # conversation so far are re-sent on every step of an agent turn.
+            kwargs["cache_control"] = {"type": "ephemeral"}
         if self.fallbacks:
             kwargs["betas"] = [FALLBACK_BETA]
             kwargs["fallbacks"] = "default"
@@ -153,7 +157,8 @@ class AnthropicClient:
                  tools: list[dict[str, Any]], *, effort: str | None = "medium") -> Any:
         """One step of a tool-using conversation. Returns the raw response, whose
         ``content`` the caller must append to the history unchanged."""
-        return self._request(system=system, messages=messages, tools=tools, effort=effort)
+        return self._request(system=system, messages=messages, tools=tools, effort=effort,
+                             cache=True)
 
 
 @dataclass

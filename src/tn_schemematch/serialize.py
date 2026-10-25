@@ -21,6 +21,7 @@ without leaving the page.
 
 from __future__ import annotations
 
+import json
 import re
 from typing import Any, Mapping
 
@@ -389,3 +390,65 @@ def profile_rows(spec: AttributeSpec, profile: Mapping[str, Any],
             "source": sources.get(name, "derived" if spec[name].is_derived else "unknown"),
         })
     return rows
+
+
+def filter_cards(cards: list[dict[str, Any]], *, level: str | None = None,
+                 sector: str | None = None, query: str | None = None) -> list[dict[str, Any]]:
+    """The schemes browser's filter, shared with the assistant's ``search_schemes`` tool.
+
+    Every word of the query must appear somewhere in the card (English or Tamil), so
+    "fisher relief" narrows rather than widens.
+    """
+    if level:
+        cards = [c for c in cards if c["level"] == level]
+    if sector:
+        cards = [c for c in cards if sector in c["sectors"]]
+    words = [w for w in (query or "").casefold().split() if w]
+    if words:
+        cards = [c for c in cards
+                 if all(w in json.dumps(c, ensure_ascii=False).casefold() for w in words)]
+    return cards
+
+
+def grounding_lines(trace: Trace, spec: AttributeSpec) -> list[str]:
+    """The satisfied clauses of a decision, as sentences.
+
+    This is the entire evidence a model is given when it phrases an explanation — the
+    explain endpoint and the assistant's ``explain_scheme`` tool both use it — so a
+    condition the person does not meet can never reach the prompt.
+    """
+    lines: list[str] = []
+    for node in _walk(trace):
+        if not isinstance(node.node, Predicate) or node.verdict is not Verdict.TRUE:
+            continue
+        sentence = describe_clause(node.node, spec)
+        if node.actual is not None:
+            sentence += f" — you said {format_value(spec, node.node.attr, node.actual)}"
+        lines.append(sentence)
+    return lines
+
+
+def _walk(trace: Trace):
+    yield trace
+    for child in trace.children:
+        yield from _walk(child)
+
+
+def decisive_clauses(tree: Mapping[str, Any]) -> list[str]:
+    """The clauses that decided a verdict, as sentences, from a ``trace_to_dict`` tree.
+
+    Only children that agree with their parent's verdict are followed: for an eligible
+    scheme, the alternatives of an ANY that were not needed are left out; for an
+    ineligible one, only the clauses that actually failed. Under a NOT the child is always
+    followed, and its sentence is already phrased as an exclusion ("must not be"), so the
+    list reads correctly without the reader inverting anything.
+    """
+    if tree["kind"] == "predicate":
+        line = tree["human"]
+        if tree.get("observed_text"):
+            line += f" — you said {tree['observed_text']}"
+        return [line]
+    children = tree.get("children", [])
+    if tree["kind"] != "not":
+        children = [c for c in children if c["verdict"] == tree["verdict"]]
+    return [line for child in children for line in decisive_clauses(child)]

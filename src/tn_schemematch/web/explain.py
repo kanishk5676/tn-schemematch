@@ -14,8 +14,8 @@ from __future__ import annotations
 
 from ..attributes import AttributeSpec
 from ..kb import Scheme
-from ..rules import Predicate, Trace, Verdict
-from ..serialize import describe_clause, format_value
+from ..rules import Trace
+from ..serialize import grounding_lines
 from ..systems.base import LLMClient
 
 EXPLAIN_SYSTEM_PROMPT = """\
@@ -35,25 +35,6 @@ _LANGUAGES = {
     "ta": "Write in Tamil (தமிழ்). Use everyday spoken Tamil, not formal literary Tamil. "
           "Keep scheme names and rupee amounts as they are.",
 }
-
-
-def grounding_lines(trace: Trace, spec: AttributeSpec) -> list[str]:
-    """The satisfied clauses, as sentences. This is the model's entire evidence set."""
-    lines: list[str] = []
-    for node in _walk(trace):
-        if not isinstance(node.node, Predicate) or node.verdict is not Verdict.TRUE:
-            continue
-        sentence = describe_clause(node.node, spec)
-        if node.actual is not None:
-            sentence += f" — you said {format_value(spec, node.node.attr, node.actual)}"
-        lines.append(sentence)
-    return lines
-
-
-def _walk(trace: Trace):
-    yield trace
-    for child in trace.children:
-        yield from _walk(child)
 
 
 def explain_trace(client: LLMClient, scheme: Scheme, trace: Trace, spec: AttributeSpec,
