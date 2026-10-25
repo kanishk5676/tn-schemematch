@@ -16,7 +16,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request
 
 from ..attributes import default_spec
 from ..documents import MAX_UPLOAD_BYTES, load_documents
@@ -118,20 +118,34 @@ def _turn_payload(ctx: AppContext, session) -> dict[str, Any]:
 
 
 def _register_pages(app: Flask, ctx: AppContext) -> None:
+    def page(template: str, name: str, **extra: Any):
+        return render_template(template, model=ctx.model_name, n_schemes=len(ctx.active),
+                               page=name, **extra)
+
     @app.get("/")
-    def index():
-        return render_template("index.html", model=ctx.model_name,
-                               n_schemes=len(ctx.active), page="interview")
+    def assistant():
+        # Old demo links were /?persona=p001; the replay lives on the interview page now.
+        if request.args.get("persona"):
+            return redirect(f"/interview?persona={request.args['persona']}")
+        return page("assistant.html", "assistant",
+                    has_agent=hasattr(ctx.interview.client, "converse"))
+
+    @app.get("/interview")
+    def interview_page():
+        return page("interview.html", "interview")
+
+    @app.get("/profile")
+    def profile_page():
+        return page("profile.html", "profile",
+                    can_read=hasattr(ctx.interview.client, "complete_with_images"))
 
     @app.get("/schemes")
     def schemes_page():
-        return render_template("schemes.html", model=ctx.model_name,
-                               n_schemes=len(ctx.active), page="schemes")
+        return page("schemes.html", "schemes")
 
     @app.get("/dashboard")
     def dashboard_page():
-        return render_template("dashboard.html", model=ctx.model_name,
-                               n_schemes=len(ctx.active), page="dashboard")
+        return page("dashboard.html", "dashboard")
 
 
 # ----------------------------------------------------------------------- interview

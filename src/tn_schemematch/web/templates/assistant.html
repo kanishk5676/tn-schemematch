@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Assistant — TN-SchemeMatch{% endblock %}
+{% block body %}
+<div class="chat-layout">
+
+  {% if has_agent %}
+  <section class="card chat" id="chat-card">
+    <header class="chat-head">
+      <h1>Udhavi <span class="ta">உதவி</span></h1>
+      <p class="muted tiny">
+        Ask in Tamil, English or both. I find the welfare schemes you qualify for and help you
+        get your documents ready. A rule engine makes every eligibility decision, and you can
+        open its reasoning.
+      </p>
+    </header>
+
+    <div class="messages" id="messages" aria-live="polite"></div>
+    <div class="starters" id="starters"></div>
+
+    <form class="composer" id="composer">
+      <button type="button" class="btn icon" id="attach" title="Upload a photo of a document"
+              aria-label="Upload a photo of a document">📎</button>
+      <textarea id="input" rows="1" placeholder="Type here — tamil, english, rendum OK…"
+                aria-label="Your message"></textarea>
+      <button class="btn primary" id="send">Send</button>
+      <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+    </form>
+  </section>
+  {% else %}
+  <section class="card chat">
+    <header class="chat-head">
+      <h1>Udhavi <span class="ta">உதவி</span></h1>
+    </header>
+    <div class="no-model">
+      <p><b>The assistant needs a model, and this server is running rules-only.</b></p>
+      <p class="muted">Restart it with a key to talk to the assistant and have document photos
+        read automatically:</p>
+      <pre class="mono">export ANTHROPIC_API_KEY='…'
+python scripts/serve.py</pre>
+      <p class="muted">Everything else works without a model:</p>
+      <div class="row">
+        <a class="btn primary" href="/interview">Take the eligibility interview →</a>
+        <a class="btn" href="/profile">My profile and documents</a>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <aside class="rail">
+    {% if has_agent %}
+    <div class="card">
+      <div class="eyebrow">Talking as</div>
+      <select id="who" aria-label="Saved profile"></select>
+      <div class="row" style="margin-top:9px">
+        <button class="btn small" id="save" type="button">Save my profile</button>
+        <a class="tiny" id="open-profile" href="/profile">My profile →</a>
+      </div>
+      <p class="tiny muted" id="who-note" style="margin:8px 0 0"></p>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="eyebrow">Live verdict</div>
+      <div class="score">
+        <div class="score-row s-ok"><span class="score-n" id="n-ok">0</span><span class="score-l">eligible</span></div>
+        <div class="score-row s-no"><span class="score-n" id="n-no">0</span><span class="score-l">ruled out</span></div>
+        <div class="score-row s-open"><span class="score-n" id="n-open">&mdash;</span><span class="score-l">still open</span></div>
+      </div>
+      <div class="grid41" id="grid" aria-hidden="true"></div>
+      <div class="settled zero" id="settled"></div>
+    </div>
+
+    <div class="card" id="profile-card" hidden>
+      <div class="eyebrow">What I know so far</div>
+      <div class="chips" id="profile-chips"></div>
+    </div>
+  </aside>
+</div>
+
+<dialog id="save-dialog">
+  <form method="dialog" class="dlg-body" id="save-form">
+    <h2 style="margin:0 0 6px">Save your profile</h2>
+    <p class="muted tiny" style="margin:0 0 12px">
+      Your answers and documents are kept only on the computer running this app, so you never
+      have to answer the same question twice. You can delete everything from the profile page.
+    </p>
+    <label class="tiny muted" for="save-name">Your name</label>
+    <input type="text" id="save-name" maxlength="80" required autocomplete="off">
+    <div class="row" style="margin-top:14px; justify-content:flex-end">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" value="save" id="save-confirm">Save</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+{% if has_agent %}
+<script type="module" src="{{ url_for('static', filename='js/assistant.js') }}"></script>
+{% else %}
+<script type="module">
+  import { paintBoard } from "{{ url_for('static', filename='js/board.js') }}";
+  // Rules-only: show the empty board so the rail is not blank.
+  paintBoard({ counts: { eligible: 0, ineligible: 0, undetermined: {{ n_schemes }} }, total: {{ n_schemes }} });
+</script>
+{% endif %}
+{% endblock %}

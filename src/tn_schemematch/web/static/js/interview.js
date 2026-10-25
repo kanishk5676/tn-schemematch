@@ -5,11 +5,13 @@
 
 import { api, el, $ } from './api.js';
 import { paintBoard, paintProfile } from './board.js';
-import { traceDisclosure } from './trace.js';
+import { schemeCard as card } from './cards.js';
+import { fillPicker, rememberProfile } from './picker.js';
 
 let sid = null;
 let current = null;      // the question object currently on screen
 let hasModel = false;
+let profileId = null;    // the saved profile this interview reads from and saves to
 
 const show = (id) => $(id).classList.remove('hidden');
 const hide = (id) => $(id).classList.add('hidden');
@@ -32,9 +34,10 @@ async function start(query) {
   $('go').textContent = useAi ? 'Reading your sentence…' : 'Starting…';
 
   try {
-    const data = await api.start(query, useAi, maxQuestions);
+    const data = await api.start(query, useAi, maxQuestions, $('who').value);
     sid = data.session_id;
     hasModel = Boolean(data.has_model);
+    profileId = data.profile_id || null;
     hide('ask');
     // Only claim the model read the sentence when it actually did.
     if (data.extraction.used_ai || data.extraction.error) renderExtraction(data.extraction);
@@ -175,41 +178,36 @@ async function finish() {
 }
 
 function schemeCard(scheme, { miss = false } = {}) {
-  const card = el('div', { class: `scheme${miss ? ' miss' : ''}` });
-  const top = el('div', { class: 'scheme-top' },
-    el('h3', {}, scheme.name),
-    scheme.name_ta ? el('p', { class: 'ta' }, scheme.name_ta) : null,
-    scheme.benefit_prose ? el('p', { class: 'benefit' }, scheme.benefit_prose.split('\n')[0]) : null);
+  const actions = hasModel && !miss ? [
+    el('button', { class: 'btn', onclick: (e) => explain(scheme.id, 'en', e.target) }, 'Explain in plain words'),
+    el('button', { class: 'btn', onclick: (e) => explain(scheme.id, 'ta', e.target) }, 'தமிழில்'),
+  ] : [];
+  return card(scheme, { miss, actions });
+}
 
-  const meta = el('div', { class: 'scheme-meta' },
-    el('span', { class: 'pill' },
-      scheme.level === 'central' ? 'Central' : (scheme.jurisdiction_name || scheme.jurisdiction)),
-    ...(scheme.sectors || []).slice(0, 3).map((s) => el('span', { class: 'pill' }, s.replace(/_/g, ' '))),
-    el('span', { class: 'badge open', title: 'no human has checked this rule against the Government Order' }, 'draft'));
-  top.append(meta);
-
-  if (miss) {
-    top.append(el('p', { class: 'missing-line' },
-      'You would qualify if ', el('b', {}, scheme.missing.human.toLowerCase()),
-      scheme.missing.observed_text && scheme.missing.observed_text !== '—'
-        ? ` — you said ${scheme.missing.observed_text}.` : '.'));
+/* "Save to my profile": the answers just given are kept, so the next interview, the
+   assistant and the profile page all start from them. */
+function saveBox() {
+  const box = el('div', { class: 'save-box' });
+  const done = (saved) => {
+    profileId = saved.profile_id;
+    rememberProfile(profileId);
+    box.replaceChildren(el('span', { class: 'tiny' },
+      `Saved ${saved.saved} answer${saved.saved === 1 ? '' : 's'} to ${saved.profile.name}. `),
+      el('a', { class: 'tiny', href: `/profile?id=${profileId}` }, 'Open profile and add documents →'));
+  };
+  const fail = (error) => box.append(el('div', { class: 'tiny err' }, error.message));
+  if (profileId) {
+    box.append(el('button', { class: 'btn', onclick: () => api.save(sid, {}).then(done, fail) },
+      'Save new answers to my profile'));
   } else {
-    const actions = el('div', { class: 'scheme-actions' });
-    if (scheme.apply_url) {
-      actions.append(el('a', { class: 'btn', href: scheme.apply_url, target: '_blank', rel: 'noopener' }, 'Apply →'));
-    }
-    if (hasModel) {
-      actions.append(
-        el('button', { class: 'btn', onclick: (e) => explain(scheme.id, 'en', e.target) }, 'Explain in plain words'),
-        el('button', { class: 'btn', onclick: (e) => explain(scheme.id, 'ta', e.target) }, 'தமிழில்'));
-    }
-    top.append(actions);
-    top.append(el('div', { id: `explain-${scheme.id}` }));
+    const name = el('input', { type: 'text', placeholder: 'Your name', maxlength: 80, 'aria-label': 'Your name' });
+    box.append(el('div', { class: 'numrow' }, name,
+      el('button', { class: 'btn', onclick: () => {
+        if (name.value.trim()) api.save(sid, { name: name.value.trim() }).then(done, fail);
+      } }, 'Save my profile')));
   }
-
-  card.append(top);
-  if (scheme.trace) card.append(traceDisclosure(scheme.trace));
-  return card;
+  return box;
 }
 
 async function explain(schemeId, lang, button) {
@@ -239,6 +237,7 @@ function renderResults(data) {
       data.used_ai ? el('span', { class: 'badge ai' }, 'ai extraction') : el('span', { class: 'badge det' }, 'rules only')),
     el('p', { class: 'muted tiny', style: 'margin:6px 0 0' },
       'Every verdict below is a rule evaluation, not a model assertion. Open a trace to see the clauses.'),
+    el('div', { style: 'margin-top:14px' }, saveBox()),
     el('div', { class: 'row', style: 'margin-top:14px' },
       el('button', { class: 'btn', onclick: () => location.reload() }, 'Start over'),
       hasModel
@@ -363,6 +362,8 @@ $('free-text').addEventListener('keydown', (e) => {
 
 loadSamples();
 loadPersonas();
+fillPicker($('who'), { blank: 'Someone new (nothing saved)' });
+$('who').addEventListener('change', () => rememberProfile($('who').value || null));
 
 const requestedPersona = new URLSearchParams(location.search).get('persona');
 if (requestedPersona) replay(requestedPersona);

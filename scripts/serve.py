@@ -46,10 +46,13 @@ def main() -> int:
                         default=int(os.environ.get("PORT", 5001)))
     parser.add_argument("--max-questions", type=int, default=15)
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--vault-dir", default=None,
+                        help="where saved profiles and documents live (default data/vault)")
     args = parser.parse_args()
 
     client = build_client(args.backend, args.model)
-    app = create_app(client=client, max_questions=args.max_questions, debug=args.debug)
+    app = create_app(client=client, max_questions=args.max_questions, debug=args.debug,
+                     vault_dir=args.vault_dir)
     print(f"\n  TN-SchemeMatch → http://{args.host}:{args.port}")
     print(f"  model: {getattr(client, 'name', 'none (rules only)')}\n")
     app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)

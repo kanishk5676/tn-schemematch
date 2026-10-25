@@ -169,7 +169,8 @@ def cmd_serve(args) -> int:
         print("Flask is not installed — pip install flask", file=sys.stderr)
         return 1
 
-    app = create_app(client=client, max_questions=args.max_questions, debug=args.debug)
+    app = create_app(client=client, max_questions=args.max_questions, debug=args.debug,
+                     vault_dir=args.vault_dir)
     print(f"\n  TN-SchemeMatch \u2192 http://{args.host}:{args.port}")
     print(f"  model: {getattr(client, 'name', 'none (rules only)')}\n")
     app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)
@@ -220,6 +221,8 @@ def main(argv: list[str] | None = None) -> int:
                        default=int(os.environ.get("PORT", 5001)))
     serve.add_argument("--max-questions", type=int, default=15)
     serve.add_argument("--debug", action="store_true")
+    serve.add_argument("--vault-dir", default=None,
+                       help="where saved profiles and documents live (default data/vault)")
     serve.set_defaults(func=cmd_serve)
 
     explain = sub.add_parser("explain", help="print the rule trace for a persona")

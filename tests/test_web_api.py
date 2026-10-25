@@ -233,8 +233,19 @@ def test_stats_endpoint_returns_coverage(client):
 
 
 def test_pages_render(client):
-    for path in ("/", "/schemes", "/dashboard"):
+    for path in ("/", "/interview", "/profile", "/schemes", "/dashboard"):
         assert client.get(path).status_code == 200
+
+
+def test_rules_only_assistant_points_to_the_interview(client):
+    page = client.get("/").get_data(as_text=True)
+    assert "running rules-only" in page and 'href="/interview"' in page
+
+
+def test_old_replay_links_still_land_on_the_interview(client):
+    response = client.get("/?persona=p001")
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/interview?persona=p001")
 
 
 # ----------------------------------------------------------- model-backed API

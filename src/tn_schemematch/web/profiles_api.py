@@ -21,7 +21,7 @@ from ..documents import (
     unread_reading,
 )
 from ..interview import parse_answer
-from ..serialize import format_value
+from ..serialize import attribute_form, format_value, label_for
 from ..vault import VaultError, eligibility
 from .http import error
 from .state import AppContext
@@ -48,6 +48,15 @@ def profile_payload(ctx: AppContext, pid: str) -> dict[str, Any]:
 def register_profile_api(app: Flask, ctx: AppContext) -> None:
     def missing(pid: str):
         return error("no_such_profile", f"no saved profile {pid!r}", 404)
+
+    @app.get("/api/attributes")
+    def attributes():
+        """Form contracts for every attribute a person can state — the profile page's
+        editor picks a control from these, exactly as the interview does."""
+        return jsonify({"attributes": [
+            attribute_form(ctx.spec, name) | {"label": label_for(ctx.spec, name)}
+            for name in sorted(ctx.spec.elicitable_names(),
+                               key=lambda n: label_for(ctx.spec, n).lower())]})
 
     @app.get("/api/profiles")
     def list_profiles():
@@ -170,8 +179,10 @@ def register_document_api(app: Flask, ctx: AppContext) -> None:
                   {"applied": [], "confirmed": [], "conflicts": []})
         reading["conflicts"] = merged["conflicts"]
         document = ctx.vault.update_document(pid, document["id"], reading=reading)
+        doc_type = document["doc_type"]
         return {
             "document": public_document(document),
+            "type_label": ctx.documents[doc_type].label if doc_type in ctx.documents else None,
             "reading": reading,
             **merged,
             "facts": ctx.vault.fact_rows(pid),

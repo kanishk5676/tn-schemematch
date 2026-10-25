@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}My profile — TN-SchemeMatch{% endblock %}
+{% block body %}
+<div class="split profile-page">
+
+  <aside class="rail">
+    <div class="card">
+      <div class="eyebrow">Saved people</div>
+      <div class="people" id="people"></div>
+      <form class="new-person" id="new-person">
+        <input type="text" id="new-name" placeholder="Name" maxlength="80" required aria-label="Name">
+        <input type="text" id="new-relation" placeholder="Relation, e.g. mother (optional)"
+               maxlength="40" aria-label="Relation">
+        <label class="switch tiny" id="same-household-label">
+          <input type="checkbox" id="same-household" checked> same family as the selected person
+        </label>
+        <button class="btn small">Add person</button>
+      </form>
+      <p class="tiny muted" style="margin:10px 0 0">
+        Profiles and documents are stored only on the computer running this app. Deleting a
+        person deletes every fact and photo saved for them.
+      </p>
+    </div>
+  </aside>
+
+  <div>
+    <section class="card" id="empty" hidden>
+      <h2>No saved profile yet</h2>
+      <p class="muted">
+        Talk to the <a href="/">assistant</a> or take the <a href="/interview">interview</a> and
+        save at the end — or add a person on the left and fill in what you know.
+      </p>
+    </section>
+
+    <div id="profile-view" hidden>
+      <section class="card profile-head">
+        <div>
+          <h1 id="p-name"></h1>
+          <div class="tiny muted" id="p-meta"></div>
+        </div>
+        <div class="row">
+          <a class="btn primary" id="p-chat" href="/">Talk to the assistant</a>
+          <a class="btn" href="/interview">Interview</a>
+          <button class="btn ghost danger" id="p-delete" type="button">Delete</button>
+        </div>
+      </section>
+
+      <div id="changes"></div>
+
+      <section class="card" id="schemes-card">
+        <h2>Schemes for this person</h2>
+        <div id="schemes"></div>
+      </section>
+
+      <section class="card" id="docs-card">
+        <h2>Documents</h2>
+        <form class="upload-row" id="upload-form">
+          <select id="upload-type" aria-label="Document type"></select>
+          <input type="file" id="upload-file" accept="image/jpeg,image/png,image/webp"
+                 aria-label="Photo of the document">
+          <button class="btn primary" id="upload-go">Upload</button>
+        </form>
+        <p class="tiny muted" id="upload-note" style="margin:6px 0 0">
+          {% if can_read %}
+          Photos are read by the model; only facts that kind of document can prove are kept, ID
+          numbers are masked, and nothing you said is overwritten without asking.
+          {% else %}
+          No model is running, so photos are filed by the type you choose — the checklist still
+          updates. Start the server with a key to have them read.
+          {% endif %}
+        </p>
+        <div class="doc-grid" id="documents"></div>
+      </section>
+
+      <section class="card" id="checklist-card">
+        <h2>Get ready to apply</h2>
+        <div id="checklist"></div>
+      </section>
+
+      <section class="card" id="facts-card">
+        <h2>What is saved <span class="muted tiny" id="facts-count"></span></h2>
+        <p class="tiny muted" style="margin:-6px 0 10px">
+          Every value shows where it came from. Change one to see what it does to the
+          schemes above — a birthday, a new job or a marriage are all just a new fact.
+        </p>
+        <div class="scroll-x"><table class="facts" id="facts"></table></div>
+        <details class="add-fact" id="add-fact">
+          <summary>Add a fact</summary>
+          <div class="row" style="margin-top:8px" id="add-fact-row"></div>
+        </details>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>window.CAN_READ = {{ 'true' if can_read else 'false' }};</script>
+<script type="module" src="{{ url_for('static', filename='js/profile.js') }}"></script>
+{% endblock %}
