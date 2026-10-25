@@ -23,6 +23,7 @@ from typing import Any
 from pathlib import Path
 
 from ..attributes import AttributeSpec
+from ..documents import DocumentVocabulary
 from ..interview import Interview, InterviewState
 from ..kb import SchemeKB
 from ..vault import DEFAULT_VAULT_DIR, Vault
@@ -95,6 +96,7 @@ class AppContext:
     benchmark: dict[str, Any] | None = None
     benchmark_status: str = "not_loaded"
     _personas: Any = None
+    documents: DocumentVocabulary | None = None
     vault_dir: Path = DEFAULT_VAULT_DIR
     _vault: Vault | None = None
     _vault_lock: Any = field(default_factory=threading.Lock, repr=False)

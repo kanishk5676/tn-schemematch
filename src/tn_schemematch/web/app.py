@@ -19,6 +19,7 @@ from typing import Any
 from flask import Flask, jsonify, render_template, request
 
 from ..attributes import default_spec
+from ..documents import MAX_UPLOAD_BYTES, load_documents
 from ..elicitation import resolving_power
 from ..interview import Interview
 from ..kb import DEFAULT_KB_DIR, load_kb
@@ -27,7 +28,7 @@ from ..serialize import scheme_detail, scheme_summary
 from ..systems.base import LLMClient
 from ..vault import DEFAULT_VAULT_DIR, VaultError
 from .http import error as _error
-from .profiles_api import register_profile_api
+from .profiles_api import register_document_api, register_profile_api
 from .state import AppContext, SessionStore
 
 # The repo root is derived from the KB's own default, never recomputed here:
@@ -58,9 +59,12 @@ def _personas(ctx: AppContext):
 
 def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
                max_questions: int = 15, debug: bool = False,
-               vault_dir: str | Path | None = None) -> Flask:
+               vault_dir: str | Path | None = None, documents=None) -> Flask:
     app = Flask(__name__)
     app.json.sort_keys = False
+    # A little over the image limit, so the module's own check answers with a clear message
+    # and Flask's 413 only catches what is grossly oversized.
+    app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES + 512 * 1024
     if debug:
         # Otherwise an edited interview.js keeps serving from cache at 1am.
         app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
@@ -75,6 +79,7 @@ def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
         scheme_cards=[scheme_summary(s) for s in kb.active()],
         model_name=getattr(client, "name", None) or "none (rules only)",
         vault_dir=Path(vault_dir) if vault_dir else DEFAULT_VAULT_DIR,
+        documents=documents or load_documents(spec),
     )
     app.extensions["schemematch"] = ctx
     app.config["MAX_QUESTIONS"] = max_questions
@@ -83,6 +88,12 @@ def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
     _register_session_api(app, ctx)
     _register_catalogue_api(app, ctx)
     register_profile_api(app, ctx)
+    register_document_api(app, ctx)
+
+    @app.errorhandler(413)
+    def too_large(_exc):
+        return _error("too_large", "That file is too big — photos must be under 10 MB.", 413)
+
     return app
 
 

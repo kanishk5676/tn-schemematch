@@ -1,0 +1,347 @@
+# TN-SchemeMatch document vocabulary (v0.1)
+#
+# The scheme files list required documents as free text ("Income certificate from the
+# Village Administrative Officer"). This file maps every one of those strings onto a small
+# set of document TYPES, so an uploaded photo can tick off every requirement it satisfies.
+#
+# Every type declares:
+#   kind      : document (something you can photograph and upload) | action (something you
+#               do or fill in at the office — shown on the checklist, never uploaded)
+#   label     : English name;  label_ta : Tamil name
+#   evidences : attributes a reader may take FROM this document. A fact the model reports
+#               for any other attribute is discarded — a ration card cannot prove caste.
+#   implies   : facts that follow from merely holding the document, applied with no model
+#               at all (so they work in rules-only mode too). Kept deliberately small: only
+#               facts that are true of whoever holds the document.
+#   matches   : the EXACT requirement strings from kb/schemes/**.yaml this type satisfies.
+#               A string listed under several types is satisfied by any of them — that is
+#               how "BPL card or income certificate" and "Age proof" are expressed.
+#
+# Completeness is enforced by a test: a scheme whose document string appears under no type
+# fails the suite, so adding a scheme means mapping its documents here.
+
+version: "0.1"
+updated: "2026-10-25"
+
+types:
+
+  aadhaar:
+    kind: document
+    label: Aadhaar card
+    label_ta: ஆதார் அட்டை
+    evidences: [age, gender, district, state]
+    implies: {has_aadhaar: true}
+    matches:
+      - Aadhaar card
+      - Age proof
+      - Proof of identity and address
+      - Proof of residence in the gram panchayat
+
+  bank_passbook:
+    kind: document
+    label: Bank passbook
+    label_ta: வங்கிக் கணக்குப் புத்தகம்
+    evidences: []
+    implies: {has_bank_account: true}
+    matches:
+      - Bank account passbook
+      - Bank or post office account passbook
+      - Joint bank account passbook
+      - Savings bank or Jan Dhan account details
+
+  ration_card:
+    kind: document
+    label: Ration / family card
+    label_ta: குடும்ப அட்டை
+    evidences: [ration_card_type, family_size, district, state]
+    implies: {}
+    matches:
+      - Ration card
+      - Family card
+      - Family card (ration card)
+      - BPL card
+      - BPL ration card
+      - BPL / family card
+      - BPL card or income certificate
+      - BPL card, where claiming under the below-poverty-line quota
+      - BPL certificate or caste certificate
+      - Ration card or family identification
+      - Ration card or deprivation declaration
+      - Proof of identity and address
+      - Proof of residence in the gram panchayat
+
+  income_certificate:
+    kind: document
+    label: Income certificate
+    label_ta: வருமானச் சான்றிதழ்
+    evidences: [annual_family_income, fixed_assets_value, district]
+    implies: {}
+    matches:
+      - Income certificate
+      - Income certificate from the Village Administrative Officer
+      - Income and asset certificate
+      - Income and asset certificate from the Village Administrative Officer
+      - BPL card or income certificate
+
+  community_certificate:
+    kind: document
+    label: Community certificate
+    label_ta: சாதிச் சான்றிதழ்
+    evidences: [social_category, religion]
+    implies: {has_community_certificate: true}
+    matches:
+      - Community certificate
+      - Community certificate, where applying under the SC/ST route
+      - Community certificates of both partners
+      - BPL certificate or caste certificate
+
+  birth_certificate:
+    kind: document
+    label: Birth certificate
+    label_ta: பிறப்புச் சான்றிதழ்
+    # A birth certificate is usually a child's, so it proves nothing about the applicant.
+    evidences: []
+    implies: {}
+    matches:
+      - Age proof
+      - Birth certificate of the girl child
+      - Birth certificates of both girl children
+
+  transfer_certificate:
+    kind: document
+    label: School transfer certificate
+    label_ta: மாற்றுச் சான்றிதழ் (TC)
+    evidences: [age, education_level, studied_in_government_school]
+    implies: {}
+    matches:
+      - Age proof
+      - Transfer certificate from the previous school
+
+  mark_sheet:
+    kind: document
+    label: Mark sheet / educational certificate
+    label_ta: மதிப்பெண் சான்றிதழ்
+    evidences: [previous_exam_percent, education_level, studied_in_government_school]
+    implies: {}
+    matches:
+      - Mark sheet
+      - Class 12 mark sheet
+      - Previous year mark sheet
+      - Educational certificates
+      - Age proof and educational certificates
+
+  bonafide_certificate:
+    kind: document
+    label: Bonafide certificate
+    label_ta: கல்வி நிலையச் சான்றிதழ் (Bonafide)
+    evidences: [enrolled_in_higher_education, course_mode]
+    implies: {}
+    matches:
+      - Bonafide certificate
+      - Bonafide certificate from the institution
+      - Bonafide certificate from the higher education institution
+
+  disability_certificate:
+    kind: document
+    label: Disability certificate
+    label_ta: மாற்றுத்திறனாளிச் சான்றிதழ்
+    evidences: [disability_percent]
+    implies: {}
+    matches:
+      - National disability certificate
+      - Disability certificate
+
+  death_certificate:
+    kind: document
+    label: Death certificate
+    label_ta: இறப்புச் சான்றிதழ்
+    # Always someone else's — it cannot state a fact about the applicant.
+    evidences: []
+    implies: {}
+    matches:
+      - Death certificate of the husband
+      - Death certificates of both parents
+
+  widow_certificate:
+    kind: document
+    label: Widow certificate
+    label_ta: விதவைச் சான்றிதழ்
+    evidences: [marital_status]
+    implies: {}
+    matches:
+      - Widow certificate
+      - Widow certificate of the mother
+
+  desertion_certificate:
+    kind: document
+    label: Desertion certificate or divorce decree
+    label_ta: கைவிடப்பட்டவர் சான்றிதழ்
+    evidences: [marital_status, years_since_desertion]
+    implies: {}
+    matches:
+      - Desertion certificate from the Village Administrative Officer, or decree of divorce
+
+  unmarried_certificate:
+    kind: document
+    label: Unmarried status certificate
+    label_ta: திருமணமாகாதவர் சான்றிதழ்
+    evidences: [marital_status]
+    implies: {}
+    matches:
+      - Certificate of unmarried status from the Village Administrative Officer
+
+  destitution_certificate:
+    kind: document
+    label: Destitution certificate
+    label_ta: ஆதரவற்றவர் சான்றிதழ்
+    evidences: [is_destitute]
+    implies: {}
+    matches:
+      - Destitution certificate
+
+  no_house_certificate:
+    kind: document
+    label: No-house certificate or affidavit
+    label_ta: வீடு இல்லாச் சான்றிதழ்
+    evidences: [house_ownership]
+    implies: {}
+    matches:
+      - Certificate of houselessness from the Village Administrative Officer
+      - Certificate that no pucca house is owned
+      - Affidavit of no pucca house owned by the family
+
+  marriage_certificate:
+    kind: document
+    label: Marriage registration certificate
+    label_ta: திருமணப் பதிவுச் சான்றிதழ்
+    evidences: [marital_status]
+    implies: {}
+    matches:
+      - Marriage registration certificate
+      - Marriage invitation or certificate
+      - Marriage invitation or registration certificate
+
+  marriage_invitation:
+    kind: document
+    label: Marriage invitation
+    label_ta: திருமண அழைப்பிதழ்
+    evidences: [has_upcoming_marriage]
+    implies: {}
+    matches:
+      - Marriage invitation
+      - Marriage invitation or certificate
+      - Marriage invitation or registration certificate
+
+  land_record:
+    kind: document
+    label: Land record (patta / chitta)
+    label_ta: பட்டா / சிட்டா
+    evidences: [land_owned_acres, wetland_acres, dryland_acres, district]
+    implies: {}
+    matches:
+      - Land record / chitta-adangal
+      - Land ownership or house site patta
+      - Land records or tenancy agreement
+
+  family_planning_certificate:
+    kind: document
+    label: Family planning certificate
+    label_ta: குடும்பக் கட்டுப்பாடு சான்றிதழ்
+    evidences: []
+    implies: {has_undergone_family_planning: true}
+    matches:
+      - Family planning certificate
+
+  mother_child_card:
+    kind: document
+    label: Mother and child protection card
+    label_ta: தாய் சேய் நல அட்டை
+    evidences: [pregnancy_status, pregnancy_order]
+    implies: {}
+    matches:
+      - MCP card / RCH registration
+      - JSY card or MCP card
+      - Antenatal care card
+      - PICME registration number
+
+  fishermen_id:
+    kind: document
+    label: Fishermen identity card
+    label_ta: மீனவர் அடையாள அட்டை
+    evidences: [occupation, district]
+    implies: {}
+    matches:
+      - Fishermen identity card
+
+  cooperative_membership:
+    kind: document
+    label: Cooperative society membership certificate
+    label_ta: கூட்டுறவுச் சங்க உறுப்பினர் சான்றிதழ்
+    evidences: [is_member_of_fishermen_cooperative]
+    implies: {}
+    matches:
+      - Cooperative society membership certificate
+
+  vending_certificate:
+    kind: document
+    label: Vending certificate or recommendation letter
+    label_ta: சாலையோர வியாபாரச் சான்றிதழ்
+    evidences: [has_vending_certificate]
+    implies: {}
+    matches:
+      - Certificate of Vending or Letter of Recommendation
+
+  trade_proof:
+    kind: document
+    label: Proof of trade
+    label_ta: தொழில் சான்று
+    evidences: [traditional_trade, occupation]
+    implies: {}
+    matches:
+      - Proof of engagement in the trade
+
+  refugee_camp_id:
+    kind: document
+    label: Refugee camp identity card
+    label_ta: முகாம் அடையாள அட்டை
+    evidences: [is_srilankan_tamil_refugee, district]
+    implies: {}
+    matches:
+      - Refugee camp identity card
+
+  employment_exchange_card:
+    kind: document
+    label: Employment exchange registration card
+    label_ta: வேலைவாய்ப்பு அலுவலகப் பதிவு அட்டை
+    evidences: [employment_exchange_registration_years, education_level]
+    implies: {}
+    matches:
+      - Employment exchange registration card
+
+  ayushman_card:
+    kind: document
+    label: Ayushman card
+    label_ta: ஆயுஷ்மான் அட்டை
+    evidences: []
+    implies: {}
+    matches:
+      - Ayushman card
+
+  # ------------------------------------------------------------------ actions
+  # Not uploads. They stay on the checklist so the citizen arrives at the office knowing
+  # every step, but nothing is read and nothing is ticked off automatically.
+
+  office_action:
+    kind: action
+    label: Done at the office or online
+    label_ta: அலுவலகத்தில் / இணையத்தில் செய்ய வேண்டியவை
+    evidences: []
+    implies: {}
+    matches:
+      - Mobile number
+      - Biometric enrolment at the district camp
+      - Consent-cum-declaration form
+      - Job card application with photograph
+      - Project report for the proposed enterprise
+      - Sowing declaration
+      - Proof of one qualifying category

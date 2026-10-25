@@ -23,6 +23,7 @@ from .elicitation import (
     necessary_questions,
     resolving_power,
 )
+from .documents import load_documents, validate_documents
 from .kb import load_kb, validate_kb
 from .personas import load_personas, validate_personas
 from .rules import Verdict
@@ -42,13 +43,17 @@ def _load(args) -> tuple:
 
 
 def cmd_validate(args) -> int:
-    _, kb, personas = _load(args)
-    problems = validate_kb(kb)
+    spec, kb, personas = _load(args)
+    documents = load_documents(spec)
+    problems = validate_kb(kb) + validate_documents(documents, kb)
     if personas is not None:
         problems += validate_personas(personas, kb)
 
     print(f"KB:       {len(kb)} schemes ({len(kb.active())} active, "
           f"{len(kb.verified())} human-verified)")
+    print(f"Documents: {len(documents.uploadable())} document types, every scheme "
+          "requirement mapped" if not validate_documents(documents, kb) else
+          f"Documents: {len(documents.uploadable())} document types")
     if personas is not None:
         print(f"Personas: {len(personas)}")
     if not problems:
