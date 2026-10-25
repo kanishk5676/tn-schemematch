@@ -33,3 +33,5 @@ data/runs/**/raw/
 .cache/
 .DS_Store
 .claude/launch.json
+# Saved citizen profiles and their uploaded documents — personal data, never committed.
+data/vault/

@@ -25,6 +25,9 @@ from ..kb import DEFAULT_KB_DIR, load_kb
 from ..rules import Verdict
 from ..serialize import scheme_detail, scheme_summary
 from ..systems.base import LLMClient
+from ..vault import DEFAULT_VAULT_DIR, VaultError
+from .http import error as _error
+from .profiles_api import register_profile_api
 from .state import AppContext, SessionStore
 
 # The repo root is derived from the KB's own default, never recomputed here:
@@ -53,12 +56,9 @@ def _personas(ctx: AppContext):
     return ctx._personas
 
 
-def _error(code: str, message: str, status: int):
-    return jsonify({"error": {"code": code, "message": message}}), status
-
-
 def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
-               max_questions: int = 15, debug: bool = False) -> Flask:
+               max_questions: int = 15, debug: bool = False,
+               vault_dir: str | Path | None = None) -> Flask:
     app = Flask(__name__)
     app.json.sort_keys = False
     if debug:
@@ -74,6 +74,7 @@ def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
         sessions=SessionStore(),
         scheme_cards=[scheme_summary(s) for s in kb.active()],
         model_name=getattr(client, "name", None) or "none (rules only)",
+        vault_dir=Path(vault_dir) if vault_dir else DEFAULT_VAULT_DIR,
     )
     app.extensions["schemematch"] = ctx
     app.config["MAX_QUESTIONS"] = max_questions
@@ -81,6 +82,7 @@ def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
     _register_pages(app, ctx)
     _register_session_api(app, ctx)
     _register_catalogue_api(app, ctx)
+    register_profile_api(app, ctx)
     return app
 
 
@@ -152,14 +154,25 @@ def _register_session_api(app: Flask, ctx: AppContext) -> None:
                     iv.answer_value(state, attr, value)
             state.finished = True
         else:
+            # A saved profile seeds the interview, so nothing on file is asked again.
+            profile_id = body.get("profile_id")
+            seed = None
+            if profile_id:
+                try:
+                    seed, _ = ctx.vault.profile(profile_id)
+                except KeyError:
+                    return _error("no_such_profile", f"no saved profile {profile_id!r}", 404)
             state = iv.start(
                 (body.get("query") or "").strip(),
                 max_questions=max_questions,
                 use_ai=bool(body.get("use_ai", True)),
+                seed_profile=seed,
             )
         session = ctx.sessions.new(state)
+        session.profile_id = None if persona_id else body.get("profile_id")
         return jsonify({
             "session_id": session.id,
+            "profile_id": session.profile_id,
             "query": state.query,
             # The UI hides model-only affordances rather than offering them and 503ing.
             "has_model": iv.client is not None,
@@ -243,6 +256,42 @@ def _register_session_api(app: Flask, ctx: AppContext) -> None:
             return failure
         session.state.finished = True
         return jsonify({"session_id": session.id, **iv.results(session.state)})
+
+    @app.post("/api/session/<session_id>/save")
+    def save(session_id: str):
+        """Write what this interview learned into a saved profile (new or existing).
+
+        Facts that came *from* the profile are not written back, so saving twice does not
+        grow the log with copies; everything else keeps the source it was learned by.
+        """
+        session, failure = _load(session_id)
+        if failure:
+            return failure
+        body = request.get_json(silent=True) or {}
+        pid = body.get("profile_id") or session.profile_id
+        state = session.state
+        try:
+            if pid:
+                ctx.vault.get_profile(pid)
+            else:
+                pid = ctx.vault.create_profile(body.get("name") or "",
+                                               relation=body.get("relation") or "")["id"]
+            facts = [
+                (attr, value, state.sources.get(attr, "form"),
+                 state.query if state.sources.get(attr) == "query" else "")
+                for attr, value in state.profile.items()
+                if not ctx.spec[attr].is_derived and state.sources.get(attr) != "saved"
+            ]
+            ctx.vault.record_many(pid, facts)
+        except KeyError:
+            return _error("no_such_profile", f"no saved profile {pid!r}", 404)
+        except VaultError as exc:
+            return _error("bad_profile", str(exc), 400)
+        session.profile_id = pid
+        for attr, *_ in facts:
+            state.sources[attr] = "saved"
+        return jsonify({"profile_id": pid, "saved": len(facts),
+                        "profile": ctx.vault.get_profile(pid)})
 
     @app.get("/api/session/<session_id>/explain/<scheme_id>")
     def explain(session_id: str, scheme_id: str):

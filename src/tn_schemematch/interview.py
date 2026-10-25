@@ -254,9 +254,21 @@ class Interview:
 
     # -- phase 1: read the sentence ------------------------------------------
 
-    def start(self, query: str, *, max_questions: int = 15,
-              use_ai: bool = True) -> InterviewState:
+    def start(self, query: str, *, max_questions: int = 15, use_ai: bool = True,
+              seed_profile: Mapping[str, Any] | None = None) -> InterviewState:
+        """Begin an interview, optionally from a saved profile.
+
+        Seeded facts count as known, so ``next_question`` never asks for them — that is the
+        whole point of saving a profile. They are marked ``saved`` so the page can show
+        which answers came from memory. Facts the query states win over seeded ones: the
+        sentence typed just now is newer than anything on file.
+        """
         state = InterviewState(query=query, max_questions=max_questions)
+        for name, value in (seed_profile or {}).items():
+            if name in self.spec and not self.spec[name].is_derived and value is not None:
+                state.profile[name] = value
+                state.sources[name] = "saved"
+        self._rederive(state)
         if not (use_ai and self.client is not None and query.strip()):
             return state
 
@@ -270,11 +282,19 @@ class Interview:
         state.extraction_ms = int((time.time() - started) * 1000)
 
         profile, rejected = normalize_extraction(self.spec, state.raw_extraction)
-        state.profile = profile
+        for name, value in profile.items():
+            if not self.spec[name].is_derived:
+                state.profile[name] = value
+                state.sources[name] = "query"
         state.rejected = rejected
-        for name in profile:
-            state.sources[name] = "derived" if self.spec[name].is_derived else "query"
+        self._rederive(state)
         return state
+
+    def _rederive(self, state: InterviewState) -> None:
+        state.profile.update(self.spec.derive(state.profile))
+        for name in state.profile:
+            if self.spec[name].is_derived:
+                state.sources[name] = "derived"
 
     # -- phase 2: the turn loop ----------------------------------------------
 

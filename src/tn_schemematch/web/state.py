@@ -20,9 +20,12 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any
 
+from pathlib import Path
+
 from ..attributes import AttributeSpec
 from ..interview import Interview, InterviewState
 from ..kb import SchemeKB
+from ..vault import DEFAULT_VAULT_DIR, Vault
 
 
 @dataclass
@@ -34,6 +37,13 @@ class Session:
     # Cached model output, keyed so a re-click on stage never pays for a second call.
     explanations: dict[str, str] = field(default_factory=dict)
     comparison: dict[str, Any] | None = None
+    # The saved profile this session reads from and writes back to, if any.
+    profile_id: str | None = None
+    # Agent sessions only: the API message history (append-only — earlier turns carry
+    # thinking blocks that stop being valid if edited) and the transcript the page shows.
+    chat: list[dict[str, Any]] = field(default_factory=list)
+    transcript: list[dict[str, Any]] = field(default_factory=list)
+    last_eligible: list[str] | None = None
 
 
 class SessionStore:
@@ -85,7 +95,19 @@ class AppContext:
     benchmark: dict[str, Any] | None = None
     benchmark_status: str = "not_loaded"
     _personas: Any = None
+    vault_dir: Path = DEFAULT_VAULT_DIR
+    _vault: Vault | None = None
+    _vault_lock: Any = field(default_factory=threading.Lock, repr=False)
 
     @property
     def active(self) -> SchemeKB:
         return self.interview.active
+
+    @property
+    def vault(self) -> Vault:
+        """Opened on first use, so a server that never saves a profile never creates a
+        database — and a test that never touches profiles never writes to data/."""
+        with self._vault_lock:
+            if self._vault is None:
+                self._vault = Vault(self.vault_dir, self.spec)
+            return self._vault
