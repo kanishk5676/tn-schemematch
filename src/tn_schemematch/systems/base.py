@@ -53,6 +53,11 @@ class ScriptedClient:
     default: str = "{}"
     name: str = "scripted"
     calls: list[tuple[str, str]] = field(default_factory=list)
+    # Agent turns, consumed in order by ``converse``: each is
+    # {"stop_reason": ..., "content": [{"type": "text" | "tool_use", ...}, ...]}.
+    turns: list[dict[str, Any]] = field(default_factory=list)
+    image_calls: list[dict[str, Any]] = field(default_factory=list)
+    conversations: list[dict[str, Any]] = field(default_factory=list)
 
     def complete(self, system: str, user: str, *, json_mode: bool = False) -> str:
         self.calls.append((system, user))
@@ -60,6 +65,45 @@ class ScriptedClient:
             if key in user:
                 return response
         return self.default
+
+    def complete_with_images(self, system: str, user: str, images, *,
+                             schema: dict[str, Any] | None = None,
+                             effort: str | None = None) -> str:
+        self.image_calls.append({"system": system, "user": user, "schema": schema,
+                                 "media_types": [media for media, _ in images]})
+        return self.complete(system, user, json_mode=True)
+
+    def converse(self, system: str, messages: list[dict[str, Any]],
+                 tools: list[dict[str, Any]], *, effort: str | None = None) -> "ScriptedMessage":
+        # Snapshot, because the caller keeps appending to the same list.
+        self.conversations.append({"system": system, "messages": json.loads(json.dumps(
+            messages, default=str)), "tools": [t["name"] for t in tools]})
+        turn = self.turns.pop(0) if self.turns else {
+            "stop_reason": "end_turn", "content": [{"type": "text", "text": self.default}]}
+        return ScriptedMessage(turn["stop_reason"],
+                               [ScriptedBlock(dict(block)) for block in turn["content"]])
+
+
+class ScriptedBlock:
+    """A content block shaped like the SDK's: attribute access plus ``to_dict``."""
+
+    def __init__(self, data: dict[str, Any]) -> None:
+        self._data = data
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._data[name]
+        except KeyError:
+            raise AttributeError(name) from None
+
+    def to_dict(self) -> dict[str, Any]:
+        return dict(self._data)
+
+
+@dataclass
+class ScriptedMessage:
+    stop_reason: str
+    content: list[ScriptedBlock]
 
 
 # ------------------------------------------------------------------ result record

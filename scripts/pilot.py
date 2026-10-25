@@ -138,8 +138,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--backend", choices=["anthropic", "openai", "none"], default="none")
-    parser.add_argument("--model", default="claude-sonnet-5")
-    parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--model", default=None)
     parser.add_argument("--top-k", type=int, default=8)
     parser.add_argument("--out", default=None)
     args = parser.parse_args()
@@ -165,16 +164,9 @@ def main() -> int:
 
     client = None
     if args.backend != "none":
-        from tn_schemematch.systems.clients import (
-            AnthropicClient,
-            CachingClient,
-            OpenAIClient,
-        )
+        from tn_schemematch.systems.clients import make_client
 
-        inner = (AnthropicClient(model=args.model, temperature=args.temperature)
-                 if args.backend == "anthropic"
-                 else OpenAIClient(model=args.model, temperature=args.temperature))
-        client = CachingClient(inner)
+        client = make_client(args.backend, args.model)
         systems += [
             RAGBaseline(client, kb, retriever=BM25Retriever(kb), top_k=args.top_k),
             RAGBaseline(client, kb, retriever=OracleRetriever(kb)),
@@ -200,7 +192,7 @@ def main() -> int:
     unvalidated = [p.id for p in personas if not p.annotation.validated_by]
     metadata = {
         "backend": args.backend,
-        "model": args.model if client else "none",
+        "model": client.name if client else "none",
         "n_schemes": len(kb),
         "n_personas": len(personas),
         "kb_verified": bool(kb.verified()),

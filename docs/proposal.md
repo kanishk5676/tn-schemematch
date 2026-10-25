@@ -279,3 +279,10 @@ and aggregation reports scored-versus-skipped counts.
 retrieval degrades under code-mixing for reasons unrelated to reasoning. An oracle retriever
 (returns everything) and a dense multilingual arm are both implemented so the retrieval and
 reasoning components of any observed gap can be separated.
+
+**Reproducibility no longer comes from temperature.** The Anthropic API stopped accepting
+`temperature`, `top_p` and `top_k` (API version 2026-10-21; the 1.x Python SDK already
+refuses them as arguments, and current models reject them). A run therefore cannot be made
+repeatable by pinning temperature to zero. Instead every raw model response is saved to
+`<run>/responses.jsonl`, and `run_experiment.py --replay` re-scores from that file without
+calling the model. The saved responses, not a decoding seed, are the experimental record.

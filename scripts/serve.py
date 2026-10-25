@@ -22,20 +22,16 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 from tn_schemematch.web import create_app  # noqa: E402
 
 
-def build_client(backend: str, model: str):
-    if backend == "none":
-        return None
-    env_var = "ANTHROPIC_API_KEY" if backend == "anthropic" else "OPENAI_API_KEY"
-    if not os.environ.get(env_var):
-        print(f"\n  {env_var} is not set.")
-        print(f"  Set it, or run rules-only with --backend none:\n")
+def build_client(backend: str, model: str | None):
+    from tn_schemematch.systems.clients import has_credentials, make_client
+    if not has_credentials(backend):
+        env_var = "ANTHROPIC_API_KEY" if backend == "anthropic" else "OPENAI_API_KEY"
+        print(f"\n  No credentials found for the {backend} backend.")
+        print(f"  Set {env_var}, or run rules-only with --backend none:\n")
         print(f"    export {env_var}='...'")
         print(f"    python scripts/serve.py --backend none\n")
         raise SystemExit(2)
-    from tn_schemematch.systems.clients import AnthropicClient, CachingClient, OpenAIClient
-    inner = (AnthropicClient(model=model, max_retries=1) if backend == "anthropic"
-             else OpenAIClient(model=model, max_retries=1))
-    return CachingClient(inner)
+    return make_client(backend, model, max_retries=1)
 
 
 def main() -> int:
@@ -43,7 +39,8 @@ def main() -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--backend", choices=["anthropic", "openai", "none"],
                         default="anthropic")
-    parser.add_argument("--model", default="claude-sonnet-5")
+    parser.add_argument("--model", default=None,
+                        help="defaults to claude-opus-5-5 (anthropic) / gpt-4o (openai)")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int,
                         default=int(os.environ.get("PORT", 5001)))

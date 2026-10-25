@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 """Run the benchmark grid and write a scored report.
 
-    python scripts/run_experiment.py --backend anthropic --model claude-sonnet-5
+    python scripts/run_experiment.py --backend anthropic           # claude-opus-5-5
+    python scripts/run_experiment.py --backend anthropic --model claude-sonnet-5-5
     python scripts/run_experiment.py --backend none      # offline: rule-only arms
 
 The offline mode runs the arms that need no model — the oracle-extraction grounding
 pipeline and the retrieval-only diagnostics — which is enough to sanity-check the KB and
 the metrics before spending anything on a model.
+
+Every raw model response is written to ``<run>/responses.jsonl``. The API no longer takes
+a temperature, so that file — not a seed — is what makes a run reproducible:
+
+    python scripts/run_experiment.py --backend anthropic --replay data/runs/<run>/responses.jsonl
+
+re-scores the saved answers and only calls the model for prompts the file does not cover.
 """
 
 from __future__ import annotations
@@ -37,25 +45,14 @@ from tn_schemematch.systems.rag_baseline import DirectSystem, RAGBaseline  # noq
 from tn_schemematch.systems.retrieval import BM25Retriever, OracleRetriever  # noqa: E402
 
 
-def build_client(backend: str, model: str, temperature: float):
-    if backend == "none":
-        return None
-    from tn_schemematch.systems.clients import AnthropicClient, CachingClient, OpenAIClient
-
-    inner = (
-        AnthropicClient(model=model, temperature=temperature)
-        if backend == "anthropic"
-        else OpenAIClient(model=model, temperature=temperature)
-    )
-    return CachingClient(inner)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--backend", choices=["anthropic", "openai", "none"], default="none")
-    parser.add_argument("--model", default="claude-sonnet-5")
-    parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--model", default=None,
+                        help="defaults to claude-opus-5-5 (anthropic) / gpt-4o (openai)")
+    parser.add_argument("--replay", default=None,
+                        help="a responses.jsonl from an earlier run, to re-score for free")
     parser.add_argument("--top-k", type=int, default=8)
     parser.add_argument("--out", default=None)
     parser.add_argument("--allow-unverified", action="store_true",
@@ -100,7 +97,13 @@ def main() -> int:
         personas = PersonaSet({p.id: p for p in chosen[: args.max_personas]}, personas.spec)
         print(f"Subset run: {len(personas)} persona(s)\n")
 
-    client = build_client(args.backend, args.model, args.temperature)
+    from tn_schemematch.systems.clients import has_credentials, make_client
+    if not has_credentials(args.backend):
+        print(f"No credentials found for the {args.backend} backend.", file=sys.stderr)
+        return 2
+    client = make_client(args.backend, args.model)
+    if client is not None and args.replay:
+        print(f"Replaying {client.load(args.replay)} saved response(s)\n")
 
     systems = [OracleExtractionPipeline(kb)]
     if client is not None:
@@ -119,8 +122,9 @@ def main() -> int:
                             datetime.now().strftime("%Y%m%d-%H%M%S")))
     save_run(out, results, scores, metadata={
         "backend": args.backend,
-        "model": args.model,
-        "temperature": args.temperature,
+        "model": client.name if client else "none",
+        # The API no longer accepts sampling parameters; responses.jsonl is the record.
+        "sampling": "api default",
         "top_k": args.top_k,
         "kb_verified": bool(kb.verified()),
         "personas_validated": not unvalidated,
@@ -128,6 +132,11 @@ def main() -> int:
         "n_personas": len(personas),
         "subset": bool(args.max_personas),
     })
+
+    if client is not None:
+        n = client.dump(out / "responses.jsonl")
+        print(f"saved {n} raw response(s) — {client.misses} model call(s), "
+              f"{client.hits} served from cache")
 
     print("\n=== SUMMARY ===")
     print(json.dumps(summarize(scores), indent=2, ensure_ascii=False))

@@ -147,21 +147,16 @@ def cmd_serve(args) -> int:
     web dependency, and `schemematch validate` plus the test suite must keep working on an
     environment where Flask is not installed.
     """
-    import os
-
     client = None
     if args.backend != "none":
-        env_var = "ANTHROPIC_API_KEY" if args.backend == "anthropic" else "OPENAI_API_KEY"
-        if not os.environ.get(env_var):
+        from .systems.clients import has_credentials, make_client
+        if not has_credentials(args.backend):
             # Fail before binding a port rather than seven seconds into a live extraction.
-            print(f"{env_var} is not set. Set it, or run with --backend none.",
-                  file=sys.stderr)
+            env_var = "ANTHROPIC_API_KEY" if args.backend == "anthropic" else "OPENAI_API_KEY"
+            print(f"No credentials for {args.backend}. Set {env_var}, or run with "
+                  "--backend none.", file=sys.stderr)
             return 2
-        from .systems.clients import AnthropicClient, CachingClient, OpenAIClient
-        inner = (AnthropicClient(model=args.model, max_retries=1)
-                 if args.backend == "anthropic" else OpenAIClient(model=args.model,
-                                                                  max_retries=1))
-        client = CachingClient(inner)
+        client = make_client(args.backend, args.model, max_retries=1)
 
     try:
         from .web import create_app
@@ -212,7 +207,8 @@ def main(argv: list[str] | None = None) -> int:
     serve = sub.add_parser("serve", help="run the browser front end")
     serve.add_argument("--backend", choices=["anthropic", "openai", "none"],
                        default="anthropic")
-    serve.add_argument("--model", default="claude-sonnet-5")
+    serve.add_argument("--model", default=None,
+                       help="defaults to claude-opus-5-5 (anthropic) / gpt-4o (openai)")
     serve.add_argument("--host", default="127.0.0.1")
     # 5000 is taken by ControlCenter/AirPlay on macOS out of the box.
     serve.add_argument("--port", type=int,

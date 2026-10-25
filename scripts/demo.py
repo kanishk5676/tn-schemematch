@@ -218,7 +218,7 @@ def main() -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--backend", choices=["anthropic", "openai", "none"],
                         default="anthropic")
-    parser.add_argument("--model", default="claude-sonnet-5")
+    parser.add_argument("--model", default=None)
     parser.add_argument("--query", default=None, help="skip the prompt and use this query")
     parser.add_argument("--persona", default=None,
                         help="auto-answer from a persona instead of a keyboard")
@@ -234,20 +234,16 @@ def main() -> int:
         # Fail here rather than inside the first call. The client retries with backoff, so
         # a missing key otherwise surfaces as a seven-second pause and a stack trace —
         # which is a bad thing to discover while someone is watching.
-        import os
+        from tn_schemematch.systems.clients import has_credentials, make_client
         env_var = ("ANTHROPIC_API_KEY" if args.backend == "anthropic"
                    else "OPENAI_API_KEY")
-        if not os.environ.get(env_var):
+        if not has_credentials(args.backend):
             print(red(f"\n  {env_var} is not set."))
             print(f"  Set it, or run rules-only with {bold('--backend none')}:\n")
             print(f"    export {env_var}='...'")
             print(f"    python scripts/demo.py\n")
             return 2
-        from tn_schemematch.systems.clients import (AnthropicClient, CachingClient,
-                                                    OpenAIClient)
-        inner = (AnthropicClient(model=args.model)
-                 if args.backend == "anthropic" else OpenAIClient(model=args.model))
-        client = CachingClient(inner)
+        client = make_client(args.backend, args.model)
 
     print()
     print(rule("═"))
