@@ -532,3 +532,125 @@ details.add-fact select { width: auto; max-width: 320px; }
   .msg { max-width: 100%; }
   .starters { grid-template-columns: 1fr; padding: 0 12px 10px; }
 }
+
+/* =================================================================== citizen layer
+   Tamil-first and low-literacy: large type, large targets, one thing at a time. Every
+   tap target is at least 56px tall, the microphone at least 72px, and nothing scrolls
+   sideways at 390px. */
+
+.skip-link { position: absolute; left: -999px; top: 0; }
+.skip-link:focus { left: 12px; top: 8px; z-index: 99; background: var(--panel); padding: 6px 10px; border-radius: 6px; }
+.brand-ta { font-size: 19px; }
+.brand-en { color: var(--muted); font-weight: 500; font-size: 14px; margin-left: 4px; }
+.lang-btn { font-weight: 600; min-height: 40px; }
+:focus-visible { outline: 3px solid var(--ai); outline-offset: 2px; }
+
+body.talk-page { font-size: 16.5px; }
+body.busy .answer-btn, body.busy .mic { opacity: .6; pointer-events: none; }
+
+.talk { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: start; }
+@media (max-width: 940px) { .talk { grid-template-columns: 1fr; } }
+.talk-main {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden;
+}
+.talk .messages { height: auto; max-height: min(52vh, 560px); min-height: 160px; }
+.talk .bubble { font-size: 17px; line-height: 1.6; }
+.talk .msg.note .bubble { font-size: 15px; }
+.speaker { margin-top: 6px; padding: 4px 8px; font-size: 15px; background: transparent; }
+.spoken-line { margin: 9px 0 0; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 15px; color: var(--muted); }
+
+.mode-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); min-height: 48px; }
+.mode-note { color: var(--muted); font-size: 14px; flex: 1; }
+
+/* The open question and its answers. */
+.answer:empty { display: none; }
+.answer { padding: 14px 16px 6px; border-top: 1px solid var(--line); background: var(--panel-2); }
+.question-text { margin: 0; font-size: 21px; font-weight: 650; line-height: 1.45; }
+.question-alt { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+.question-why { margin: 6px 0 0; color: var(--ai); font-size: 14px; }
+.answer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+.answer-grid.two { grid-template-columns: 1fr 1fr; }
+.answer-grid.many { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); max-height: 46vh; overflow-y: auto; padding: 2px; }
+.answer-btn {
+  min-height: 64px; padding: 10px 14px; border-radius: 14px; cursor: pointer; text-align: left;
+  border: 2px solid var(--line); background: var(--panel); display: flex; flex-direction: column; justify-content: center;
+}
+.answer-btn:hover, .answer-btn:focus-visible { border-color: var(--ink); }
+.answer-btn.yes { border-color: var(--ok); }
+.answer-btn.no { border-color: var(--no); }
+.answer-main { font-size: 19px; font-weight: 650; line-height: 1.3; }
+.answer-alt { font-size: 13.5px; color: var(--muted); }
+.answer-btn.yes .answer-main::before { content: '✓ '; color: var(--ok); }
+.answer-btn.no .answer-main::before { content: '✗ '; color: var(--no); }
+.number-row { display: flex; gap: 10px; align-items: center; margin-top: 14px; }
+.number-input { font-size: 26px !important; flex: 1 1 auto; min-width: 0; max-width: 200px; min-height: 60px; text-align: center; }
+.number-row .btn.big { min-height: 60px; min-width: 76px; }
+.number-unit { font-size: 16px; color: var(--muted); }
+.answer-skip { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 8px; }
+.answer-skip .btn { min-height: 48px; font-size: 15px; }
+
+/* The microphone: the biggest thing on the screen. */
+.voice-bar { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border-top: 1px solid var(--line); }
+.mic {
+  min-width: 220px; min-height: 76px; border-radius: 999px; border: 0; cursor: pointer;
+  background: var(--ok); color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+  font-size: 19px; font-weight: 700; padding: 0 26px; box-shadow: 0 4px 14px rgba(21,128,61,.35);
+}
+.mic-icon { font-size: 30px; }
+.mic.on { background: var(--no); box-shadow: 0 0 0 8px var(--no-bg); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 14px var(--no-bg); } }
+.heard { min-height: 1.4em; font-size: 17px; color: var(--muted); text-align: center; max-width: 100%; overflow-wrap: anywhere; }
+.talk .composer textarea { font-size: 17px; }
+.tools-row { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; padding: 10px 16px 16px; }
+.btn.big-secondary { min-height: 52px; font-size: 16px; font-weight: 650; border: 2px solid var(--ok); background: var(--ok-bg); color: var(--ink); }
+.toggle { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font-size: 14px; color: var(--muted); }
+.toggle input { width: 20px; height: 20px; accent-color: var(--ok); }
+
+/* The result. */
+.result { padding: 16px; border-top: 1px solid var(--line); display: grid; gap: 12px; }
+.result-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.result-head h2 { margin: 0; font-size: 20px; }
+.result-card { display: grid; grid-template-columns: 56px 1fr; gap: 12px; padding: 14px; border: 1px solid var(--line); border-left: 5px solid var(--ok); border-radius: 14px; background: var(--panel); }
+.result-icon { font-size: 34px; line-height: 1; text-align: center; padding-top: 4px; }
+.result-body h3 { margin: 0 0 4px; font-size: 19px; color: var(--ink); }
+.result-what { margin: 0 0 6px; font-size: 16.5px; }
+.result-line { margin: 0 0 4px; font-size: 15px; }
+.result-official { margin: 4px 0 8px; font-size: 12.5px; color: var(--faint); }
+.result-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.result-actions .btn { min-height: 46px; }
+.card.bring h3, .card.near h3 { font-size: 16px; color: var(--ink); }
+.card.bring ul, .card.near ul { margin: 0; padding-left: 22px; display: grid; gap: 4px; font-size: 16px; }
+
+/* The rail. */
+.counts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.count { display: flex; flex-direction: column; align-items: center; }
+.count .n { font-size: 34px; font-weight: 750; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.count.ok .n { color: var(--ok); }
+.count.open .n { color: var(--open); }
+.count .l { font-size: 13px; color: var(--muted); text-align: center; }
+dl.told { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 15px; }
+dl.told dt { color: var(--muted); }
+dl.told dd { margin: 0; font-weight: 600; }
+
+dialog { border: 0; border-radius: 16px; padding: 0; max-width: min(460px, calc(100vw - 32px)); box-shadow: var(--shadow); background: var(--panel); color: var(--ink); }
+dialog::backdrop { background: rgba(0,0,0,.4); }
+.dlg-body { padding: 20px; display: grid; gap: 10px; font-size: 16px; }
+.dlg-body h2 { margin: 0; font-size: 19px; }
+.dlg-body p { margin: 0; }
+.dlg-actions { justify-content: flex-end; margin-top: 6px; }
+.dlg-actions .btn { min-height: 46px; }
+
+@media (max-width: 600px) {
+  .brand-en { display: none; }
+  .talk-main { border-radius: 12px; }
+  .question-text { font-size: 19px; }
+  .answer-grid { grid-template-columns: 1fr 1fr; }
+  .mic { min-width: 0; width: 100%; }
+  .rail { order: 2; }
+}
+
+@media print {
+  .topbar, .foot, .no-print, .voice-bar, .tools-row, .mode-bar { display: none !important; }
+  body { background: #fff; color: #000; }
+}

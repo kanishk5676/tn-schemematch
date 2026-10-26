@@ -49,6 +49,7 @@ class QuestionBookError(ValueError):
 class Question:
     attr: str
     ask: Mapping[str, str]
+    label: Mapping[str, str] = field(default_factory=dict)
     options: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
     unit: Mapping[str, str] = field(default_factory=dict)
     scale: float = 1.0
@@ -72,6 +73,12 @@ class QuestionBook:
             return attr.replace("_", " ") + "?"
         return question.ask.get(lang) or question.ask.get("en") or ""
 
+    def label(self, attr: str, lang: str) -> str:
+        question = self.questions.get(attr)
+        if question is None:
+            return attr.replace("_", " ")
+        return question.label.get(lang) or question.label.get("en") or attr.replace("_", " ")
+
     def option_label(self, attr: str, value: Any, lang: str) -> str:
         question = self.questions.get(attr)
         labels = (question.options.get(str(value)) if question else None) or {}
@@ -86,7 +93,8 @@ def load_questions(path: str | Path | None = None) -> QuestionBook:
         if not isinstance(body, Mapping) or not isinstance(body.get("ask"), Mapping):
             raise QuestionBookError(f"{attr}: every question needs an 'ask' mapping")
         options = {str(value): dict(labels) for value, labels in (body.get("options") or {}).items()}
-        questions[attr] = Question(attr=attr, ask=dict(body["ask"]), options=options,
+        questions[attr] = Question(attr=attr, ask=dict(body["ask"]),
+                                   label=dict(body.get("label") or {}), options=options,
                                    unit=dict(body.get("unit") or {}),
                                    scale=float(body.get("scale") or 1.0))
     return QuestionBook(version=str(raw.get("version", "0")),
@@ -113,6 +121,8 @@ def validate_questions(book: QuestionBook, spec: AttributeSpec) -> list[str]:
         for lang in LANGUAGES:
             if not question.ask.get(lang):
                 problems.append(f"questions.yaml: {attr} has no {lang!r} question")
+            if not question.label.get(lang):
+                problems.append(f"questions.yaml: {attr} has no {lang!r} label")
         if spec[attr].type == "enum":
             for value in spec[attr].domain or ():
                 labels = question.options.get(str(value)) or {}
@@ -181,6 +191,49 @@ def scaled_value(book: QuestionBook, attr: str, value: Any) -> Any:
         return float(value) * question.scale
     except (TypeError, ValueError):
         return value
+
+
+def _number_text(value: float) -> str:
+    """65 → "65", 2.5 → "2.5", 120000 → "1,20,000" (Indian grouping)."""
+    if float(value).is_integer():
+        digits = str(int(value))
+        if len(digits) <= 3:
+            return digits
+        head, tail = digits[:-3], digits[-3:]
+        groups = []
+        while len(head) > 2:
+            groups.insert(0, head[-2:])
+            head = head[:-2]
+        if head:
+            groups.insert(0, head)
+        return ",".join(groups + [tail])
+    return f"{value:.2f}".rstrip("0").rstrip(".")
+
+
+def answer_text(book: QuestionBook, spec: AttributeSpec, attr: str, value: Any,
+                lang: str) -> str:
+    """A stored value as the person would say it: "ஆம்", "விவசாயி", "2 ஏக்கர்"."""
+    attribute = spec[attr]
+    if attribute.type == "bool":
+        return BUTTONS["yes" if value else "no"][lang]
+    if attribute.type == "enum":
+        return book.option_label(attr, value, lang)
+    question = book.questions.get(attr)
+    shown = value / question.scale if question is not None and question.scale != 1 else value
+    unit = (question.unit.get(lang) if question else "") or ""
+    return f"{_number_text(float(shown))} {unit}".strip()
+
+
+def told(book: QuestionBook, spec: AttributeSpec, profile: Mapping[str, Any],
+         lang: str) -> list[dict[str, Any]]:
+    """What the person has said, in their language, for "what you told me"."""
+    rows = []
+    for attr in spec.elicitable_names():
+        if profile.get(attr) is None:
+            continue
+        rows.append({"attr": attr, "label": book.label(attr, lang),
+                     "display": answer_text(book, spec, attr, profile[attr], lang)})
+    return rows
 
 
 # ------------------------------------------------------------------------ phrases
@@ -322,7 +375,7 @@ def answer(book: QuestionBook, iv: Interview, state: InterviewState, lang: str, 
                 return _next(book, iv, state, lang, lead=phrase("gave_up", lang))
             card = question_card(book, iv, state, attr, lang)
             reply = phrase("unread", lang)
-            return {"reply": reply, "say": reply + " " + _say_question(card, lang),
+            return {"reply": reply, "lead": reply, "say": reply + " " + _say_question(card, lang),
                     "question": card, "done": False, "understood": False}
         state.retries.pop(attr, None)
         outcome = iv.answer_value(state, attr, parsed, source="said")
@@ -347,5 +400,6 @@ def _next(book: QuestionBook, iv: Interview, state: InterviewState, lang: str, *
                 "understood": True}
     card = question_card(book, iv, state, attr, lang)
     reply = f"{lead} {card['text']}".strip()
-    return {"reply": reply, "say": f"{lead} {_say_question(card, lang)}".strip(),
+    # ``lead`` alone is what a page that shows the question card needs in the bubble.
+    return {"reply": reply, "lead": lead, "say": f"{lead} {_say_question(card, lang)}".strip(),
             "question": card, "done": False, "understood": True}

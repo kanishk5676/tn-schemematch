@@ -129,6 +129,7 @@ def spoken_result(active: SchemeKB, profile: Mapping[str, Any], lang: str, *,
     lines = [scheme_line(s, lang) for s in eligible]
 
     sentences: list[str] = []
+    bring: list[dict[str, Any]] = []
     if eligible:
         all_verified = all(s.is_verified for s in eligible)
         key = "found_verified" if all_verified else "found_draft"
@@ -143,10 +144,19 @@ def spoken_result(active: SchemeKB, profile: Mapping[str, Any], lang: str, *,
 
         if documents is not None:
             plan = checklist(documents, active, [s.id for s in eligible], held)
-            wanted = []
-            for entry in plan["to_collect"][:MAX_SPOKEN_DOCUMENTS]:
+            # "Aadhaar" and "Aadhaar or ration card" are one trip, not two: an alternative
+            # already covered by a document that must be brought anyway is not listed.
+            needed = {e["types"][0]["id"] for e in plan["to_collect"] if len(e["types"]) == 1}
+            for entry in plan["to_collect"]:
+                ids = {t["id"] for t in entry["types"]}
+                if len(ids) > 1 and ids & needed:
+                    continue
                 label = (entry.get("label_ta") if lang == "ta" else None) or entry["label"]
-                wanted.append(label.replace(" / ", _t("or", lang)).replace(" or ", _t("or", lang)))
+                bring.append({"label": label.replace(" / ", _t("or", lang))
+                                       .replace(" or ", _t("or", lang)),
+                              "n_schemes": entry["n_schemes"],
+                              "types": [t["id"] for t in entry["types"]]})
+            wanted = [item["label"] for item in bring[:MAX_SPOKEN_DOCUMENTS]]
             if wanted:
                 sentences.append(_t("documents", lang, items=_join(wanted, lang)))
             elif plan["schemes"]:
@@ -173,6 +183,7 @@ def spoken_result(active: SchemeKB, profile: Mapping[str, Any], lang: str, *,
         "text": " ".join(sentences),
         "eligible": lines,
         "near": [scheme_line(s, lang) for s in near],
+        "bring": bring,
         "n_open": len(buckets[Verdict.UNKNOWN]),
         "lang": lang,
     }

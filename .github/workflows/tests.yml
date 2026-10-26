@@ -23,3 +23,26 @@ jobs:
         run: schemematch validate
       - name: Run the tests (no API key, no network)
         run: python -m pytest -q
+
+  ui:
+    # The assistant page in a real browser at phone width, with no model.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install
+        run: |
+          pip install -e ".[dev]" playwright
+          python -m playwright install --with-deps chromium
+      - name: Drive the page
+        run: python -m pytest -q tests/test_ui.py
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: ui-screenshots/
+          if-no-files-found: ignore

@@ -14,7 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from flask import Flask, jsonify, redirect, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, send_from_directory
 
 from ..attributes import default_spec
 from ..documents import MAX_UPLOAD_BYTES, load_documents
@@ -139,6 +139,14 @@ def _register_pages(app: Flask, ctx: AppContext) -> None:
     @app.get("/schemes")
     def schemes_page():
         return page("schemes.html", "schemes")
+
+    @app.get("/sw.js")
+    def service_worker():
+        # Served from the root, not /static/, so its scope covers every page.
+        response = send_from_directory(app.static_folder, "sw.js",
+                                       mimetype="application/javascript")
+        response.headers["Cache-Control"] = "no-cache"
+        return response
 
     @app.get("/admin")
     def admin_page():

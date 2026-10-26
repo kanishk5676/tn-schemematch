@@ -60,9 +60,12 @@ export const api = {
   deleteDocument: (pid, docId) => send('DELETE', `/api/profiles/${pid}/documents/${docId}`),
 
   // the assistant
-  startChat: (profileId) => post('/api/chat', { profile_id: profileId || undefined }),
-  chat: (chatId) => call(`/api/chat/${chatId}`),
-  say: (chatId, text) => post(`/api/chat/${chatId}/message`, { text }),
+  startChat: (profileId, lang, mode) =>
+    post('/api/chat', { profile_id: profileId || undefined, lang, mode: mode || undefined }),
+  chat: (chatId, lang) => call(`/api/chat/${chatId}${lang ? `?lang=${lang}` : ''}`),
+  say: (chatId, body) => post(`/api/chat/${chatId}/message`, body),
+  chatResult: (chatId, lang) => call(`/api/chat/${chatId}/result?lang=${lang}`),
+  chatMode: (chatId, mode, lang) => post(`/api/chat/${chatId}/mode`, { mode, lang }),
 
   replay: (persona) => post('/api/session', { persona }),
   personas: () => call('/api/personas'),

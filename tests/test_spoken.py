@@ -95,3 +95,12 @@ def test_plain_text_is_preferred_over_the_official_name(kb, personas):
         result = spoken_result(patched, profile, lang)
         assert plain[lang]["name"] in result["text"]
         assert plain[lang]["what"] in result["text"]
+
+
+def test_an_alternative_already_covered_is_not_listed_twice(kb, personas, documents):
+    """"Aadhaar" and "Aadhaar or ration card" are one trip to the office, not two."""
+    result = spoken_result(kb.active(), personas["p002"].profile, "en", documents=documents)
+    singles = {item["types"][0] for item in result["bring"] if len(item["types"]) == 1}
+    for item in result["bring"]:
+        if len(item["types"]) > 1:
+            assert not set(item["types"]) & singles, item

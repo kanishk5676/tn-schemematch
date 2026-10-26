@@ -28,7 +28,7 @@ from ..agent import run_turn
 from ..agent_tools import AgentContext
 from ..guided import answer as guided_answer
 from ..guided import opening as guided_opening
-from ..guided import BUTTONS, phrase, question_card
+from ..guided import BUTTONS, phrase, question_card, told
 from ..serialize import near_misses, profile_rows
 from ..spoken import spoken_result
 from ..systems.budget import BudgetExceeded, ModelUnavailable
@@ -81,6 +81,8 @@ def chat_payload(ctx: AppContext, session: Session, *, transcript: bool = True) 
         "reason": session.reason,
         "board": ctx.interview.board(state),
         "profile": profile_rows(ctx.spec, state.profile, state.sources),
+        # The same facts in the person's own language, for "what you told me".
+        "told": told(ctx.questions, ctx.spec, state.profile, session.lang),
     }
     if session.mode == "guided":
         attr = ctx.interview.next_question(state)
@@ -126,8 +128,8 @@ def register_chat_api(app: Flask, ctx: AppContext) -> None:
             turn = {"reply": lead, "say": lead, "question": None, "done": True}
         else:
             card = question_card(ctx.questions, ctx.interview, state, attr, session.lang)
-            turn = {"reply": f"{lead} {card['text']}", "say": f"{lead} {card['text']}",
-                    "question": card, "done": False}
+            turn = {"reply": f"{lead} {card['text']}", "lead": lead,
+                    "say": f"{lead} {card['text']}", "question": card, "done": False}
         return turn
 
     def write_through(session: Session, before: dict[str, Any], text: str, source: str) -> None:
@@ -175,6 +177,10 @@ def register_chat_api(app: Flask, ctx: AppContext) -> None:
         session, failure = load(chat_id)
         if failure:
             return failure
+        # A language switch on the page re-reads the chat, so the open question is
+        # re-worded in the new language.
+        session.lang = language(dict(request.args), session)
+        _sync_from_vault(ctx, session)
         return jsonify(chat_payload(ctx, session))
 
     @app.get("/api/chat/<chat_id>/result")

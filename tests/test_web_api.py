@@ -247,9 +247,17 @@ def test_compare_route_is_gone(client):
     assert client.post(f"/api/session/{sid}/compare").status_code in (404, 405)
 
 
-def test_rules_only_assistant_points_to_the_interview(client):
+def test_the_assistant_page_works_without_a_model(client):
+    """No model is not a dead end: the page carries the mic, the answer area and Tamil."""
     page = client.get("/").get_data(as_text=True)
-    assert "running rules-only" in page and 'href="/interview"' in page
+    assert 'id="mic"' in page and 'id="answer"' in page
+    assert '<html lang="ta">' in page
+
+
+def test_the_service_worker_is_served_from_the_root(client):
+    response = client.get("/sw.js")
+    assert response.status_code == 200
+    assert "javascript" in response.headers["Content-Type"]
 
 
 def test_old_replay_links_still_land_on_the_interview(client):
