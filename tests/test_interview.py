@@ -155,10 +155,18 @@ def test_parse_answer_prefers_aliases_over_the_model(spec):
     assert client.calls == [], "the alias table should have settled this with no model call"
 
 
-def test_parse_answer_falls_back_to_the_model(spec):
-    """'rendu ekkar' has no digit, so the deterministic parser cannot read it."""
-    client = ScriptedClient(default=json.dumps({"value": 2.0}))
+def test_parse_answer_reads_number_words_without_the_model(spec):
+    """A spoken answer ("rendu ekkar") must work in guided mode, with no model at all."""
+    client = ScriptedClient(default=json.dumps({"value": 99.0}))
     value, source = parse_answer(spec, "land_owned_acres", "rendu ekkar", client)
+    assert (value, source) == (2.0, "aliases")
+    assert client.calls == []
+
+
+def test_parse_answer_falls_back_to_the_model(spec):
+    """A phrasing the deterministic parser cannot read goes to the model."""
+    client = ScriptedClient(default=json.dumps({"value": 2.0}))
+    value, source = parse_answer(spec, "land_owned_acres", "a little more than my brother's", client)
     assert (value, source) == (2.0, "model")
     assert len(client.calls) == 1
 

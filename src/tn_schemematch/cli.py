@@ -43,14 +43,23 @@ def _load(args) -> tuple:
 
 
 def cmd_validate(args) -> int:
+    from .guided import default_questions, validate_questions
+
     spec, kb, personas = _load(args)
     documents = load_documents(spec)
-    problems = validate_kb(kb) + validate_documents(documents, kb)
+    questions = default_questions()
+    problems = (validate_kb(kb) + validate_documents(documents, kb)
+                + validate_questions(questions, spec))
     if personas is not None:
         problems += validate_personas(personas, kb)
 
     print(f"KB:       {len(kb)} schemes ({len(kb.active())} active, "
           f"{len(kb.verified())} human-verified)")
+    plain = kb.coverage_report()["plain"]
+    print(f"Plain:    {plain['written']} of {plain['active']} active schemes have plain "
+          f"Tamil/English text, {plain['reviewed']} reviewed by a person")
+    print(f"Questions: {len(questions.questions)} written in Tamil and English"
+          f"{'' if questions.reviewed else ' (not yet reviewed by a native speaker)'}")
     print(f"Documents: {len(documents.uploadable())} document types, every scheme "
           "requirement mapped" if not validate_documents(documents, kb) else
           f"Documents: {len(documents.uploadable())} document types")
@@ -154,14 +163,17 @@ def cmd_serve(args) -> int:
     """
     client = None
     if args.backend != "none":
+        from .systems.budget import UsageMeter
         from .systems.clients import has_credentials, make_client
-        if not has_credentials(args.backend):
-            # Fail before binding a port rather than seven seconds into a live extraction.
+        from .vault import DEFAULT_VAULT_DIR
+        if has_credentials(args.backend):
+            meter = UsageMeter(path=DEFAULT_VAULT_DIR / "usage.json",
+                               daily_budget_usd=getattr(args, "daily_budget", None))
+            client = make_client(args.backend, args.model, max_retries=1, meter=meter)
+        else:
+            # Never refuse to start: without a key the assistant runs in guided mode.
             env_var = "ANTHROPIC_API_KEY" if args.backend == "anthropic" else "OPENAI_API_KEY"
-            print(f"No credentials for {args.backend}. Set {env_var}, or run with "
-                  "--backend none.", file=sys.stderr)
-            return 2
-        client = make_client(args.backend, args.model, max_retries=1)
+            print(f"No {env_var} found — starting in guided mode (no model).", file=sys.stderr)
 
     try:
         from .web import create_app
@@ -220,6 +232,8 @@ def main(argv: list[str] | None = None) -> int:
     serve.add_argument("--port", type=int,
                        default=int(os.environ.get("PORT", 5001)))
     serve.add_argument("--max-questions", type=int, default=15)
+    serve.add_argument("--daily-budget", type=float, default=None,
+                       help="US dollars the model may spend per day; then guided mode")
     serve.add_argument("--debug", action="store_true")
     serve.add_argument("--vault-dir", default=None,
                        help="where saved profiles and documents live (default data/vault)")

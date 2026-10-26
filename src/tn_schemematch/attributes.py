@@ -213,9 +213,15 @@ class AttributeSpec:
 
 _BOOL_TRUE = {
     "true", "yes", "y", "1", "irukku", "இருக்கு", "undu", "உண்டு", "aam", "ஆம்", "have", "has",
+    # Spoken forms, with and without the respectful -ங்க: what a voice answer looks like.
+    "aama", "aamaa", "aamam", "aamaam", "aamanga", "aamaanga", "ஆமா", "ஆமாம்", "ஆமாங்க",
+    "irukkunga", "இருக்குங்க", "irukkuthu", "இருக்குது", "yes irukku", "yes sir", "yes madam",
+    "s", "ok yes",
 }
 _BOOL_FALSE = {
     "false", "no", "n", "0", "illa", "இல்ல", "இல்லை", "illai", "none", "not", "dont have",
+    "illainga", "illeenga", "இல்லீங்க", "இல்லைங்க", "kidaiyathu", "கிடையாது", "no sir",
+    "no madam", "illa sir", "do not have", "nope",
 }
 
 
@@ -238,7 +244,7 @@ def _fold(text: str) -> str:
 
 
 _MAGNITUDES: dict[str, float] = {
-    "thousand": 1e3, "k": 1e3, "ayiram": 1e3, "ஆயிரம்": 1e3,
+    "thousand": 1e3, "k": 1e3, "aayiram": 1e3, "ayiram": 1e3, "ஆயிரம்": 1e3,
     "lakh": 1e5, "lac": 1e5, "lakhs": 1e5, "laksham": 1e5, "லட்சம்": 1e5, "latcham": 1e5,
     "crore": 1e7, "cr": 1e7, "கோடி": 1e7, "kodi": 1e7,
 }
@@ -252,6 +258,138 @@ _LAND_UNITS: dict[str, str] = {
 }
 
 _PER_MONTH = {"month", "monthly", "per month", "manthly", "maasam", "மாசம்", "மாதம்", "maatham", "pm"}
+
+# Electricity in Tamil Nadu is billed every two months, so that is the figure people know.
+_TWO_MONTHS = re.compile(
+    r"(?:^|\s)(?:2|rendu|randu|irandu|two|ரெண்டு|இரண்டு)\s*"
+    r"(?:maas|masa|maat|month|மாச|மாத)\S*|(?:^|\s)bi\s?monthly")
+
+# Number words, for answers spoken rather than typed: "rendu ekkar", "aimbathu aayiram",
+# "அறுபது வயசு". Forms ending in "-" match as a prefix, which catches Tamil's combining
+# forms and case endings ("iruvathi", "இருபதுக்கு") without listing every inflection.
+_UNIT_WORDS: tuple[tuple[float, tuple[str, ...]], ...] = (
+    (0, ("zero", "poojyam", "poojiyam", "pujyam", "பூஜ்யம்", "பூஜ்ஜியம்", "nil")),
+    (0.25, ("kaal", "கால்", "quarter")),
+    (0.5, ("arai", "அரை", "half")),
+    (1, ("oru", "onnu", "ondru", "onru", "ஒரு", "ஒன்னு", "ஒன்று", "one")),
+    (1.5, ("onnara", "onrara", "ஒன்றரை", "ஒண்ணரை")),
+    (2, ("rendu", "randu", "irandu", "ரெண்டு", "இரண்டு", "two")),
+    (2.5, ("rendara", "irandara", "இரண்டரை", "ரெண்டரை")),
+    (3, ("moonu", "munu", "moondru", "மூணு", "மூன்று", "three")),
+    (4, ("naalu", "nalu", "naangu", "நாலு", "நான்கு", "four")),
+    (5, ("anju", "ainthu", "aindhu", "அஞ்சு", "ஐந்து", "five")),
+    (6, ("aaru", "ஆறு", "six")),
+    (7, ("ezhu", "yezhu", "elu", "ஏழு", "seven")),
+    (8, ("ettu", "எட்டு", "eight")),
+    (9, ("onbathu", "onbadhu", "ஒன்பது", "nine")),
+    (10, ("pathu", "paththu", "பத்து", "ten")),
+    (11, ("pathinonnu", "pathinondru", "பதினொன்று", "eleven")),
+    (12, ("pannendu", "pannirandu", "பன்னிரண்டு", "twelve")),
+    (13, ("pathimoonu", "பதிமூன்று", "thirteen")),
+    (14, ("pathinaalu", "பதினான்கு", "fourteen")),
+    (15, ("pathinanju", "பதினைந்து", "fifteen")),
+    (16, ("pathinaaru", "பதினாறு", "sixteen")),
+    (17, ("pathinezhu", "பதினேழு", "seventeen")),
+    (18, ("pathinettu", "பதினெட்டு", "eighteen")),
+    (19, ("pathonbathu", "பத்தொன்பது", "nineteen")),
+)
+_TENS: tuple[tuple[float, tuple[str, ...]], ...] = (
+    (20, ("iruvath", "irupath", "இருபத", "twenty")),
+    (30, ("muppath", "முப்பத", "thirty")),
+    (40, ("naarpath", "narpath", "நாற்பத", "forty")),
+    (50, ("aimbath", "ambath", "ஐம்பத", "fifty")),
+    (60, ("arupath", "aruvath", "அறுபத", "sixty")),
+    (70, ("ezhupath", "ezhuvath", "எழுபத", "seventy")),
+    (80, ("enbath", "embath", "எண்பத", "eighty")),
+    (90, ("thonnoor", "thonnur", "தொண்ணூ", "ninety")),
+)
+# What follows a tens stem inside one Tamil-script word: இருபத்தைந்து is இருபத + ்தைந்து.
+_TENS_TAIL_TA = {
+    "்தொன்று": 1, "்தொன்னு": 1, "்திரண்டு": 2, "்தி ரெண்டு": 2, "்துமூன்று": 3,
+    "்துமூணு": 3, "்துநான்கு": 4, "்துநாலு": 4, "்தைந்து": 5, "்தஞ்சு": 5, "்தாறு": 6,
+    "்தேழு": 7, "்தெட்டு": 8, "்தொன்பது": 9,
+}
+# The stem a unit takes before ஆயிரம் / aayiram: ஐந்தாயிரம் is ஐந்த + ாயிரம், 5 x 1000.
+_THOUSAND_STEMS = {
+    "or": 1, "rend": 2, "irand": 2, "moov": 3, "moo": 3, "naal": 4, "naang": 4, "anj": 5,
+    "aindh": 5, "ainth": 5, "aar": 6, "ezh": 7, "ett": 8, "onbath": 9, "onbadh": 9,
+    "path": 10, "ஓர": 1, "இரண்ட": 2, "ரெண்ட": 2, "மூவ": 3, "நால": 4, "நான்க": 4,
+    "ஐந்த": 5, "அஞ்ச": 5, "ஆற": 6, "ஏழ": 7, "எட்ட": 8, "ஒன்பத": 9, "பத்த": 10,
+}
+_THOUSAND_SUFFIXES = ("aayiram", "ayiram", "ாயிரம்")
+_HUNDRED = ("nooru", "நூறு", "hundred")
+
+
+def _number_word(token: str) -> float | None:
+    """The value of one number word, or ``None``."""
+    for value, forms in _UNIT_WORDS:
+        if token in forms:
+            return value
+    for value, stems in _TENS:
+        for stem in stems:
+            if token.startswith(stem):
+                rest = token[len(stem):]
+                for tail, unit in _TENS_TAIL_TA.items():
+                    if rest.startswith(tail):
+                        return value + unit
+                # Romanized: "irupathanju", or "aruvathi rendu" (the unit is the next word).
+                for candidate in (rest, rest[1:]):
+                    for unit, forms in _UNIT_WORDS[3:]:
+                        if candidate in forms:
+                            return value + unit
+                return value
+    return None
+
+
+def _magnitude_word(token: str) -> float | None:
+    if token in _HUNDRED:
+        return 100.0
+    for word, factor in _MAGNITUDES.items():
+        if token == word or (len(word) > 2 and token.startswith(word)):
+            return factor
+    return None
+
+
+def _compound_thousand(token: str) -> float | None:
+    """ஐந்தாயிரம், anjaayiram, iruvathaayiram: a number fused with "thousand"."""
+    for suffix in _THOUSAND_SUFFIXES:
+        position = token.find(suffix)
+        if position > 0:
+            stem = token[:position]
+            value = _THOUSAND_STEMS.get(stem)
+            if value is None:
+                value = _number_word(stem) or _number_word(stem + "u")
+            if value:
+                return value * 1000
+    return None
+
+
+def parse_number_words(text: str) -> float | None:
+    """Read a number written in words — Tamil script, Tanglish or English.
+
+    Values add within a group and a magnitude word closes the group, so "oru lakh aimbathu
+    aayiram" is 1 x 100000 + 50 x 1000. Returns ``None`` when no number word is present,
+    so a sentence with no quantity in it is never read as zero.
+    """
+    total, current, seen = 0.0, 0.0, False
+    for token in _fold(text).split():
+        compound = _compound_thousand(token)
+        if compound is not None:
+            total += current + compound
+            current, seen = 0.0, True
+            continue
+        value = _number_word(token)
+        if value is not None:
+            current += value
+            seen = True
+            continue
+        factor = _magnitude_word(token)
+        if factor is not None:
+            total += (current or 1) * factor
+            current, seen = 0.0, True
+    if not seen:
+        return None
+    return total + current
 
 
 def _mentions(tokens: list[str], phrase: str) -> bool:
@@ -286,18 +424,31 @@ def parse_quantity(text: str, unit_table: Mapping[str, float]) -> float | None:
     # Indian digit grouping: 1,00,000 -> 100000. Done before folding, which drops commas.
     normalized = re.sub(r"(?<=\d),(?=\d)", "", normalized)
 
-    match = re.search(r"\d+(?:\.\d+)?", normalized)
-    if not match:
-        return None
-    number = float(match.group(0))
-    tokens = _fold(normalized).split()
+    # A two-month bill: note it, then drop the phrase so its "2" is not read as the figure.
+    two_monthly = False
+    if "units_per_year" in unit_table and _TWO_MONTHS.search(_fold(normalized)):
+        two_monthly = True
+        normalized = _TWO_MONTHS.sub(" ", _fold(normalized))
 
+    tokens = _fold(normalized).split()
+    match = re.search(r"\d+(?:\.\d+)?", normalized)
     magnitude_applied = False
-    for word, factor in _MAGNITUDES.items():
-        if _mentions(tokens, word):
-            number *= factor
-            magnitude_applied = True
-            break
+    if match:
+        number = float(match.group(0))
+        for word, factor in _MAGNITUDES.items():
+            if _mentions(tokens, word):
+                number *= factor
+                magnitude_applied = True
+                break
+    else:
+        # No digits: a spoken answer. Magnitude words are part of the reading already.
+        words = parse_number_words(normalized)
+        if words is None:
+            return None
+        number, magnitude_applied = words, True
+
+    if two_monthly:
+        return number * 6
 
     # Land units
     for word, canonical in _LAND_UNITS.items():

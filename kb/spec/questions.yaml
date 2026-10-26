@@ -1,0 +1,506 @@
+# What the assistant says when it asks for each attribute, and the words for each answer.
+#
+# The elicitation policy picks WHICH question comes next; this file is only the WORDS. It
+# is what lets the assistant hold a whole conversation with no model at all: every
+# question, every answer button and every option is said in spoken Tamil and in plain
+# English from here.
+#
+#   ask:      the question, one short sentence. Spoken aloud, so no brackets that only make
+#             sense on screen, and no jargon that is not explained in the same sentence.
+#   options:  for enum attributes, the label of every value, in both languages. Labels are
+#             also accepted as answers, so a person can say the option instead of tapping.
+#   unit:     for numbers, the unit as it is said, shown beside the number pad.
+#   scale:    for numbers, what a number-pad answer is multiplied by (electricity is
+#             billed every two months, the rule needs a year).
+#
+# A test fails if any askable attribute or any enum value is missing here.
+#
+# reviewed: false until a native speaker has read every line aloud and checked it.
+
+version: "0.1"
+reviewed: false
+
+questions:
+
+  # ----------------------------------------------------------------- identity
+
+  age:
+    ask:
+      ta: "உங்களுக்கு எத்தனை வயது?"
+      en: "How old are you?"
+    unit: {ta: "வயது", en: "years"}
+
+  gender:
+    ask:
+      ta: "நீங்கள் ஆணா, பெண்ணா, திருநங்கையா?"
+      en: "Are you a man, a woman, or transgender?"
+    options:
+      male: {ta: "ஆண்", en: "Man"}
+      female: {ta: "பெண்", en: "Woman"}
+      transgender: {ta: "திருநங்கை", en: "Transgender"}
+
+  marital_status:
+    ask:
+      ta: "உங்களுக்குத் திருமணம் ஆகிவிட்டதா?"
+      en: "Are you married?"
+    options:
+      unmarried: {ta: "திருமணம் ஆகவில்லை", en: "Not married"}
+      married: {ta: "திருமணம் ஆனவர்", en: "Married"}
+      widowed: {ta: "கணவனை அல்லது மனைவியை இழந்தவர்", en: "Widowed"}
+      divorced: {ta: "விவாகரத்து ஆனவர்", en: "Divorced"}
+      deserted: {ta: "கணவரால் கைவிடப்பட்டவர்", en: "Left by my husband"}
+
+  social_category:
+    ask:
+      ta: "உங்கள் சாதிச் சான்றிதழில் எந்தப் பிரிவு என்று இருக்கிறது?"
+      en: "Which community category is on your community certificate?"
+    options:
+      SC: {ta: "ஆதிதிராவிடர் (SC)", en: "Scheduled Caste (SC)"}
+      SCA: {ta: "அருந்ததியர் (SCA)", en: "Arunthathiyar (SCA)"}
+      ST: {ta: "பழங்குடியினர் (ST)", en: "Scheduled Tribe (ST)"}
+      MBC: {ta: "மிகவும் பிற்படுத்தப்பட்டோர் (MBC)", en: "Most Backward Class (MBC)"}
+      DNC: {ta: "சீர்மரபினர் (DNC)", en: "Denotified Community (DNC)"}
+      BC: {ta: "பிற்படுத்தப்பட்டோர் (BC)", en: "Backward Class (BC)"}
+      BCM: {ta: "பிற்படுத்தப்பட்ட முஸ்லிம் (BCM)", en: "Backward Class Muslim (BCM)"}
+      FC: {ta: "பொதுப் பிரிவு (FC)", en: "General (FC)"}
+
+  religion:
+    ask:
+      ta: "உங்கள் மதம் எது?"
+      en: "What is your religion?"
+    options:
+      hindu: {ta: "இந்து", en: "Hindu"}
+      muslim: {ta: "முஸ்லிம்", en: "Muslim"}
+      christian: {ta: "கிறிஸ்தவர்", en: "Christian"}
+      sikh: {ta: "சீக்கியர்", en: "Sikh"}
+      buddhist: {ta: "பௌத்தர்", en: "Buddhist"}
+      jain: {ta: "சமணர்", en: "Jain"}
+      parsi: {ta: "பார்சி", en: "Parsi"}
+      other: {ta: "மற்றவை", en: "Other"}
+
+  state:
+    ask:
+      ta: "நீங்கள் தமிழ்நாட்டில் வசிக்கிறீர்களா?"
+      en: "Do you live in Tamil Nadu?"
+    options:
+      TN: {ta: "தமிழ்நாடு", en: "Tamil Nadu"}
+      other: {ta: "வேறு மாநிலம்", en: "Another state"}
+
+  district:
+    ask:
+      ta: "நீங்கள் எந்த மாவட்டத்தில் வசிக்கிறீர்கள்?"
+      en: "Which district do you live in?"
+    options:
+      Ariyalur: {ta: "அரியலூர்", en: "Ariyalur"}
+      Chengalpattu: {ta: "செங்கல்பட்டு", en: "Chengalpattu"}
+      Chennai: {ta: "சென்னை", en: "Chennai"}
+      Coimbatore: {ta: "கோயம்புத்தூர்", en: "Coimbatore"}
+      Cuddalore: {ta: "கடலூர்", en: "Cuddalore"}
+      Dharmapuri: {ta: "தருமபுரி", en: "Dharmapuri"}
+      Dindigul: {ta: "திண்டுக்கல்", en: "Dindigul"}
+      Erode: {ta: "ஈரோடு", en: "Erode"}
+      Kallakurichi: {ta: "கள்ளக்குறிச்சி", en: "Kallakurichi"}
+      Kancheepuram: {ta: "காஞ்சிபுரம்", en: "Kancheepuram"}
+      Kanyakumari: {ta: "கன்னியாகுமரி", en: "Kanyakumari"}
+      Karur: {ta: "கரூர்", en: "Karur"}
+      Krishnagiri: {ta: "கிருஷ்ணகிரி", en: "Krishnagiri"}
+      Madurai: {ta: "மதுரை", en: "Madurai"}
+      Mayiladuthurai: {ta: "மயிலாடுதுறை", en: "Mayiladuthurai"}
+      Nagapattinam: {ta: "நாகப்பட்டினம்", en: "Nagapattinam"}
+      Namakkal: {ta: "நாமக்கல்", en: "Namakkal"}
+      Nilgiris: {ta: "நீலகிரி", en: "Nilgiris"}
+      Perambalur: {ta: "பெரம்பலூர்", en: "Perambalur"}
+      Pudukkottai: {ta: "புதுக்கோட்டை", en: "Pudukkottai"}
+      Ramanathapuram: {ta: "இராமநாதபுரம்", en: "Ramanathapuram"}
+      Ranipet: {ta: "இராணிப்பேட்டை", en: "Ranipet"}
+      Salem: {ta: "சேலம்", en: "Salem"}
+      Sivaganga: {ta: "சிவகங்கை", en: "Sivaganga"}
+      Tenkasi: {ta: "தென்காசி", en: "Tenkasi"}
+      Thanjavur: {ta: "தஞ்சாவூர்", en: "Thanjavur"}
+      Theni: {ta: "தேனி", en: "Theni"}
+      Thoothukudi: {ta: "தூத்துக்குடி", en: "Thoothukudi"}
+      Tiruchirappalli: {ta: "திருச்சிராப்பள்ளி", en: "Tiruchirappalli"}
+      Tirunelveli: {ta: "திருநெல்வேலி", en: "Tirunelveli"}
+      Tirupattur: {ta: "திருப்பத்தூர்", en: "Tirupattur"}
+      Tiruppur: {ta: "திருப்பூர்", en: "Tiruppur"}
+      Tiruvallur: {ta: "திருவள்ளூர்", en: "Tiruvallur"}
+      Tiruvannamalai: {ta: "திருவண்ணாமலை", en: "Tiruvannamalai"}
+      Tiruvarur: {ta: "திருவாரூர்", en: "Tiruvarur"}
+      Vellore: {ta: "வேலூர்", en: "Vellore"}
+      Viluppuram: {ta: "விழுப்புரம்", en: "Viluppuram"}
+      Virudhunagar: {ta: "விருதுநகர்", en: "Virudhunagar"}
+
+  residence_type:
+    ask:
+      ta: "நீங்கள் கிராமத்தில் வசிக்கிறீர்களா, நகரத்தில் வசிக்கிறீர்களா?"
+      en: "Do you live in a village or in a town?"
+    options:
+      rural: {ta: "கிராமம்", en: "Village"}
+      urban: {ta: "நகரம்", en: "Town or city"}
+
+  # ----------------------------------------------------------- income, assets
+
+  annual_family_income:
+    ask:
+      ta: "உங்கள் குடும்பத்துக்கு ஒரு வருடத்தில் மொத்தம் எவ்வளவு வருமானம் வரும்? மாதம் எவ்வளவு என்று சொன்னாலும் போதும்."
+      en: "How much does your whole family earn in a year? You can say how much in a month instead."
+    unit: {ta: "ரூபாய், ஒரு வருடத்துக்கு", en: "rupees a year"}
+
+  is_income_tax_payer:
+    ask:
+      ta: "நீங்களோ உங்கள் கணவர் அல்லது மனைவியோ வருமான வரி கட்டுகிறீர்களா?"
+      en: "Do you or your husband or wife pay income tax?"
+
+  is_government_employee:
+    ask:
+      ta: "நீங்கள் அரசு வேலையில் இருக்கிறீர்களா, அல்லது அரசு வேலையிலிருந்து ஓய்வு பெற்றவரா?"
+      en: "Do you work for the government, or have you retired from a government job?"
+
+  is_class_iv_employee:
+    ask:
+      ta: "உங்கள் அரசு வேலை அலுவலக உதவியாளர் போன்ற நான்காம் நிலைப் பணியா?"
+      en: "Is your government job a Class IV post, like an office assistant?"
+
+  monthly_pension_amount:
+    ask:
+      ta: "உங்களுக்கு மாதம் எவ்வளவு அரசு ஓய்வூதியம் வருகிறது? எதுவும் இல்லையென்றால் பூஜ்ஜியம் என்று சொல்லுங்கள்."
+      en: "How much government pension do you get each month? Say zero if none."
+    unit: {ta: "ரூபாய், ஒரு மாதத்துக்கு", en: "rupees a month"}
+
+  is_registered_professional:
+    ask:
+      ta: "நீங்கள் பதிவு பெற்ற மருத்துவர், பொறியாளர், வழக்கறிஞர், ஆடிட்டர் அல்லது கட்டடக் கலைஞரா?"
+      en: "Are you a registered doctor, engineer, lawyer, chartered accountant or architect?"
+
+  held_constitutional_post:
+    ask:
+      ta: "நீங்கள் எப்போதாவது அமைச்சர், எம்.பி., எம்.எல்.ஏ., மேயர் அல்லது மாவட்ட ஊராட்சித் தலைவராக இருந்திருக்கிறீர்களா?"
+      en: "Have you ever been a minister, MP, MLA, mayor or district panchayat chairperson?"
+
+  fixed_assets_value:
+    ask:
+      ta: "உங்கள் நிலம், வீடு எல்லாம் சேர்த்து மொத்தம் எவ்வளவு மதிப்பு இருக்கும்?"
+      en: "What is the total value of your land and house together?"
+    unit: {ta: "ரூபாய்", en: "rupees"}
+
+  annual_electricity_units:
+    ask:
+      ta: "இரண்டு மாதத்துக்கு ஒருமுறை வரும் மின் கட்டணத்தில் எத்தனை யூனிட் என்று இருக்கும்?"
+      en: "Your electricity bill comes every two months. How many units does it show?"
+    unit: {ta: "யூனிட், இரண்டு மாதத்துக்கு", en: "units every two months"}
+    scale: 6
+
+  is_destitute:
+    ask:
+      ta: "உங்களுக்கு நிரந்தர வருமானம் எதுவும் இல்லாமல், உங்களைப் பார்த்துக்கொள்ளக் குடும்பத்தில் யாரும் இல்லையா?"
+      en: "Do you have no regular income, and no one in your family who can look after you?"
+
+  is_head_of_household:
+    ask:
+      ta: "ரேஷன் கார்டில் குடும்பத் தலைவராக உங்கள் பெயர் இருக்கிறதா?"
+      en: "Is your name written as head of the family on the ration card?"
+
+  land_owned_acres:
+    ask:
+      ta: "உங்கள் குடும்பத்துக்குச் சொந்தமாக எவ்வளவு விவசாய நிலம் இருக்கிறது? ஏக்கர், சென்ட் எப்படிச் சொன்னாலும் சரி. நிலம் இல்லையென்றால் பூஜ்ஜியம்."
+      en: "How much farm land does your family own? Acres or cents are both fine. Say zero if none."
+    unit: {ta: "ஏக்கர்", en: "acres"}
+
+  wetland_acres:
+    ask:
+      ta: "உங்களுக்கு நன்செய் நிலம், அதாவது பாசன வசதி உள்ள நிலம், எவ்வளவு இருக்கிறது?"
+      en: "How much wet land, with irrigation, do you own?"
+    unit: {ta: "ஏக்கர்", en: "acres"}
+
+  dryland_acres:
+    ask:
+      ta: "உங்களுக்கு புன்செய் நிலம், அதாவது மழையை நம்பிய நிலம், எவ்வளவு இருக்கிறது?"
+      en: "How much dry land, watered only by rain, do you own?"
+    unit: {ta: "ஏக்கர்", en: "acres"}
+
+  ration_card_type:
+    ask:
+      ta: "உங்களிடம் எந்த வகை ரேஷன் கார்டு இருக்கிறது?"
+      en: "What kind of ration card do you have?"
+    options:
+      aay: {ta: "அந்தியோதயா அட்டை (AAY)", en: "Antyodaya card (AAY)"}
+      phh_rice: {ta: "முன்னுரிமை அரிசி அட்டை (PHH)", en: "Priority rice card (PHH)"}
+      nphh_sugar: {ta: "சர்க்கரை அட்டை", en: "Sugar card"}
+      nphh_no_commodity: {ta: "பொருள் இல்லா அட்டை", en: "No-commodity card"}
+      none: {ta: "ரேஷன் கார்டு இல்லை", en: "No ration card"}
+
+  house_ownership:
+    ask:
+      ta: "நீங்கள் வசிக்கும் வீடு எப்படிப்பட்டது?"
+      en: "What kind of house do you live in?"
+    options:
+      owns_pucca: {ta: "சொந்த கான்கிரீட் வீடு", en: "Own concrete house"}
+      owns_kutcha: {ta: "சொந்த குடிசை அல்லது ஓட்டு வீடு", en: "Own hut or tiled house"}
+      rented: {ta: "வாடகை வீடு", en: "Rented house"}
+      homeless: {ta: "வீடு இல்லை", en: "No house"}
+
+  owns_four_wheeler:
+    ask:
+      ta: "உங்கள் குடும்பத்துக்குச் சொந்தமாக கார், ஜீப் அல்லது வேன் போன்ற நான்கு சக்கர வாகனம் இருக்கிறதா?"
+      en: "Does your family own a car, jeep, van or other four-wheeled vehicle?"
+
+  family_size:
+    ask:
+      ta: "உங்கள் ரேஷன் கார்டில் எத்தனை பேர் இருக்கிறார்கள்?"
+      en: "How many people are on your ration card?"
+    unit: {ta: "பேர்", en: "people"}
+
+  # ------------------------------------------------------------ work, study
+
+  occupation:
+    ask:
+      ta: "நீங்கள் என்ன வேலை செய்கிறீர்கள்?"
+      en: "What work do you do?"
+    options:
+      farmer: {ta: "விவசாயி", en: "Farmer"}
+      agri_labourer: {ta: "விவசாயக் கூலித் தொழிலாளி", en: "Farm labourer"}
+      fisher: {ta: "மீனவர்", en: "Fisher"}
+      weaver: {ta: "நெசவாளர்", en: "Weaver"}
+      artisan: {ta: "கைவினைஞர்", en: "Craftsperson"}
+      daily_wage: {ta: "தினக்கூலி", en: "Daily wage work"}
+      salaried_private: {ta: "தனியார் நிறுவனத்தில் சம்பளம்", en: "Private job on a salary"}
+      salaried_government: {ta: "அரசு வேலை", en: "Government job"}
+      self_employed: {ta: "சொந்தத் தொழில்", en: "Own business"}
+      student: {ta: "மாணவர்", en: "Student"}
+      homemaker: {ta: "இல்லத்தரசி", en: "Homemaker"}
+      unemployed: {ta: "வேலை இல்லை", en: "No work"}
+      retired: {ta: "ஓய்வு பெற்றவர்", en: "Retired"}
+
+  education_level:
+    ask:
+      ta: "நீங்கள் எதுவரை படித்திருக்கிறீர்கள்?"
+      en: "How far did you study?"
+    options:
+      none: {ta: "பள்ளிக்குப் போகவில்லை", en: "Did not go to school"}
+      primary: {ta: "5ஆம் வகுப்பு வரை", en: "Up to 5th class"}
+      middle: {ta: "8ஆம் வகுப்பு வரை", en: "Up to 8th class"}
+      secondary: {ta: "10ஆம் வகுப்பு", en: "10th class"}
+      higher_secondary: {ta: "12ஆம் வகுப்பு", en: "12th class"}
+      iti_diploma: {ta: "ஐ.டி.ஐ. அல்லது டிப்ளமோ", en: "ITI or diploma"}
+      undergraduate: {ta: "பட்டப்படிப்பு", en: "Degree"}
+      postgraduate: {ta: "முதுகலைப் பட்டம்", en: "Master's degree"}
+      doctorate: {ta: "முனைவர் பட்டம்", en: "PhD"}
+
+  is_first_generation_learner:
+    ask:
+      ta: "உங்கள் குடும்பத்தில் கல்லூரிக்குப் போகும் முதல் ஆள் நீங்கள்தானா?"
+      en: "Are you the first person in your family to go to college?"
+
+  studied_in_government_school:
+    ask:
+      ta: "6ஆம் வகுப்பு முதல் 12ஆம் வகுப்பு வரை அரசுப் பள்ளியிலோ அரசு உதவி பெறும் பள்ளியிலோ படித்தீர்களா?"
+      en: "Did you study from 6th to 12th class in a government or government-aided school?"
+
+  enrolled_in_higher_education:
+    ask:
+      ta: "இப்போது கல்லூரி, டிப்ளமோ அல்லது ஐ.டி.ஐ. படிப்பில் படிக்கிறீர்களா?"
+      en: "Are you studying a college degree, diploma or ITI course now?"
+
+  course_mode:
+    ask:
+      ta: "அந்தப் படிப்பை எப்படிப் படிக்கிறீர்கள்?"
+      en: "How are you studying that course?"
+    options:
+      not_applicable: {ta: "இப்போது படிக்கவில்லை", en: "Not studying now"}
+      regular: {ta: "நேரடி வகுப்பு", en: "Regular classes"}
+      distance: {ta: "தொலைதூரக் கல்வி", en: "Distance education"}
+      correspondence: {ta: "அஞ்சல் வழிக் கல்வி", en: "By correspondence"}
+      open_university: {ta: "திறந்தநிலைப் பல்கலைக்கழகம்", en: "Open university"}
+
+  previous_exam_percent:
+    ask:
+      ta: "கடைசியாக எழுதிய தேர்வில் எத்தனை சதவீதம் மதிப்பெண் வாங்கினீர்கள்?"
+      en: "What percentage did you score in your last exam?"
+    unit: {ta: "சதவீதம்", en: "percent"}
+
+  traditional_trade:
+    ask:
+      ta: "உங்கள் குடும்பம் பரம்பரையாகச் செய்யும் கைத்தொழில் ஏதாவது நீங்கள் செய்கிறீர்களா?"
+      en: "Do you work in a traditional family trade?"
+    options:
+      none: {ta: "இல்லை", en: "No"}
+      carpenter: {ta: "தச்சர்", en: "Carpenter"}
+      boat_maker: {ta: "படகு செய்பவர்", en: "Boat maker"}
+      armourer: {ta: "ஆயுதம் செய்பவர்", en: "Armourer"}
+      blacksmith: {ta: "கொல்லர்", en: "Blacksmith"}
+      hammer_toolkit_maker: {ta: "சுத்தி, கருவிகள் செய்பவர்", en: "Hammer and tool maker"}
+      locksmith: {ta: "பூட்டு செய்பவர்", en: "Locksmith"}
+      goldsmith: {ta: "பொற்கொல்லர்", en: "Goldsmith"}
+      potter: {ta: "குயவர்", en: "Potter"}
+      sculptor: {ta: "சிற்பி", en: "Sculptor or stone carver"}
+      cobbler: {ta: "செருப்புத் தைப்பவர்", en: "Cobbler"}
+      mason: {ta: "கொத்தனார்", en: "Mason"}
+      basket_weaver: {ta: "கூடை, பாய் முடைபவர்", en: "Basket or mat maker"}
+      doll_toy_maker: {ta: "பொம்மை செய்பவர்", en: "Doll and toy maker"}
+      barber: {ta: "முடி திருத்துபவர்", en: "Barber"}
+      garland_maker: {ta: "மாலை கட்டுபவர்", en: "Garland maker"}
+      washerman: {ta: "சலவைத் தொழிலாளி", en: "Washerman"}
+      tailor: {ta: "தையல்காரர்", en: "Tailor"}
+      fishing_net_maker: {ta: "மீன்பிடி வலை செய்பவர்", en: "Fishing net maker"}
+
+  availed_govt_credit_scheme_last_5y:
+    ask:
+      ta: "கடந்த 5 வருடத்தில் முத்ரா, PMEGP, ஸ்வநிதி போன்ற அரசுத் திட்டத்தில் கடன் வாங்கியிருக்கிறீர்களா?"
+      en: "In the last 5 years, have you taken a loan under a government scheme like Mudra, PMEGP or SVANidhi?"
+
+  # ------------------------------------------------------------ health, family
+
+  disability_percent:
+    ask:
+      ta: "உங்களுக்கு மாற்றுத்திறனாளி சான்றிதழ் இருந்தால், அதில் எத்தனை சதவீதம் என்று இருக்கிறது? இல்லையென்றால் பூஜ்ஜியம்."
+      en: "If you have a disability certificate, what percentage does it show? Say zero if none."
+    unit: {ta: "சதவீதம்", en: "percent"}
+
+  pregnancy_status:
+    ask:
+      ta: "நீங்கள் இப்போது கர்ப்பமாக இருக்கிறீர்களா, அல்லது குழந்தைக்குப் பால் கொடுக்கிறீர்களா?"
+      en: "Are you pregnant now, or breastfeeding a baby?"
+    options:
+      not_applicable: {ta: "இரண்டும் இல்லை", en: "Neither"}
+      pregnant: {ta: "கர்ப்பமாக இருக்கிறேன்", en: "Pregnant"}
+      lactating: {ta: "பால் கொடுக்கிறேன்", en: "Breastfeeding"}
+
+  receives_other_pension:
+    ask:
+      ta: "உங்களுக்கு ஏற்கெனவே ஏதாவது அரசு ஓய்வூதியம் வருகிறதா?"
+      en: "Do you already get any government pension?"
+
+  has_aadhaar:
+    ask:
+      ta: "உங்களிடம் ஆதார் அட்டை இருக்கிறதா?"
+      en: "Do you have an Aadhaar card?"
+
+  has_bank_account:
+    ask:
+      ta: "உங்களுக்கு வங்கிக் கணக்கு இருக்கிறதா?"
+      en: "Do you have a bank account?"
+
+  has_community_certificate:
+    ask:
+      ta: "உங்களிடம் சாதிச் சான்றிதழ் இருக்கிறதா?"
+      en: "Do you have a community certificate?"
+
+  is_bpl:
+    ask:
+      ta: "உங்கள் குடும்பம் வறுமைக் கோட்டுக்குக் கீழ் உள்ளோர் பட்டியலில் இருக்கிறதா?"
+      en: "Is your family on the Below Poverty Line list?"
+
+  is_secc_deprived_household:
+    ask:
+      ta: "2011 கணக்கெடுப்பில் உங்கள் குடும்பம் ஏழைக் குடும்பமாகப் பதிவாகியிருக்கிறதா? ஆயுஷ்மான் பாரத் பட்டியல் அதிலிருந்துதான் வருகிறது. தெரியவில்லை என்றால் விட்டுவிடலாம்."
+      en: "Was your family recorded as a poor household in the 2011 census? The Ayushman Bharat list comes from it. You can skip this if you don't know."
+
+  has_lpg_connection:
+    ask:
+      ta: "உங்கள் வீட்டில் ஏற்கெனவே கேஸ் இணைப்பு இருக்கிறதா?"
+      en: "Does your house already have a cooking gas connection?"
+
+  pregnancy_order:
+    ask:
+      ta: "இது உங்களுக்கு எத்தனையாவது பிரசவம்? முதல் குழந்தை என்றால் ஒன்று என்று சொல்லுங்கள்."
+      en: "Which pregnancy is this for you? Say one if this is your first."
+    unit: {ta: "ஆவது பிரசவம்", en: "pregnancy number"}
+
+  daughters_count:
+    ask:
+      ta: "உங்களுக்கு எத்தனை மகள்கள் இருக்கிறார்கள்?"
+      en: "How many daughters do you have?"
+    unit: {ta: "மகள்கள்", en: "daughters"}
+
+  sons_count:
+    ask:
+      ta: "உங்களுக்கு எத்தனை மகன்கள் இருக்கிறார்கள்?"
+      en: "How many sons do you have?"
+    unit: {ta: "மகன்கள்", en: "sons"}
+
+  has_undergone_family_planning:
+    ask:
+      ta: "கணவன் அல்லது மனைவியில் ஒருவர் நிரந்தரக் குடும்பக் கட்டுப்பாடு அறுவை சிகிச்சை செய்திருக்கிறீர்களா?"
+      en: "Has the husband or wife had a permanent family-planning operation?"
+
+  is_orphan:
+    ask:
+      ta: "உங்கள் அம்மா, அப்பா இருவரும் இறந்துவிட்டார்களா?"
+      en: "Have both your parents passed away?"
+
+  is_daughter_of_widow:
+    ask:
+      ta: "உங்கள் அம்மா கணவரை இழந்தவரா?"
+      en: "Is your mother a widow?"
+
+  has_upcoming_marriage:
+    ask:
+      ta: "இன்னும் சில வாரங்களில் உங்களுக்குத் திருமணம் நடக்க இருக்கிறதா?"
+      en: "Is your wedding coming up in the next few weeks?"
+
+  is_inter_caste_marriage:
+    ask:
+      ta: "இது கலப்புத் திருமணமா? இருவரில் ஒருவர் ஆதிதிராவிடரா?"
+      en: "Is this an inter-caste marriage, with one partner from a Scheduled Caste?"
+
+  years_since_desertion:
+    ask:
+      ta: "உங்கள் கணவர் உங்களைக் கைவிட்டு எத்தனை வருடம் ஆகிறது?"
+      en: "How many years ago did your husband leave you?"
+    unit: {ta: "வருடம்", en: "years"}
+
+  spouse_is_government_employee:
+    ask:
+      ta: "உங்கள் கணவர் அல்லது மனைவி அரசு வேலையில் இருக்கிறாரா, அல்லது அரசு வேலையிலிருந்து ஓய்வு பெற்றவரா?"
+      en: "Does your husband or wife work for the government, or have they retired from a government job?"
+
+  family_has_income_tax_payer:
+    ask:
+      ta: "உங்கள் குடும்பத்தில் யாராவது வருமான வரி கட்டுகிறார்களா?"
+      en: "Does anyone in your family pay income tax?"
+
+  is_covered_by_epfo_esic_nps:
+    ask:
+      ta: "உங்களுக்கு பி.எஃப்., இ.எஸ்.ஐ. அல்லது என்.பி.எஸ். ஓய்வூதியக் கணக்கு இருக்கிறதா?"
+      en: "Do you have a PF, ESI or NPS pension account?"
+
+  is_registered_unorganised_worker:
+    ask:
+      ta: "இ-ஷ்ரம் அட்டையிலோ தமிழ்நாடு தொழிலாளர் நல வாரியத்திலோ நீங்கள் பதிவு செய்திருக்கிறீர்களா?"
+      en: "Are you registered as a worker, with an e-Shram card or a Tamil Nadu welfare board?"
+
+  has_mgnrega_job_card:
+    ask:
+      ta: "உங்களிடம் நூறு நாள் வேலைத் திட்ட அட்டை இருக்கிறதா?"
+      en: "Do you have a 100-day work (MGNREGA) job card?"
+
+  has_vending_certificate:
+    ask:
+      ta: "நகராட்சி கொடுத்த தெருவோர வியாபாரச் சான்றிதழ் அல்லது பரிந்துரைக் கடிதம் உங்களிடம் இருக்கிறதா?"
+      en: "Do you have a street-vending certificate or recommendation letter from the town council?"
+
+  is_member_of_fishermen_cooperative:
+    ask:
+      ta: "நீங்கள் மீனவர் கூட்டுறவுச் சங்கத்தில் உறுப்பினரா?"
+      en: "Are you a member of a fishermen's cooperative society?"
+
+  is_srilankan_tamil_refugee:
+    ask:
+      ta: "நீங்கள் தமிழ்நாட்டு முகாமில் வசிக்கும் இலங்கைத் தமிழ் அகதியா?"
+      en: "Are you a Sri Lankan Tamil refugee living in a camp in Tamil Nadu?"
+
+  is_inter_state_migrant:
+    ask:
+      ta: "நீங்கள் வேறு மாநிலத்திலிருந்து தமிழ்நாட்டுக்கு வேலைக்கு வந்தவரா?"
+      en: "Have you come from another state to work in Tamil Nadu?"
+
+  spouse_is_differently_abled:
+    ask:
+      ta: "உங்கள் கணவர் அல்லது மனைவி, அல்லது திருமணம் செய்யப்போகிறவர், மாற்றுத்திறனாளியா?"
+      en: "Does your husband or wife, or the person you are marrying, have a disability?"
+
+  employment_exchange_registration_years:
+    ask:
+      ta: "வேலைவாய்ப்பு அலுவலகத்தில் பதிவு செய்து எத்தனை வருடம் ஆகிறது? பதிவு செய்யவில்லை என்றால் பூஜ்ஜியம்."
+      en: "How many years ago did you register at the employment exchange? Say zero if you have not."
+    unit: {ta: "வருடம்", en: "years"}

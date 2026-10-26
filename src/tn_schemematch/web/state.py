@@ -44,6 +44,11 @@ class Session:
     chat: list[dict[str, Any]] = field(default_factory=list)
     transcript: list[dict[str, Any]] = field(default_factory=list)
     last_eligible: list[str] | None = None
+    # "agent" (free conversation with the model) or "guided" (fixed questions, no model),
+    # the language the assistant speaks, and why the chat is guided if it is.
+    mode: str = "guided"
+    lang: str = "ta"
+    reason: str | None = None
     lock: Any = field(default_factory=threading.Lock, repr=False)
 
 
@@ -92,10 +97,11 @@ class AppContext:
     sessions: SessionStore
     scheme_cards: list[dict[str, Any]]
     model_name: str = "none (rules only)"
-    # Filled by a background thread; see the note on personas.summary in app.py.
-    benchmark: dict[str, Any] | None = None
-    benchmark_status: str = "not_loaded"
     _personas: Any = None
+    # The words of every question, for guided mode (kb/spec/questions.yaml).
+    questions: Any = None
+    # The usage meter the model client reports to, if any.
+    meter: Any = None
     documents: DocumentVocabulary | None = None
     vault_dir: Path = DEFAULT_VAULT_DIR
     _vault: Vault | None = None

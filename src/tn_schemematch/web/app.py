@@ -19,6 +19,7 @@ from flask import Flask, jsonify, redirect, render_template, request
 from ..attributes import default_spec
 from ..documents import MAX_UPLOAD_BYTES, load_documents
 from ..elicitation import resolving_power
+from ..guided import default_questions
 from ..interview import Interview
 from ..kb import load_kb
 from ..rules import Verdict
@@ -75,6 +76,8 @@ def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
         model_name=getattr(client, "name", None) or "none (rules only)",
         vault_dir=Path(vault_dir) if vault_dir else DEFAULT_VAULT_DIR,
         documents=documents or load_documents(spec),
+        questions=default_questions(),
+        meter=getattr(client, "meter", None),
     )
     app.extensions["schemematch"] = ctx
     app.config["MAX_QUESTIONS"] = max_questions
@@ -419,6 +422,7 @@ def _register_catalogue_api(app: Flask, ctx: AppContext) -> None:
                 "by_type": by_type, "by_sensitivity": by_sensitivity,
             },
             "attribute_usage": [{"attr": a, "n_schemes": len(ids)} for a, ids in usage],
+            "usage": ctx.meter.report() if ctx.meter is not None else None,
         })
 
     @app.get("/api/health")

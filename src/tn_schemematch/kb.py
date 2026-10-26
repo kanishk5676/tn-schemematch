@@ -108,6 +108,10 @@ class Scheme:
     verified_by: str = ""
     sources: tuple[Source, ...] = ()
     notes: str = ""
+    # Plain words for a citizen: {"ta": {"name", "what", "who", "where"}, "en": {...}}.
+    # Optional; ``plain_text`` falls back to the official wording when a field is missing.
+    plain: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
+    plain_reviewed: bool = False    # true only after a person has checked the plain text
     raw_rule: Any = None            # the un-parsed rule, for round-tripping
     source_file: Path | None = None
 
@@ -128,6 +132,27 @@ class Scheme:
     @property
     def is_verified(self) -> bool:
         return self.status == "verified"
+
+    def plain_text(self, lang: str, part: str) -> str:
+        """One plain-language field, in ``lang`` if written, else the nearest fallback.
+
+        ``name`` falls back to the Tamil or official name and ``what`` to the summary, so
+        every scheme can be listed and spoken before its plain text exists. ``who`` and
+        ``where`` have no honest fallback and come back empty.
+        """
+        for language in (lang, "en"):
+            text = (self.plain.get(language) or {}).get(part)
+            if text:
+                return text
+        if part == "name":
+            return (self.name_ta if lang == "ta" and self.name_ta else self.name)
+        if part == "what":
+            return self.summary or self.benefit_prose
+        return ""
+
+    @property
+    def has_plain(self) -> bool:
+        return bool(self.plain)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -151,6 +176,8 @@ class Scheme:
             "verified_by": self.verified_by,
             "sources": [s.to_dict() for s in self.sources],
             "notes": self.notes,
+            "plain": {lang: dict(text) for lang, text in self.plain.items()},
+            "plain_reviewed": self.plain_reviewed,
         }
 
 
@@ -237,7 +264,7 @@ class SchemeKB:
         return {k: sorted(v) for k, v in sorted(usage.items())}
 
     def coverage_report(self) -> dict[str, Any]:
-        """Summary statistics for the KB — reported in the paper's resource section."""
+        """Summary statistics for the KB, shown on /admin and by ``schemematch stats``."""
         usage = self.attribute_usage()
         by_level: dict[str, int] = {}
         by_sector: dict[str, int] = {}
@@ -265,6 +292,11 @@ class SchemeKB:
             "unused_attributes": sorted(set(self.spec.names()) - set(usage)),
             "mean_rule_nodes": round(sum(clause_counts) / max(len(clause_counts), 1), 2),
             "max_rule_nodes": max(clause_counts),
+            "plain": {
+                "written": sum(1 for scheme in self if scheme.has_plain),
+                "reviewed": sum(1 for scheme in self if scheme.has_plain and scheme.plain_reviewed),
+                "active": sum(1 for scheme in self if scheme.status != "deprecated"),
+            },
         }
 
     # -- serialization ------------------------------------------------------
@@ -287,6 +319,11 @@ class SchemeKB:
 
 
 _REQUIRED_FIELDS = ("id", "name", "level", "eligibility", "eligibility_prose")
+
+# The plain-language block a citizen hears. Every field is one short spoken sentence, and
+# ``where`` names a kind of office — never an address, which would go stale or be invented.
+PLAIN_LANGUAGES = ("ta", "en")
+PLAIN_FIELDS = ("name", "what", "who", "where")
 
 
 def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
@@ -344,6 +381,7 @@ def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
         raise KBError(f"{path.name}: {exc}") from None
 
     sources = tuple(_parse_source(s, path) for s in (raw.get("sources") or []))
+    plain, plain_reviewed = _parse_plain(raw.get("plain"), path)
     if status == "verified" and not sources:
         raise KBError(f"{path.name}: a scheme marked 'verified' must cite at least one source")
 
@@ -367,9 +405,39 @@ def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
         verified_by=str(raw.get("verified_by") or ""),
         sources=sources,
         notes=str(raw.get("notes") or "").strip(),
+        plain=plain,
+        plain_reviewed=plain_reviewed,
         raw_rule=raw["eligibility"],
         source_file=path,
     )
+
+
+def _parse_plain(raw: Any, path: Path) -> tuple[dict[str, dict[str, str]], bool]:
+    """Validate a scheme's ``plain:`` block. Unknown languages or fields are errors: a typo
+    ("wher:") would otherwise leave a citizen hearing nothing about where to go."""
+    if raw is None:
+        return {}, False
+    if not isinstance(raw, Mapping):
+        raise KBError(f"{path.name}: plain must be a mapping of language -> fields")
+    reviewed = raw.get("reviewed", False)
+    if not isinstance(reviewed, bool):
+        raise KBError(f"{path.name}: plain.reviewed must be true or false")
+    plain: dict[str, dict[str, str]] = {}
+    for lang, fields in raw.items():
+        if lang == "reviewed":
+            continue
+        if lang not in PLAIN_LANGUAGES:
+            raise KBError(f"{path.name}: plain has unknown language {lang!r}; "
+                          f"use {list(PLAIN_LANGUAGES)}")
+        if not isinstance(fields, Mapping):
+            raise KBError(f"{path.name}: plain.{lang} must be a mapping")
+        unknown = set(fields) - set(PLAIN_FIELDS)
+        if unknown:
+            raise KBError(f"{path.name}: plain.{lang} has unknown field(s) {sorted(unknown)}; "
+                          f"use {list(PLAIN_FIELDS)}")
+        plain[lang] = {key: str(value).strip() for key, value in fields.items()
+                       if value is not None and str(value).strip()}
+    return plain, reviewed
 
 
 def _parse_source(raw: Mapping[str, Any], path: Path) -> Source:

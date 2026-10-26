@@ -196,7 +196,6 @@ def test_unparseable_free_text_does_not_consume_the_question(client):
 def test_model_only_routes_refuse_without_a_model(client):
     sid = client.post("/api/session", json={"persona": "p001"}).get_json()["session_id"]
     assert client.get(f"/api/session/{sid}/explain/pm-kisan").status_code == 503
-    assert client.post(f"/api/session/{sid}/compare").status_code == 503
 
 
 def test_unknown_persona_is_404(client):
@@ -290,15 +289,3 @@ def test_explain_is_cached_per_scheme_and_language(kb, spec):
     http.get(f"/api/session/{sid}/explain/pm-kisan")
     http.get(f"/api/session/{sid}/explain/pm-kisan")
     assert len(scripted.calls) == 1
-
-
-def test_compare_separates_false_positives_from_hallucinations(kb, spec):
-    scripted = ScriptedClient(default=json.dumps(
-        {"eligible_schemes": ["pm-kisan", "kmut", "free-money-yojana"]}))
-    http = create_app(kb=kb, spec=spec, client=scripted).test_client()
-    sid = http.post("/api/session", json={"persona": "p001"}).get_json()["session_id"]
-
-    body = http.post(f"/api/session/{sid}/compare").get_json()
-    assert "free-money-yojana" in body["hallucinated"]
-    # p001 is male; the women-only scheme is a false positive the rules catch.
-    assert any(c["id"] == "kmut" for c in body["false_positives"])
