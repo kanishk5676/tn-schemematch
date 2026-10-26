@@ -81,10 +81,29 @@ function renderRuns(runs) {
   if (Object.keys(kb.by_jurisdiction || {}).length > 1) {
     bars('sector-bars', Object.entries(kb.by_jurisdiction).sort((a, b) => b[1] - a[1]));
     document.querySelector('#sector-bars').closest('.card').querySelector('h2')
-      .textContent = 'Schemes by jurisdiction';
-    return;
+      .textContent = 'State schemes by jurisdiction';
+  } else {
+    bars('sector-bars', Object.entries(kb.by_sector || {}).sort((a, b) => b[1] - a[1]).slice(0, 14));
   }
-  bars('sector-bars', Object.entries(kb.by_sector || {}).sort((a, b) => b[1] - a[1]).slice(0, 14));
   bars('attr-bars', (data.attribute_usage || []).map((row) => [row.attr, row.n_schemes]));
   renderRuns(data.runs || []);
+  renderOutcomes(await api.outcomes());
 })();
+
+function renderOutcomes(report) {
+  if (!report.schemes.length) {
+    $('outcomes').replaceChildren(el('div', { class: 'muted tiny' },
+      'No applications tracked yet. They appear here once people use “I applied” on their profile.'));
+    return;
+  }
+  const columns = ['applied', 'pending', 'approved', 'received', 'rejected', 'disagreements'];
+  const rows = report.schemes.map((row) => el('tr', { class: row.disagreements ? 'flag' : '' },
+    el('td', {}, row.name),
+    ...columns.map((c) => el('td', { class: c === 'disagreements' && row[c] ? 'err' : '' }, String(row[c]))),
+    el('td', { class: 'tiny' },
+      Object.entries(row.reasons).map(([label, n]) => `${label} (${n})`).join(', '))));
+  const head = el('thead', {}, el('tr', {}, el('th', {}, 'Scheme'),
+    ...columns.map((c) => el('th', {}, c)), el('th', {}, 'Rejection reasons')));
+  $('outcomes').replaceChildren(el('div', { class: 'scroll-x' },
+    el('table', { class: 'data' }, head, el('tbody', {}, ...rows))));
+}

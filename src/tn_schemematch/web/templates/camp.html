@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Camp — TN-SchemeMatch{% endblock %}
+{% block body %}
+<div class="split camp-page">
+  <aside class="rail">
+    <div class="card">
+      <div class="eyebrow">Camps</div>
+      <div class="people" id="camps"></div>
+      <form class="new-person" id="new-camp">
+        <input type="text" id="camp-name" placeholder="Camp name, e.g. Ward 4 screening" maxlength="80" required aria-label="Camp name">
+        <input type="text" id="camp-place" placeholder="Place (optional)" maxlength="80" aria-label="Place">
+        <input type="date" id="camp-date" aria-label="Date">
+        <button class="btn small">Start a camp</button>
+      </form>
+    </div>
+  </aside>
+
+  <div>
+    <section class="card" id="camp-empty">
+      <h2>Screen many families in a day</h2>
+      <p class="muted">Start a camp on the left. For each person, read the consent notice aloud,
+        fill the few questions that decide most schemes, and save. Each family gets a printed
+        sheet; the panchayat gets a report with no names in it.</p>
+    </section>
+
+    <div id="camp-view" hidden>
+      <section class="card profile-head">
+        <div><h1 id="camp-title"></h1><div class="tiny muted" id="camp-meta"></div></div>
+        <div class="row">
+          <a class="btn" id="camp-print" target="_blank">Print every sheet</a>
+          <a class="btn" id="camp-report">Report</a>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Add a person</h2>
+        <form id="intake" class="intake">
+          <div class="row">
+            <input type="text" id="intake-name" placeholder="Name" maxlength="80" required aria-label="Name">
+            <input type="text" id="intake-relation" placeholder="Relation (optional)" maxlength="40" aria-label="Relation">
+            <select id="intake-family" aria-label="Same family as"></select>
+          </div>
+          <div class="intake-grid" id="intake-fields"></div>
+          <details class="consent" id="consent" open>
+            <summary>Consent — read this to the person</summary>
+            <div class="row" id="consent-langs"></div>
+            <div id="consent-text"></div>
+            <label class="switch"><input type="checkbox" id="consent-given"> They agree</label>
+          </details>
+          <div class="row">
+            <button class="btn primary" id="intake-go">Save and check</button>
+            <span class="tiny" id="intake-note"></span>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Screened today <span class="tiny muted" id="queue-count"></span></h2>
+        <div id="queue"></div>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/camp.js') }}"></script>
+{% endblock %}

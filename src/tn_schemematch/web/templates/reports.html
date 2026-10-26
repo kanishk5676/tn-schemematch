@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Reports — TN-SchemeMatch{% endblock %}
+{% block body %}
+<section class="card">
+  <div class="row" style="justify-content:space-between">
+    <h1 style="margin:0">Who qualifies, and who has not applied</h1>
+    <div class="row">
+      <select id="scope" aria-label="Which people"></select>
+      <button class="btn" type="button" onclick="window.print()">Print</button>
+    </div>
+  </div>
+  <p class="muted tiny">Counts only — no names, no individual facts. Any count from 1 to 4 is
+    shown as “&lt;5” so that a small group cannot be picked out. Schemes are counted after the
+    “only one of these” rule, so a pension is not counted twice.</p>
+  <div id="report"></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}

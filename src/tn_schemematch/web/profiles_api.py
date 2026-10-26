@@ -16,7 +16,7 @@ from ..documents import (
     apply_reading,
     checklist,
     manual_reading,
-    prepare_image,
+    prepare_upload,
     read_document,
     unread_reading,
 )
@@ -42,6 +42,7 @@ def profile_payload(ctx: AppContext, pid: str) -> dict[str, Any]:
         "documents": [public_document(d) for d in vault.documents(pid)],
         "household": [p for p in vault.profiles(vault.get_profile(pid)["household"])
                       if p["id"] != pid],
+        "consent": vault.consent(pid),
     }
 
 
@@ -73,6 +74,11 @@ def register_profile_api(app: Flask, ctx: AppContext) -> None:
             return missing(body.get("household_of"))
         except VaultError as exc:
             return error("bad_profile", str(exc), 400)
+        consent = body.get("consent")
+        if isinstance(consent, dict) and consent.get("given_by") in {"self", "helper"}:
+            from ..privacy import NOTICE_VERSION
+            ctx.vault.give_consent(profile["id"], notice=NOTICE_VERSION,
+                                   lang=consent.get("lang") or "en", given_by=consent["given_by"])
         return jsonify(profile), 201
 
     @app.get("/api/profiles/<pid>")
@@ -107,7 +113,8 @@ def register_profile_api(app: Flask, ctx: AppContext) -> None:
             ctx.vault.get_profile(pid)
             if "text" in body:
                 value, source = parse_answer(ctx.spec, attr, str(body["text"]),
-                                             ctx.interview.client)
+                                             ctx.interview.client,
+                                             context=ctx.vault.profile(pid)[0])
                 if value is None:
                     return error("unparsed", "Could not read that answer.", 400)
                 evidence = str(body["text"])
@@ -160,7 +167,8 @@ def profile_checklist(ctx: AppContext, pid: str,
     if scheme_ids is None:
         result = eligibility(ctx.active, ctx.vault, pid, remember=False)
         scheme_ids = [card["id"] for card in result["eligible"]]
-    return checklist(ctx.documents, ctx.active, scheme_ids, held_types(ctx, pid))
+    state = ctx.vault.profile(pid)[0].get("state")
+    return checklist(ctx.documents, ctx.active, scheme_ids, held_types(ctx, pid), state=state)
 
 
 def register_document_api(app: Flask, ctx: AppContext) -> None:
@@ -190,6 +198,16 @@ def register_document_api(app: Flask, ctx: AppContext) -> None:
             "checklist": profile_checklist(ctx, pid),
         }
 
+    @app.get("/api/documents/<type_id>/guide")
+    def document_guide(type_id: str):
+        """How to get one document, for the person's state (``?state=TN``)."""
+        if type_id not in ctx.documents:
+            return error("bad_document_type", f"unknown document type {type_id!r}", 404)
+        guide = ctx.documents.guide(type_id, request.args.get("state"))
+        if guide is None:
+            return error("no_guide", "There is no guide for that document yet.", 404)
+        return jsonify({"type": ctx.documents[type_id].brief(), "guide": guide})
+
     @app.get("/api/documents/types")
     def document_types():
         return jsonify({"types": [t.brief() | {"evidences": list(t.evidences)}
@@ -216,7 +234,7 @@ def register_document_api(app: Flask, ctx: AppContext) -> None:
                                    or not ctx.documents[chosen].uploadable):
             return error("bad_document_type", f"unknown document type {chosen!r}", 400)
         try:
-            image, media_type, extension = prepare_image(upload.read())
+            image, media_type, extension = prepare_upload(upload.read())
         except DocumentError as exc:
             return error("bad_image", str(exc), exc.status)
 
@@ -224,7 +242,8 @@ def register_document_api(app: Flask, ctx: AppContext) -> None:
         if client is not None and request.form.get("read", "1") != "0":
             try:
                 reading = read_document(client, ctx.spec, ctx.documents, image, media_type,
-                                        holder=profile["name"], expected_type=chosen)
+                                        holder=profile["name"], expected_type=chosen,
+                                        context=ctx.vault.profile(pid)[0])
                 failure = None if reading["doc_type"] != "unknown" else \
                     "the model could not recognise the document"
             except Exception as exc:  # noqa: BLE001 — fall back to the citizen's choice

@@ -14,6 +14,12 @@
         <label class="switch tiny" id="same-household-label">
           <input type="checkbox" id="same-household" checked> same family as the selected person
         </label>
+        <details class="consent tiny" id="new-consent">
+          <summary>Consent notice</summary>
+          <div id="new-consent-text"></div>
+        </details>
+        <label class="switch tiny"><input type="checkbox" id="new-consent-given" required>
+          The person has read or heard the notice and agrees</label>
         <button class="btn small">Add person</button>
       </form>
       <p class="tiny muted" style="margin:10px 0 0">
@@ -47,16 +53,36 @@
 
       <div id="changes"></div>
 
+      <section class="card" id="family-card" hidden>
+        <h2>Your family</h2>
+        <div id="family"></div>
+      </section>
+
       <section class="card" id="schemes-card">
         <h2>Schemes for this person</h2>
         <div id="schemes"></div>
+      </section>
+
+      <section class="card" id="applications-card">
+        <h2>Applications</h2>
+        <div id="applications"></div>
+      </section>
+
+      <section class="card" id="unlock-card">
+        <h2>Unlock more</h2>
+        <div id="unlock"></div>
+      </section>
+
+      <section class="card" id="calendar-card">
+        <h2>Coming up</h2>
+        <div id="calendar"></div>
       </section>
 
       <section class="card" id="docs-card">
         <h2>Documents</h2>
         <form class="upload-row" id="upload-form">
           <select id="upload-type" aria-label="Document type"></select>
-          <input type="file" id="upload-file" accept="image/jpeg,image/png,image/webp"
+          <input type="file" id="upload-file" accept="image/jpeg,image/png,image/webp,application/pdf"
                  aria-label="Photo of the document">
           <button class="btn primary" id="upload-go">Upload</button>
         </form>
@@ -75,6 +101,11 @@
       <section class="card" id="checklist-card">
         <h2>Get ready to apply</h2>
         <div id="checklist"></div>
+      </section>
+
+      <section class="card" id="privacy-card">
+        <h2>Privacy</h2>
+        <div class="privacy" id="privacy"></div>
       </section>
 
       <section class="card" id="facts-card">

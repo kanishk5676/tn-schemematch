@@ -101,6 +101,16 @@ class AppContext:
     vault_dir: Path = DEFAULT_VAULT_DIR
     _vault: Vault | None = None
     _vault_lock: Any = field(default_factory=threading.Lock, repr=False)
+    _rejections: dict[str, Any] | None = None
+
+    @property
+    def rejections(self) -> dict[str, Any]:
+        """Why applications get rejected (kb/spec/rejections.yaml), loaded on first use."""
+        if self._rejections is None:
+            from ..applications import load_rejections
+            self._rejections = load_rejections(
+                self.spec, document_types=self.documents.types if self.documents else None)
+        return self._rejections
 
     @property
     def active(self) -> SchemeKB:

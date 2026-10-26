@@ -7,11 +7,16 @@
 import { api, el, $ } from './api.js';
 import { checklistView, sourceBadge } from './cards.js';
 import { currentProfile, rememberProfile } from './picker.js';
+import {
+  applicationsView, calendarView, familyView, moneyLine, onlyOneOf, trackButtons, unlockView,
+} from './planning.js';
 
 let pid = null;
 let people = [];
 let docTypes = {};
 let attributes = {};
+let reasons = [];
+let tracked = new Set();
 
 /* ------------------------------------------------------------- helpers */
 
@@ -53,10 +58,58 @@ async function select(id, { push = true } = {}) {
     api.profile(pid), api.eligibility(pid), api.checklist(pid)]);
   renderHead(detail);
   renderChanges(null);
+  await refreshApplications();
   renderSchemes(eligibility);
   renderDocuments(detail.documents);
   renderChecklist(checklist);
   renderFacts(detail.facts);
+  refreshOutlook(detail);
+  renderPrivacy(detail.consent);
+}
+
+/* Unlock, calendar and family depend on every fact, so they redraw after any change. */
+async function refreshOutlook(detail) {
+  const [unlock, calendar] = await Promise.all([api.unlock(pid), api.calendar(pid)]);
+  $('unlock').replaceChildren(unlockView(unlock));
+  $('calendar').replaceChildren(calendarView(calendar.items));
+  const family = (detail || await api.profile(pid)).household;
+  $('family-card').hidden = !family.length;
+  if (family.length) {
+    const household = await api.household(pid);
+    $('family').replaceChildren(familyView(household, pid, (id) => select(id)));
+  }
+}
+
+async function refreshApplications() {
+  const { applications } = await api.applications(pid);
+  tracked = new Set(applications.map((a) => a.scheme_id));
+  $('applications').replaceChildren(applicationsView(pid, applications, reasons, async () => {
+    await refreshApplications();
+    renderSchemes(await api.eligibility(pid));
+    refreshOutlook();
+  }));
+}
+
+async function renderPrivacy(consent) {
+  const box = $('privacy');
+  const log = (await api.audit(pid)).log;
+  box.replaceChildren(
+    consent
+      ? el('div', { class: 'tiny' }, el('span', { class: 'badge ok' }, 'consent recorded'),
+        ` ${new Date(consent.given_at * 1000).toLocaleDateString('en-IN')}, given by ${consent.given_by === 'self' ? 'the person' : 'a helper on their behalf'}, notice of ${consent.notice}.`)
+      : el('div', { class: 'tiny' }, el('span', { class: 'badge open' }, 'no consent recorded'), ' ',
+        el('button', { class: 'btn small', type: 'button', onclick: async () => {
+          await api.giveConsent(pid, { given_by: 'self', lang: 'en' });
+          renderPrivacy((await api.profile(pid)).consent);
+        } }, 'Record consent now')),
+    el('div', { class: 'row' },
+      el('a', { class: 'btn small', href: `/api/profiles/${pid}/export` }, 'Download all my data'),
+      el('a', { class: 'btn small', href: `/print/${pid}`, target: '_blank' }, 'Print my sheet')),
+    el('details', { class: 'tiny' }, el('summary', {}, `Who opened or changed this profile (${log.length})`),
+      el('ul', { class: 'audit' }, ...log.slice(0, 50).map((entry) => el('li', {},
+        el('span', { class: 'mono muted' }, new Date(entry.at * 1000).toLocaleString('en-IN')), ' ',
+        entry.actor, ' — ', entry.action, entry.detail ? ` (${entry.detail})` : '')))),
+    el('p', { class: 'tiny muted' }, 'To withdraw consent, delete this person (button at the top): every fact and photo goes with it.'));
 }
 
 function renderHead(detail) {
@@ -89,13 +142,19 @@ function renderSchemes(result) {
   box.replaceChildren(el('div', { class: 'row', style: 'margin-bottom:10px' },
     el('span', { class: 'badge ok' }, `${counts.eligible} eligible`),
     el('span', { class: 'badge no' }, `${counts.ineligible} ruled out`),
-    el('span', { class: 'badge open' }, `${counts.undetermined} need more answers`)));
+    el('span', { class: 'badge open' }, `${counts.undetermined} need more answers`)),
+  moneyLine(result.money) || '', onlyOneOf(result.only_one_of) || '');
 
   if (result.eligible.length) {
     box.append(el('div', { class: 'scheme-rows' }, ...result.eligible.map((s) => el('div', { class: 'scheme-row' },
       el('div', {}, el('b', {}, s.name), s.name_ta ? el('div', { class: 'ta tiny' }, s.name_ta) : null,
+        s.name_ml ? el('div', { class: 'ta tiny' }, s.name_ml) : null,
+        s.value_text ? el('div', { class: 'worth tiny' }, s.value_text) : null,
         el('div', { class: 'tiny muted' }, (s.benefit_prose || '').split('\n')[0])),
-      s.apply_url ? el('a', { class: 'btn small', href: s.apply_url, target: '_blank', rel: 'noopener' }, 'Apply →') : null))));
+      el('div', { class: 'row', style: 'gap:6px;flex-wrap:nowrap' },
+        tracked.has(s.id) ? el('span', { class: 'badge det' }, 'tracked')
+          : trackButtons(pid, s, () => refreshApplications().then(() => renderSchemes(result))),
+        s.apply_url ? el('a', { class: 'btn small', href: s.apply_url, target: '_blank', rel: 'noopener' }, 'Apply →') : null)))));
   } else {
     box.append(el('p', { class: 'muted tiny' }, 'Nothing is confirmed yet. Answer more questions in the assistant or the interview.'));
   }
@@ -139,7 +198,9 @@ function docTile(doc) {
     || ['det', doc.status];
   const tile = el('div', { class: 'doc' },
     el('a', { href: doc.file_url, target: '_blank', rel: 'noopener', class: 'thumb' },
-      el('img', { src: doc.file_url, alt: type ? type.label : 'uploaded document', loading: 'lazy' })),
+      doc.media_type === 'application/pdf'
+        ? el('span', { class: 'pdf-thumb', 'aria-label': 'PDF document' }, 'PDF')
+        : el('img', { src: doc.file_url, alt: type ? type.label : 'uploaded document', loading: 'lazy' })),
     el('div', { class: 'doc-body' },
       el('b', {}, type ? type.label : 'Unidentified document'),
       type ? el('div', { class: 'ta tiny' }, type.label_ta) : null,
@@ -187,6 +248,7 @@ async function refreshDocuments() {
   renderFacts(detail.facts);
   renderSchemes(eligibility);
   renderChanges(eligibility.changes);
+  refreshOutlook();
   loadPeople();
 }
 
@@ -259,6 +321,7 @@ function editorFor(attr, current, onDone) {
       renderSchemes(result.eligibility);
       renderChanges(result.eligibility.changes);
       api.checklist(pid).then(renderChecklist);
+      refreshOutlook();
       loadPeople();
       onDone?.();
     } catch (error) {
@@ -328,16 +391,21 @@ $('new-person').addEventListener('submit', async (event) => {
   const sameFamily = pid && $('same-household').checked;
   const created = await api.createProfile($('new-name').value.trim(), $('new-relation').value.trim(),
     sameFamily ? pid : null);
+  await api.giveConsent(created.id, { given_by: 'self', lang: 'en' });
   $('new-person').reset();
   $('same-household').checked = true;
   await select(created.id);
 });
 
 (async function init() {
-  const [types, attrs] = await Promise.all([api.documentTypes(), api.attributes()]);
+  const [types, attrs, why] = await Promise.all([
+    api.documentTypes(), api.attributes(), api.rejectionReasons()]);
+  reasons = why.reasons;
   types.types.forEach((t) => { docTypes[t.id] = t; });
   attrs.attributes.forEach((a) => { attributes[a.name] = a; });
   fillTypeSelect($('upload-type'), { includeAuto: types.can_read });
+  api.notice('en').then((notice) => $('new-consent-text').replaceChildren(
+    el('ul', {}, ...notice.points.map((point) => el('li', {}, point)))));
 
   ({ profiles: people } = await api.profiles());
   const wanted = new URLSearchParams(location.search).get('id') || currentProfile();

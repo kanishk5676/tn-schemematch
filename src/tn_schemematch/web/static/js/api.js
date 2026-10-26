@@ -9,12 +9,13 @@ async function call(url, options) {
     const error = new Error(payload?.error?.message || `request failed (${response.status})`);
     error.code = payload?.error?.code || 'http_error';
     error.status = response.status;
+    error.payload = payload;
     throw error;
   }
   return payload;
 }
 
-const post = (url, body) => call(url, {
+export const post = (url, body) => call(url, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(body || {}),
@@ -43,6 +44,30 @@ export const api = {
   recordFact: (pid, body) => post(`/api/profiles/${pid}/facts`, body),
   eligibility: (pid) => call(`/api/profiles/${pid}/eligibility`),
   checklist: (pid) => call(`/api/profiles/${pid}/checklist`),
+  unlock: (pid) => call(`/api/profiles/${pid}/unlock`),
+  household: (pid) => call(`/api/profiles/${pid}/household`),
+  calendar: (pid) => call(`/api/profiles/${pid}/calendar`),
+
+  // applications
+  applications: (pid) => call(`/api/profiles/${pid}/applications`),
+  openApplication: (pid, body) => post(`/api/profiles/${pid}/applications`, body),
+  setApplicationStatus: (pid, aid, body) =>
+    post(`/api/profiles/${pid}/applications/${aid}/status`, body),
+  deleteApplication: (pid, aid) => send('DELETE', `/api/profiles/${pid}/applications/${aid}`),
+  complaint: (pid, aid, lang) =>
+    call(`/api/profiles/${pid}/applications/${aid}/complaint?lang=${lang}`),
+  rejectionReasons: () => call('/api/rejection-reasons'),
+
+  // helpers and privacy
+  camps: () => call('/api/camps'),
+  createCamp: (body) => post('/api/camps', body),
+  camp: (cid) => call(`/api/camps/${cid}`),
+  intake: (cid, body) => post(`/api/camps/${cid}/people`, body),
+  report: (cid) => call('/api/reports/summary' + (cid ? `?camp=${cid}` : '')),
+  notice: (lang) => call(`/api/privacy/notice?lang=${lang}`),
+  giveConsent: (pid, body) => post(`/api/profiles/${pid}/consent`, body),
+  audit: (pid) => call(`/api/profiles/${pid}/audit`),
+  outcomes: () => call('/api/outcomes'),
 
   // documents
   documentTypes: () => call('/api/documents/types'),

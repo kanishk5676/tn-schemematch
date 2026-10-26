@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Helper sign-in — TN-SchemeMatch{% endblock %}
+{% block body %}
+<section class="card narrow">
+  <h1>Helper sign-in</h1>
+  <p class="muted">Camps and reports hold many families' details, so they need the helper PIN
+    this server was started with.</p>
+  <form class="row" id="login">
+    <input type="password" id="pin" inputmode="numeric" autocomplete="current-password"
+           placeholder="PIN" aria-label="Helper PIN" required>
+    <button class="btn primary">Sign in</button>
+  </form>
+  <p class="tiny" id="login-note"></p>
+</section>
+{% endblock %}
+{% block scripts %}
+<script type="module">
+  import { post, $ } from "{{ url_for('static', filename='js/api.js') }}";
+  $('login').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      await post('/api/helper/login', { pin: $('pin').value });
+      location.reload();
+    } catch (error) {
+      $('login-note').textContent = error.message;
+      $('login-note').className = 'tiny err';
+    }
+  });
+</script>
+{% endblock %}

@@ -181,6 +181,7 @@ function schemeCard(scheme, { miss = false } = {}) {
   const actions = hasModel && !miss ? [
     el('button', { class: 'btn', onclick: (e) => explain(scheme.id, 'en', e.target) }, 'Explain in plain words'),
     el('button', { class: 'btn', onclick: (e) => explain(scheme.id, 'ta', e.target) }, 'தமிழில்'),
+    el('button', { class: 'btn', onclick: (e) => explain(scheme.id, 'ml', e.target) }, 'മലയാളത്തിൽ'),
   ] : [];
   return card(scheme, { miss, actions });
 }

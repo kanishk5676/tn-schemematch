@@ -24,6 +24,8 @@ export function schemeCard(scheme, { miss = false, actions = [], verdict = null 
   const top = el('div', { class: 'scheme-top' },
     el('h3', {}, scheme.name),
     scheme.name_ta ? el('p', { class: 'ta' }, scheme.name_ta) : null,
+    scheme.name_ml ? el('p', { class: 'ta' }, scheme.name_ml) : null,
+    scheme.value_text ? el('p', { class: 'worth' }, scheme.value_text) : null,
     scheme.benefit_prose ? el('p', { class: 'benefit' }, scheme.benefit_prose.split('\n')[0]) : null);
 
   const meta = el('div', { class: 'scheme-meta' },
@@ -87,7 +89,8 @@ export function checklistView(checklist, { onUpload = null } = {}) {
         el('span', { class: 'pill' }, `needed for ${entry.n_schemes} scheme${entry.n_schemes === 1 ? '' : 's'}`),
         onUpload && uploadable.length
           ? el('button', { class: 'btn small', onclick: () => onUpload(uploadable[0].id) }, 'Upload')
-          : null));
+          : null,
+        ...(entry.how_to_get || []).slice(0, 1).map((guide) => guideView(guide))));
     });
     root.append(list);
   }
@@ -110,6 +113,22 @@ export function checklistView(checklist, { onUpload = null } = {}) {
         : null));
   });
   return root;
+}
+
+/** How to get one document: who issues it, where to go, what to bring, the steps. */
+export function guideView(guide, { open = false } = {}) {
+  return el('details', { class: 'guide', open },
+    el('summary', { class: 'tiny' }, `How to get it${guide.state ? ` in ${guide.state}` : ''}`),
+    el('dl', {},
+      el('dt', {}, 'Issued by'), el('dd', {}, guide.issued_by),
+      guide.where ? [el('dt', {}, 'Where'), el('dd', {}, guide.where)] : null,
+      guide.online ? [el('dt', {}, 'Online'), el('dd', {},
+        el('a', { href: guide.online, target: '_blank', rel: 'noopener' }, guide.online.replace(/^https:\/\/(www\.)?/, '').replace(/\/$/, '')))] : null,
+      guide.bring?.length ? [el('dt', {}, 'Bring'), el('dd', {}, guide.bring.map((b) => b.text).join(' · '))] : null,
+      guide.fee ? [el('dt', {}, 'Fee'), el('dd', {}, guide.fee)] : null),
+    guide.steps?.length ? el('ol', { class: 'steps' }, ...guide.steps.map((step) => el('li', {}, step))) : null,
+    guide.reviewed ? null : el('p', { class: 'tiny muted' },
+      'Not yet checked against the department\'s own page — confirm at the office.'));
 }
 
 export const SOURCE_LABEL = {

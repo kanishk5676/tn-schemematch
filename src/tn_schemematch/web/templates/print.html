@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scheme sheet — TN-SchemeMatch</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}">
+</head>
+<body>
+<div class="toolbar"><button onclick="window.print()">Print</button></div>
+{% for sheet in sheets %}
+<article class="sheet">
+  <header>
+    <h1>{{ sheet.person.name }}{% if sheet.person.relation %} <small>({{ sheet.person.relation }})</small>{% endif %}</h1>
+    <div class="meta">Checked on {{ sheet.date }} · TN-SchemeMatch</div>
+  </header>
+
+  {% if sheet.schemes %}
+  <section>
+    <h2>Schemes you can apply for</h2>
+    {% if sheet.money.yearly_text or sheet.money.one_time_text %}
+    <p class="worth">Worth at least {{ sheet.money.yearly_text or "—" }} a year{% if sheet.money.one_time_text %}, and {{ sheet.money.one_time_text }} one-time{% endif %}.</p>
+    {% endif %}
+    <ol class="schemes">
+    {% for s in sheet.schemes %}
+      <li><b>{{ s.name }}</b>{% if s.name_ta %} · {{ s.name_ta }}{% endif %}{% if s.name_ml %} · {{ s.name_ml }}{% endif %}
+        {% if s.value_text %}<div class="amount">{{ s.value_text }}</div>{% endif %}
+        {% if s.apply_url %}<div class="small">Apply: {{ s.apply_url }}</div>{% endif %}</li>
+    {% endfor %}
+    </ol>
+    {% for group in sheet.only_one_of %}
+    <p class="small note">Only one of these can be taken: {{ (group.keep + group.drop) | map(attribute="name") | join(", ") }}. {{ group.reasons | join(" ") }}</p>
+    {% endfor %}
+  </section>
+  {% else %}
+  <section><h2>No scheme is confirmed yet</h2>
+    <p>Answer the questions below at the office or with a helper to find out more.</p></section>
+  {% endif %}
+
+  {% if sheet.to_collect %}
+  <section>
+    <h2>Papers to collect</h2>
+    <table>
+      <tr><th>Document</th><th>Needed for</th><th>Where to get it</th></tr>
+      {% for entry in sheet.to_collect %}
+      {% set guide = entry.how_to_get[0] if entry.how_to_get else None %}
+      <tr><td><b>{{ entry.label }}</b>{% if entry.label_ta %}<br><span class="small">{{ entry.label_ta }}</span>{% endif %}</td>
+        <td>{{ entry.n_schemes }} scheme{{ "s" if entry.n_schemes != 1 }}</td>
+        <td>{% if guide %}{{ guide.issued_by }}{% if guide.where %} — {{ guide.where }}{% endif %}{% if guide.online %}<br><span class="small">{{ guide.online }}</span>{% endif %}{% else %}Ask at the office{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+  {% endif %}
+
+  {% if sheet.questions %}
+  <section>
+    <h2>Still to find out</h2>
+    <ul>{% for q in sheet.questions %}<li>{{ q.question }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+
+  {% if sheet.applications %}
+  <section>
+    <h2>Applications</h2>
+    <ul>{% for a in sheet.applications %}<li>{{ a.scheme }} — {{ a.status }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+
+  <footer>The rules are unverified draft data copied from government sources, and the
+    "where to get it" steps have not been checked against each department's page. Confirm at
+    the office before you travel.</footer>
+</article>
+{% endfor %}
+</body>
+</html>

@@ -1,0 +1,30 @@
+/* One A4 page per family, readable without colour: large type, plain rules, no chrome. */
+
+body { font: 15px/1.5 system-ui, -apple-system, "Segoe UI", "Noto Sans Tamil", "Noto Sans Malayalam", sans-serif;
+       color: #111; background: #fff; margin: 0; }
+.toolbar { padding: 12px 20px; border-bottom: 1px solid #ddd; }
+.toolbar button { font: inherit; padding: 8px 16px; }
+.sheet { max-width: 760px; margin: 0 auto; padding: 24px 20px 32px; }
+.sheet + .sheet { border-top: 2px dashed #bbb; }
+h1 { font-size: 26px; margin: 0; }
+h1 small { font-size: 16px; font-weight: 400; }
+h2 { font-size: 18px; margin: 22px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+.meta, .small { font-size: 13px; color: #444; }
+.worth { font-size: 17px; font-weight: 600; }
+.amount { font-weight: 600; }
+ol.schemes li { margin: 0 0 8px; }
+.note { border-left: 3px solid #999; padding-left: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid #ddd; }
+td { overflow-wrap: anywhere; }
+footer { margin-top: 24px; font-size: 12px; color: #555; }
+
+@media print {
+  .toolbar { display: none; }
+  .sheet { padding: 0; max-width: none; }
+  .sheet + .sheet { border: 0; break-before: page; }
+  @page { size: A4; margin: 16mm; }
+}
+@media (max-width: 520px) {
+  th:nth-child(2), td:nth-child(2) { display: none; }
+}

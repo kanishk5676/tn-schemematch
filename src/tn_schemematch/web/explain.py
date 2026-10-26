@@ -34,6 +34,8 @@ _LANGUAGES = {
     "en": "Write in plain English.",
     "ta": "Write in Tamil (தமிழ்). Use everyday spoken Tamil, not formal literary Tamil. "
           "Keep scheme names and rupee amounts as they are.",
+    "ml": "Write in Malayalam (മലയാളം). Use everyday spoken Malayalam, not formal "
+          "literary Malayalam. Keep scheme names and rupee amounts as they are.",
 }
 
 

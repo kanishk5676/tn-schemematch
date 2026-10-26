@@ -12,6 +12,8 @@ tested offline against a ``ScriptedClient``, with no key and no network.
 from __future__ import annotations
 
 import json
+import os
+import secrets
 import threading
 from pathlib import Path
 from typing import Any
@@ -28,7 +30,10 @@ from ..serialize import filter_cards, scheme_detail, scheme_summary
 from ..systems.base import LLMClient
 from ..vault import DEFAULT_VAULT_DIR, VaultError
 from .http import error as _error
+from .applications_api import register_application_api
 from .chat_api import register_chat_api
+from .helper_api import pin_hash, register_audit, register_helper_api
+from .planning_api import register_planning_api
 from .profiles_api import register_document_api, register_profile_api
 from .state import AppContext, SessionStore
 
@@ -43,6 +48,9 @@ SAMPLE_QUERIES = [
      "query": "naan widow, 55 vayasu, Madurai la irukken. enna udhavi kidaikum?"},
     {"label": "Daughter in school",
      "query": "en ponnu 12th padikkira, government school, enna scholarship irukku?"},
+    {"label": "Farm worker in Palakkad (Malayalam)",
+     "query": "njan oru karshaka thozhilali aanu, 64 vayassu, Palakkad. yellow card und. "
+              "kollam 72000 roopa varumanam. pension kittumo?"},
     {"label": "Tailor in Salem (English)",
      "query": "I am a 34 year old tailor in Salem, I have a shop but no land. "
               "What can I apply for?"},
@@ -60,9 +68,17 @@ def _personas(ctx: AppContext):
 
 def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
                max_questions: int = 15, debug: bool = False,
-               vault_dir: str | Path | None = None, documents=None) -> Flask:
+               vault_dir: str | Path | None = None, documents=None,
+               helper_pin: str | None = None) -> Flask:
     app = Flask(__name__)
     app.json.sort_keys = False
+    # Signs the helper's session cookie. A fresh one per start signs everyone out on a
+    # restart, which is the safe default; set SCHEMEMATCH_SECRET to keep sessions.
+    app.secret_key = os.environ.get("SCHEMEMATCH_SECRET") or secrets.token_hex(32)
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    pin = helper_pin if helper_pin is not None else os.environ.get("HELPER_PIN")
+    app.config["HELPER_PIN_HASH"] = pin_hash(pin) if pin else None
     # A little over the image limit, so the module's own check answers with a clear message
     # and Flask's 413 only catches what is grossly oversized.
     app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES + 512 * 1024
@@ -91,6 +107,10 @@ def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
     register_profile_api(app, ctx)
     register_document_api(app, ctx)
     register_chat_api(app, ctx)
+    register_planning_api(app, ctx)
+    register_helper_api(app, ctx)
+    register_application_api(app, ctx)
+    register_audit(app, ctx)
 
     @app.errorhandler(413)
     def too_large(_exc):
@@ -332,7 +352,7 @@ def _register_session_api(app: Flask, ctx: AppContext) -> None:
                           "This server is running rules-only, so there is no model to "
                           "phrase an explanation.", 503)
 
-        language = "ta" if request.args.get("lang") == "ta" else "en"
+        language = request.args.get("lang") if request.args.get("lang") in {"ta", "ml"} else "en"
         cache_key = f"{scheme_id}:{language}"
         if cache_key not in session.explanations:
             from .explain import explain_trace
