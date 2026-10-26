@@ -402,3 +402,49 @@ def test_no_source_is_dated_in_the_future(kb):
             assert source.retrieved <= today, (
                 f"{scheme.id} cites {source.url} as retrieved on {source.retrieved}"
             )
+
+
+# ------------------------------------------------------------- plain language
+
+
+def test_plain_text_loads_and_falls_back(kb):
+    """Plain words are optional; a scheme without them still has a name to say."""
+    with_plain = [s for s in kb if s.has_plain]
+    without = [s for s in kb if not s.has_plain]
+    assert with_plain and without
+    for scheme in with_plain:
+        for lang in ("ta", "en"):
+            assert scheme.plain_text(lang, "name") and scheme.plain_text(lang, "what")
+    bare = without[0]
+    assert bare.plain_text("ta", "name") == (bare.name_ta or bare.name)
+    assert bare.plain_text("en", "what") == (bare.summary or bare.benefit_prose)
+    assert bare.plain_text("ta", "where") == ""
+
+
+def test_plain_text_is_unreviewed_until_a_person_checks_it(kb):
+    assert not any(s.plain_reviewed for s in kb), (
+        "plain text marked reviewed: say who checked it in docs/verification-log.md")
+
+
+@pytest.mark.parametrize("block,problem", [
+    ({"fr": {"name": "x"}}, "unknown language"),
+    ({"ta": {"wher": "x"}}, "unknown field"),
+    ({"reviewed": "yes"}, "true or false"),
+])
+def test_malformed_plain_blocks_are_rejected(tmp_path, spec, block, problem):
+    import yaml
+
+    from tn_schemematch.kb import KBError, load_scheme
+    raw = yaml.safe_load(Path("kb/schemes/central/pm-kisan.yaml").read_text(encoding="utf-8"))
+    raw["plain"] = block
+    path = tmp_path / "broken.yaml"
+    path.write_text(yaml.safe_dump(raw, allow_unicode=True), encoding="utf-8")
+    with pytest.raises(KBError, match=problem):
+        load_scheme(path, spec)
+
+
+def test_the_most_common_schemes_have_plain_tamil(kb):
+    common = ["tn-old-age-pension", "tn-widow-pension", "kmut", "pm-kisan", "cmchis",
+              "pmjay", "mgnrega", "pmfby", "pudhumai-penn", "pmmvy", "mrmbs"]
+    for scheme_id in common:
+        assert (kb[scheme_id].plain.get("ta") or {}).get("what"), scheme_id

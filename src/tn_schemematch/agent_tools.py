@@ -241,8 +241,12 @@ def explain_scheme(ctx: AgentContext, scheme_id: str) -> dict[str, Any]:
         "id": scheme.id, "name": scheme.name, "name_ta": scheme.name_ta,
         "verdict": tree["verdict"], heading: decisive_clauses(tree),
         "benefit": (scheme.benefit_prose or scheme.summary).strip(),
+        # Plain words to say it in, where they have been written; prefer these to the
+        # official name when talking to the person.
+        "plain": {lang: dict(text) for lang, text in scheme.plain.items()},
         "documents": list(scheme.documents), "apply_url": scheme.apply_url,
-        "rule_status": "draft, not yet verified against the Government Order",
+        "rule_status": ("verified against the Government Order" if scheme.is_verified
+                        else "draft, not yet verified against the Government Order"),
     }
 
 

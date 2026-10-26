@@ -26,6 +26,21 @@ eligibility:
     - {attr: disability_percent, op: gte, value: 75,
        note: "the 75 percent 'severe disability' route; the 40 percent routes are condition-specific and the vocabulary has no disability-type attribute"}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "மாற்றுத்திறனாளி பராமரிப்பு உதவித்தொகை"
+    what: "மாதம் 1,500 ரூபாய்."
+    who: "75 சதவீதம் அல்லது அதற்கு மேல் மாற்றுத்திறன் உள்ளவர்கள். அறிவுசார் குறைபாடு, தசைச் சிதைவு நோய், குணமான தொழுநோய் உள்ளவர்களுக்கு 40 சதவீதத்திலிருந்தே."
+    where: "மாவட்ட மாற்றுத்திறனாளிகள் நல அலுவலகம்."
+  en:
+    name: "Maintenance allowance for severe disability"
+    what: "₹1,500 a month."
+    who: "People with 75% or more disability. For intellectual disability, muscular dystrophy or cured leprosy, from 40%."
+    where: "The district differently abled welfare office."
+
 documents:
   - National disability certificate
   - Aadhaar card

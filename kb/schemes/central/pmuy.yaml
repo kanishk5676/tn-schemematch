@@ -29,6 +29,21 @@ eligibility:
        note: "'poor household, established by a deprivation declaration' is encoded as the BPL flag; see the note below"}
     - not: {attr: has_lpg_connection, op: eq, value: true}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "உஜ்வலா இலவச கேஸ் இணைப்பு"
+    what: "வைப்புத் தொகை இல்லாமல் கேஸ் இணைப்பு; முதல் சிலிண்டரும் அடுப்பும் இலவசம்."
+    who: "வீட்டில் கேஸ் இணைப்பு இல்லாத ஏழைக் குடும்பத்தின் 18 வயதுக்கு மேற்பட்ட பெண்."
+    where: "அருகிலுள்ள கேஸ் ஏஜென்சி."
+  en:
+    name: "Ujjwala free gas connection"
+    what: "A gas connection with no deposit, with the first cylinder and a stove free."
+    who: "A woman over 18 from a poor household that has no gas connection."
+    where: "The nearest LPG gas agency."
+
 documents:
   - Aadhaar card
   - Ration card or deprivation declaration

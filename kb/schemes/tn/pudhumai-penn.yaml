@@ -37,6 +37,21 @@ eligibility:
     - {attr: course_mode, op: eq, value: regular}
     - {attr: previous_exam_percent, op: gte, value: 33}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "புதுமைப் பெண் திட்டம்"
+    what: "கல்லூரியில் படிக்கும் மாணவிக்குப் படிப்பு முடியும் வரை மாதம் 1,000 ரூபாய்."
+    who: "6 முதல் 12ஆம் வகுப்பு வரை அரசுப் பள்ளியிலோ அரசு உதவி பெறும் பள்ளியிலோ படித்து, இப்போது கல்லூரி, டிப்ளமோ அல்லது ஐ.டி.ஐ.யில் நேரடி வகுப்பில் படிக்கும் மாணவிகள்."
+    where: "நீங்கள் படிக்கும் கல்லூரி மூலம் விண்ணப்பிக்கலாம்."
+  en:
+    name: "Pudhumai Penn, for girl students"
+    what: "₹1,000 a month to a girl student until she finishes her course."
+    who: "Girls who studied 6th to 12th in a government or government-aided school and now study a degree, diploma or ITI course in regular classes."
+    where: "Apply through your college."
+
 documents:
   - Class 12 mark sheet
   - Bonafide certificate from the higher education institution

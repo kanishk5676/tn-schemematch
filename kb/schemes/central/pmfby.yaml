@@ -28,6 +28,21 @@ eligibility:
     - {attr: land_owned_acres, op: gt, value: 0}
     - {attr: age, op: gte, value: 18}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "பயிர்க் காப்பீடு"
+    what: "விளைச்சல் இழப்புக்குக் காப்பீடு. விவசாயி கட்டுவது சிறிய பங்கு மட்டுமே: காரீஃப் உணவுப் பயிருக்கு 2 சதவீதம், ரபிக்கு 1.5 சதவீதம்."
+    who: "அறிவிக்கப்பட்ட பகுதியில் அறிவிக்கப்பட்ட பயிர் விளைவிக்கும் எந்த விவசாயியும்."
+    where: "வங்கி, கூட்டுறவுச் சங்கம், பொது சேவை மையம் அல்லது வேளாண்மை அலுவலகம் — பருவத்தின் கடைசித் தேதிக்கு முன்."
+  en:
+    name: "Crop insurance (PMFBY)"
+    what: "Insurance against crop loss. The farmer pays only a small share: 2% for kharif food crops, 1.5% for rabi."
+    who: "Any farmer growing a notified crop in a notified area."
+    where: "A bank, cooperative society, common service centre or agriculture office — before the season's last date."
+
 documents:
   - Land records or tenancy agreement
   - Sowing declaration

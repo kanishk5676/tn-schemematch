@@ -29,6 +29,21 @@ eligibility:
     - {attr: house_ownership, op: in, value: [owns_kutcha, homeless],
        note: "'living in huts or unsafe dwellings', and by the same clause not owning a pucca house — the published exclusion is subsumed by this condition rather than encoded twice; see the notes"}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "கலைஞரின் கனவு இல்லம்"
+    what: "இலவசமாக 360 சதுர அடி கான்கிரீட் வீடு."
+    who: "குடிசையிலோ பாதுகாப்பில்லாத வீட்டிலோ வசிக்கும், எங்கும் சொந்தக் கான்கிரீட் வீடு இல்லாத ஏழைக் குடும்பங்கள்."
+    where: "கிராம ஊராட்சி அல்லது வட்டார வளர்ச்சி அலுவலகம்."
+  en:
+    name: "Kalaignar dream house"
+    what: "A free 360 square foot concrete house."
+    who: "Poor families living in a hut or unsafe house who own no concrete house anywhere in Tamil Nadu."
+    where: "The village panchayat or the block development office."
+
 documents:
   - Family card
   - Aadhaar card
