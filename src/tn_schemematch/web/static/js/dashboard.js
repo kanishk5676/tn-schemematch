@@ -16,10 +16,23 @@ function bars(container, rows, unit = '') {
     el('span', { class: 'n' }, `${value}${unit}`))));
 }
 
+function renderUsage(usage) {
+  if (!usage) return;
+  const today = usage.today || {};
+  const cap = usage.daily_budget_usd;
+  $('usage-card').hidden = false;
+  $('usage-stats').replaceChildren(
+    stat(`$${(today.usd || 0).toFixed(4)}`, 'spent today', cap !== null && (today.usd || 0) >= cap),
+    stat(cap === null || cap === undefined ? 'none' : `$${cap.toFixed(2)}`, 'daily cap'),
+    stat(today.calls || 0, 'model calls today'),
+    stat(`$${(usage.total_usd || 0).toFixed(4)}`, 'last 7 days'));
+}
+
 (async () => {
   const data = await api.stats();
   const kb = data.kb;
   const spec = data.spec;
+  renderUsage(data.usage);
 
   $('kb-stats').replaceChildren(
     stat(kb.n_schemes, 'schemes encoded'),
@@ -30,7 +43,8 @@ function bars(container, rows, unit = '') {
     stat(spec.n_attributes, 'attributes'),
     stat(spec.n_elicitable, 'can be asked'),
     stat(spec.n_derived, 'computed'),
-    stat(kb.mean_rule_nodes?.toFixed?.(1) ?? kb.mean_rule_nodes, 'mean rule size'));
+    stat(kb.mean_rule_nodes?.toFixed?.(1) ?? kb.mean_rule_nodes, 'mean rule size'),
+    stat(`${kb.plain?.written ?? 0}/${kb.plain?.active ?? 0}`, 'with plain Tamil text', true));
 
   if (Object.keys(kb.by_jurisdiction || {}).length > 1) {
     bars('sector-bars', Object.entries(kb.by_jurisdiction).sort((a, b) => b[1] - a[1]));

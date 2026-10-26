@@ -15,6 +15,20 @@ deterministic. The model is an upgrade that lets a person speak freely instead o
 one question at a time. When the key is missing, the credit is spent or the daily cap is
 reached, the assistant switches to guided mode and keeps going.
 
+## Status (October 2026)
+
+| Phase | State |
+|---|---|
+| 0 — remove research scaffolding | done |
+| A — works with no model; budget guard | done |
+| 1 — voice in and out | done (1b, offline speech, not started) |
+| 2 — plain-language content | 20 schemes written, none reviewed |
+| 3 — application sheet, coming up | done |
+| 4 — helper mode, PIN, photo privacy, tracker | done |
+| 5 — Tamil-first, installable, accessible | done; axe-core checks in CI |
+| 6 — verify rules | not started: 0 of 47 verified |
+| 7 — field test | not started: see `docs/field-test.md` |
+
 ## How to run this plan
 
 Do one phase per session, in order. Start each session with:

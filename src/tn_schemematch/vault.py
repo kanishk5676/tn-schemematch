@@ -21,8 +21,9 @@ Three decisions shape it:
 
 Storage is a single SQLite file under ``data/vault/`` (git-ignored) plus uploaded files
 beside it. It is local by design: nothing here leaves the machine the server runs on.
-There is no authentication — a profile id is a bearer token, like a session id — which is
-acceptable for a server bound to 127.0.0.1 and stated, not hidden, in the README.
+Who may read which profile is decided in the web layer (:mod:`.web.helper_api`): with a
+helper PIN set, a browser sees only the profiles it created unless a helper logs in.
+Photos are deleted once read unless kept on purpose (:meth:`Vault.discard_file`).
 """
 
 from __future__ import annotations
