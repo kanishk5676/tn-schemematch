@@ -1,0 +1,25 @@
+# Where a complaint about a welfare application goes (v0.1)
+#
+# A complaint draft is addressed to the scheme's own authority first (the `authority`
+# field of the scheme) and then to one of these channels: the state's for a state scheme,
+# CPGRAMS for a central one.
+#
+# STATUS: reviewed: false. Phone numbers and portals change; a person must check each one
+# against the government's own page before it is shown as fact.
+
+version: "0.1"
+updated: "2026-10-26"
+
+channels:
+  central:
+    - name: CPGRAMS — the Government of India's public grievance portal
+      online: https://pgportal.gov.in/
+      reviewed: false
+  TN:
+    - name: Mudhalvarin Mugavari — the Chief Minister's helpline
+      phone: "1100"
+      reviewed: false
+  KL:
+    - name: Chief Minister's Public Grievance Redressal Cell
+      online: https://cmo.kerala.gov.in/
+      reviewed: false

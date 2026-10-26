@@ -16,6 +16,8 @@ benefit_prose: >
   Rs 15,000 in cash with a Rs 10,000 National Savings Certificate and an 8 gram gold coin,
   or Rs 30,000 with a Rs 20,000 certificate for degree or diploma holders.
 
+value: {amount: 15000, max: 30000, per: once, note: "in cash, plus a savings certificate and a gold coin"}
+
 eligibility_prose: >
   The marriage must be between partners belonging to different communities, one of whom
   belongs to a Scheduled Caste. The bride must be at least 18 years of age and the groom

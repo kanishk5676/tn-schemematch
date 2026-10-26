@@ -18,6 +18,8 @@ benefit_prose: >
   Rs 1 lakh (first tranche) and Rs 2 lakh (second tranche) at 5 percent concessional
   interest; and incentives for digital transactions and marketing support.
 
+value: {amount: 15000, per: once, note: "toolkit incentive; training stipend and loans as well"}
+
 eligibility_prose: >
   An artisan or craftsperson working with hands and tools, engaged on a self-employment
   basis in one of the eighteen listed family-based traditional trades in the unorganised

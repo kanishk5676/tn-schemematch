@@ -16,6 +16,8 @@ benefit_prose: >
   Rs 1,000 per month (Rs 12,000 per year) by direct benefit transfer to the bank account
   of the eligible woman head of the family.
 
+value: {amount: 1000, per: month, per_family: true}
+
 eligibility_prose: >
   A woman who has completed 21 years of age and is recognised as the head of the family
   on the family card is eligible. Only one woman member per family card may receive the

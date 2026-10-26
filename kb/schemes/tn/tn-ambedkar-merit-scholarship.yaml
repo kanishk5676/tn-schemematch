@@ -15,6 +15,8 @@ summary: >
 benefit_prose: >
   Rs 60,000, Rs 50,000 and Rs 40,000 for the first, second and third ranks at state level.
 
+value: {amount: 40000, max: 60000, per: once, note: "by state rank"}
+
 eligibility_prose: >
   Awarded to the top three Scheduled Caste and Scheduled Tribe students at state level in
   the tenth or twelfth standard examinations whose family income is less than Rs 1 lakh.

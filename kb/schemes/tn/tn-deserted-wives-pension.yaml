@@ -16,6 +16,8 @@ benefit_prose: >
   Rs 1,000 per month, with the in-kind benefits attached to the state social security
   pensions.
 
+value: {amount: 1000, per: month}
+
 eligibility_prose: >
   The applicant must be a destitute woman aged at least 30 years who has been abandoned by
   her husband for a minimum of five years, or who is legally divorced or holds a legal

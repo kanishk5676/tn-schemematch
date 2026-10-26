@@ -15,6 +15,12 @@ summary: >
 benefit_prose: >
   A monthly pension at the rates set for the state social security pensions.
 
+cannot_combine_with:
+  - id: tn-deserted-wives-pension
+    reason: "The refugee pension is for those 'not in receipt of another government pension'."
+  - id: tn-unmarried-women-pension
+    reason: "The refugee pension is for those 'not in receipt of another government pension'."
+
 eligibility_prose: >
   Payable to Sri Lankan Tamil refugees resident in Tamil Nadu who are destitute and are
   not in receipt of another government pension.

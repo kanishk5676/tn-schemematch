@@ -1,0 +1,357 @@
+# How to get each document (v0.1)
+#
+# The checklist says what is missing; this file says how to get it. One entry per document
+# type in documents.yaml, with a guide per state (by jurisdiction code) and a `default` for
+# documents that work the same everywhere (Aadhaar, a bank account) or for states not
+# written yet.
+#
+# Fields, all optional except `issued_by`:
+#   issued_by : the office or authority that issues it
+#   where     : where a citizen goes to apply
+#   online    : an official portal — only a government site, never an agent's
+#   bring     : what to take; a document type id (aadhaar, ration_card…) becomes a link
+#   steps     : what happens, in order, in plain words
+#   fee, time : only when an official source states them — never estimated
+#
+# STATUS: written from general knowledge of the process, NOT from a dated source, so every
+# guide carries `reviewed: false` and the app says "confirm at the office". A person who
+# checks one against the department's page sets `reviewed: true` and adds `source:`.
+
+version: "0.1"
+updated: "2026-10-26"
+
+guides:
+
+  aadhaar:
+    default:
+      issued_by: Unique Identification Authority of India (UIDAI)
+      where: An Aadhaar enrolment centre — many banks, post offices, e-Sevai and Akshaya centres
+      online: https://uidai.gov.in/
+      bring: [proof of identity, proof of address, birth_certificate]
+      steps:
+        - Find an enrolment centre on the UIDAI site and take the papers below.
+        - Your photo, fingerprints and iris are recorded. Keep the enrolment slip.
+        - The Aadhaar comes by post, and can be downloaded once it is ready.
+      fee: A new Aadhaar is free; updates are charged.
+      reviewed: false
+
+  bank_passbook:
+    default:
+      issued_by: Any bank or post office
+      where: The nearest bank branch or post office, or the bank's agent (bank mitra) in the village
+      bring: [aadhaar, a passport-size photo]
+      steps:
+        - Ask for a basic savings account (Jan Dhan); it needs no minimum balance.
+        - Ask the bank to link the account to your Aadhaar so that government payments can reach it.
+      reviewed: false
+
+  ration_card:
+    TN:
+      issued_by: Civil Supplies and Consumer Protection Department (Taluk Supply Office)
+      where: Online on the TNPDS site, or at an e-Sevai centre
+      online: https://www.tnpds.gov.in/
+      bring: [aadhaar of every family member, proof of address]
+      steps:
+        - Apply with the Aadhaar of every family member.
+        - An officer checks the details, sometimes with a visit.
+        - The smart family card is issued at the taluk supply office.
+      reviewed: false
+    KL:
+      issued_by: Civil Supplies Department (Taluk Supply Office)
+      where: Online on the Civil Supplies portal, or at an Akshaya centre
+      online: https://civilsupplieskerala.gov.in/
+      bring: [aadhaar of every family member, proof of address, income_certificate]
+      steps:
+        - Apply with the Aadhaar of every family member.
+        - The taluk supply office checks the application and decides the card colour.
+      reviewed: false
+    default:
+      issued_by: The state's food and civil supplies department (Taluk Supply Office)
+      where: The taluk supply office, or the state's public distribution portal
+      bring: [aadhaar of every family member, proof of address]
+      reviewed: false
+
+  income_certificate:
+    TN:
+      issued_by: Tahsildar, after the Village Administrative Officer and Revenue Inspector check
+      where: An e-Sevai centre, or online through TN e-Sevai
+      online: https://tnesevai.tn.gov.in/
+      bring: [aadhaar, ration_card, salary slip or a self-declaration of income]
+      steps:
+        - Apply at an e-Sevai centre and keep the acknowledgement number.
+        - The VAO and Revenue Inspector check your income, sometimes with a visit.
+        - Download the certificate with the acknowledgement number once it is approved.
+      reviewed: false
+    KL:
+      issued_by: Village Officer
+      where: An Akshaya centre, or online through e-District
+      online: https://edistrict.kerala.gov.in/
+      bring: [aadhaar, ration_card, land tax receipt if you own land]
+      steps:
+        - Apply at an Akshaya centre or on e-District.
+        - The Village Officer checks the details and signs it digitally.
+      reviewed: false
+    default:
+      issued_by: The revenue office of your taluk (Tahsildar or Village Officer)
+      where: The taluk or village office, or the state's e-District portal
+      bring: [aadhaar, ration_card]
+      reviewed: false
+
+  community_certificate:
+    TN:
+      issued_by: Tahsildar
+      where: An e-Sevai centre, or online through TN e-Sevai
+      online: https://tnesevai.tn.gov.in/
+      bring: [aadhaar, ration_card, a parent's community certificate, transfer_certificate showing community]
+      steps:
+        - Apply at an e-Sevai centre with a parent's certificate if you have one.
+        - The VAO and Revenue Inspector check; the Tahsildar issues it.
+      reviewed: false
+    KL:
+      issued_by: Village Officer (caste certificate)
+      where: An Akshaya centre, or online through e-District
+      online: https://edistrict.kerala.gov.in/
+      bring: [aadhaar, school certificate showing caste, a parent's caste certificate]
+      reviewed: false
+    default:
+      issued_by: The revenue office of your taluk
+      where: The taluk office or the state's e-District portal
+      bring: [aadhaar, a parent's community certificate]
+      reviewed: false
+
+  birth_certificate:
+    default:
+      issued_by: Registrar of births and deaths at the local body where the birth happened
+      where: The panchayat, municipality or corporation office of the place of birth
+      bring: [hospital discharge slip, parents' aadhaar]
+      steps:
+        - Hospital births are registered by the hospital; ask the local body for a copy.
+        - A birth that was never registered can still be registered late; ask the local body how.
+      reviewed: false
+
+  transfer_certificate:
+    default:
+      issued_by: The head of the last school you attended
+      where: The school office
+      reviewed: false
+
+  mark_sheet:
+    default:
+      issued_by: The school or the examination board
+      where: The school office; a lost mark sheet is replaced by the board that held the exam
+      reviewed: false
+
+  bonafide_certificate:
+    default:
+      issued_by: The school, college or institute where you study now
+      where: The institution's office
+      steps:
+        - Ask the office for a bonafide certificate for this academic year.
+      reviewed: false
+
+  disability_certificate:
+    default:
+      issued_by: A medical board at a government hospital
+      where: The district government hospital, or online for the UDID card
+      online: https://www.swavlambancard.gov.in/
+      bring: [aadhaar, passport-size photos, your medical records]
+      steps:
+        - Apply for the UDID card online or at the hospital.
+        - The medical board examines you and records the percentage of disability.
+        - The certificate and UDID card state that percentage.
+      reviewed: false
+
+  death_certificate:
+    default:
+      issued_by: Registrar of births and deaths at the local body where the death happened
+      where: The panchayat, municipality or corporation office of that place
+      bring: [hospital record or a statement of the death, aadhaar of the person who died]
+      reviewed: false
+
+  widow_certificate:
+    TN:
+      issued_by: Tahsildar
+      where: An e-Sevai centre, or online through TN e-Sevai
+      online: https://tnesevai.tn.gov.in/
+      bring: [death_certificate of the husband, aadhaar, ration_card]
+      reviewed: false
+    KL:
+      issued_by: Village Officer
+      where: An Akshaya centre, or online through e-District
+      online: https://edistrict.kerala.gov.in/
+      bring: [death_certificate of the husband, aadhaar, ration_card]
+      reviewed: false
+    default:
+      issued_by: The revenue office of your taluk
+      where: The taluk or village office
+      bring: [death_certificate of the husband, aadhaar]
+      reviewed: false
+
+  desertion_certificate:
+    TN:
+      issued_by: Tahsildar (deserted woman certificate), or a court (decree of divorce)
+      where: An e-Sevai centre, or online through TN e-Sevai
+      online: https://tnesevai.tn.gov.in/
+      bring: [aadhaar, ration_card, marriage_certificate if you have it]
+      reviewed: false
+    default:
+      issued_by: The revenue office of your taluk, or a court
+      where: The taluk office
+      reviewed: false
+
+  unmarried_certificate:
+    TN:
+      issued_by: Tahsildar
+      where: An e-Sevai centre, or online through TN e-Sevai
+      online: https://tnesevai.tn.gov.in/
+      bring: [aadhaar, ration_card]
+      reviewed: false
+    default:
+      issued_by: The village or taluk revenue office
+      where: The village or taluk office
+      reviewed: false
+
+  destitution_certificate:
+    default:
+      issued_by: The Village Administrative Officer or Village Officer
+      where: The village office
+      bring: [aadhaar, ration_card]
+      reviewed: false
+
+  no_house_certificate:
+    default:
+      issued_by: The Village Administrative Officer or Village Officer
+      where: The village office
+      bring: [aadhaar, ration_card]
+      reviewed: false
+
+  marriage_certificate:
+    TN:
+      issued_by: Sub-Registrar
+      where: The Sub-Registrar's office of the area where the marriage took place
+      online: https://tnreginet.gov.in/
+      bring: [wedding invitation, photos of the wedding, aadhaar of both partners, age proof of both]
+      reviewed: false
+    KL:
+      issued_by: Registrar of marriages at the local body
+      where: The panchayat, municipality or corporation office where the marriage took place
+      bring: [wedding invitation, aadhaar of both partners, age proof of both]
+      reviewed: false
+    default:
+      issued_by: The registrar of marriages
+      where: The registrar's office of the area where the marriage took place
+      reviewed: false
+
+  marriage_invitation:
+    default:
+      issued_by: You — it is the printed wedding invitation
+      where: Keep one printed copy for the application
+      reviewed: false
+
+  land_record:
+    TN:
+      issued_by: Revenue Department (patta, chitta and A-register)
+      where: Online, or the taluk office for corrections
+      online: https://eservices.tn.gov.in/
+      steps:
+        - View and download the patta and chitta online with the survey number.
+        - If the name or extent is wrong, apply to the VAO or Tahsildar for a correction.
+      reviewed: false
+    KL:
+      issued_by: Village Office (land tax receipt, thandaper)
+      where: The village office, or the Revenue Department's online land tax service
+      online: https://revenue.kerala.gov.in/
+      steps:
+        - Pay the year's land tax; the receipt with the thandaper number is the usual proof.
+      reviewed: false
+    default:
+      issued_by: The state revenue department
+      where: The village or taluk office, or the state's land records portal
+      reviewed: false
+
+  family_planning_certificate:
+    default:
+      issued_by: The government hospital or primary health centre where the operation was done
+      where: That hospital's office
+      reviewed: false
+
+  mother_child_card:
+    TN:
+      issued_by: The village health nurse (VHN) or primary health centre
+      where: Register the pregnancy with the VHN or at the primary health centre
+      online: https://picme.tn.gov.in/
+      steps:
+        - Registering the pregnancy gives a PICME number and the mother and child card.
+      reviewed: false
+    default:
+      issued_by: The anganwadi worker or primary health centre
+      where: Register the pregnancy at the anganwadi or primary health centre
+      steps:
+        - Registering the pregnancy gives the mother and child protection (MCP) card.
+      reviewed: false
+
+  fishermen_id:
+    default:
+      issued_by: The state Fisheries Department
+      where: The Fisheries Department's office for your area
+      bring: [aadhaar, ration_card, a letter from your fishermen's cooperative society]
+      reviewed: false
+
+  cooperative_membership:
+    default:
+      issued_by: Your fishermen's cooperative society
+      where: The society's office
+      reviewed: false
+
+  vending_certificate:
+    default:
+      issued_by: The town vending committee of your municipality or corporation
+      where: The municipality or corporation office
+      bring: [aadhaar, a photo]
+      reviewed: false
+
+  trade_proof:
+    default:
+      issued_by: The gram panchayat head or the urban local body, who verify the trade
+      where: The panchayat or municipal office
+      reviewed: false
+
+  refugee_camp_id:
+    default:
+      issued_by: The camp office
+      where: The office of the camp you live in
+      reviewed: false
+
+  employment_exchange_card:
+    TN:
+      issued_by: District Employment Exchange
+      where: The district employment exchange, or online
+      online: https://tnvelaivaaippu.gov.in/
+      bring: [aadhaar, your education certificates]
+      steps:
+        - Register and renew the registration every three years so the years keep counting.
+      reviewed: false
+    default:
+      issued_by: District Employment Exchange
+      where: The district employment exchange
+      bring: [aadhaar, your education certificates]
+      reviewed: false
+
+  ayushman_card:
+    default:
+      issued_by: National Health Authority
+      where: Online, at a Common Service Centre, or at an empanelled hospital's help desk
+      online: https://beneficiary.nha.gov.in/
+      bring: [aadhaar, ration_card]
+      reviewed: false
+
+  welfare_fund_certificate:
+    KL:
+      issued_by: The welfare fund board you were a member of (for farm work, the Kerala Agricultural Workers' Welfare Fund Board)
+      where: The board's district office
+      bring: [aadhaar, your welfare fund membership card]
+      reviewed: false
+    default:
+      issued_by: The welfare fund board you were a member of
+      where: The board's district office
+      reviewed: false

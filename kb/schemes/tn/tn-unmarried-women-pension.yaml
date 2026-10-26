@@ -16,6 +16,8 @@ benefit_prose: >
   Rs 1,000 per month, with the in-kind benefits attached to the state social security
   pensions.
 
+value: {amount: 1000, per: month}
+
 eligibility_prose: >
   The applicant must be an unmarried destitute woman aged 50 years or above, resident in
   Tamil Nadu, whose fixed assets do not exceed Rs 50,000.

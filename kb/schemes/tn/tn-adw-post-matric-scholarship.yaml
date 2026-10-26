@@ -16,6 +16,8 @@ benefit_prose: >
   Rs 230 to Rs 550 per month for day scholars and Rs 380 to Rs 1,200 per month for
   hostellers, in addition to fee reimbursement.
 
+value: {amount: 230, max: 1200, per: month, note: "plus fee reimbursement"}
+
 eligibility_prose: >
   Scheduled Caste and Scheduled Tribe students studying beyond the tenth standard whose
   family income is up to Rs 2.50 lakh per annum.

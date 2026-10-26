@@ -1,0 +1,103 @@
+id: kl-widow-pension
+name: Indira Gandhi National Widow Pension (Kerala)
+name_ml: വിധവ പെൻഷൻ
+level: state
+jurisdiction: KL
+authority: Local Self Government Department, Government of Kerala
+sectors: [social_security, women]
+benefit_type: pension
+status: draft
+
+summary: >
+  Kerala's monthly social security pension for widows, and for women over 50 deserted by
+  their husbands for more than seven years, with a family income up to Rs 1 lakh a year.
+
+benefit_prose: >
+  Currently, the rate of major social security pensions is Rs 2,000 per month.
+
+value: {amount: 2000, per: month}
+
+cannot_combine_with:
+  - id: nsap-ignoaps
+    reason: "In Kerala the national pensions are paid as the state's social security pensions, and the panchayat checks 'whether the applicant is receiving any other social security pension'."
+  - id: nsap-igndps
+    reason: "In Kerala the national pensions are paid as the state's social security pensions, and the panchayat checks 'whether the applicant is receiving any other social security pension'."
+  - id: nsap-ignwps
+    reason: "Kerala's widow pension is the state's implementation of IGNWPS — one pension, not two."
+  - id: kl-disability-pension
+    reason: "Only one social security pension is paid; the panchayat checks 'whether the applicant is receiving any other social security pension'."
+  - id: kl-unmarried-women-pension
+    reason: "Only one social security pension is paid; the panchayat checks 'whether the applicant is receiving any other social security pension'."
+  - id: kl-agricultural-labour-pension
+    reason: "Only one social security pension is paid; the panchayat checks 'whether the applicant is receiving any other social security pension'."
+
+eligibility_prose: >
+  Widows whose husbands have passed away may be eligible. Women above 50 years of age who
+  have been abandoned by their husbands for more than 7 years may be eligible subject to
+  the prescribed conditions. The applicant should not have remarried. Family annual income
+  limit is Rs. 1,00,000. Must have permanent residence in the State of Kerala for at least
+  three years. The applicant should not be a service pensioner/family pensioner. The
+  applicant should not be an income tax payer. The applicant or the family should not own
+  more than two acres of property (not applicable to Scheduled Tribe categories).
+
+eligibility:
+  all:
+    - {attr: state, op: eq, value: KL}
+    - {attr: annual_family_income, op: lte, value: 100000, note: "'Family annual income limit is Rs. 1,00,000.'"}
+    - {attr: receives_other_pension, op: eq, value: false, note: "'should not be a service pensioner/family pensioner'"}
+    - {attr: is_income_tax_payer, op: eq, value: false}
+    - any:
+        - {attr: land_owned_acres, op: lte, value: 2}
+        - {attr: social_category, op: eq, value: ST, note: "the two-acre limit does not apply to Scheduled Tribes"}
+    - {attr: gender, op: eq, value: female}
+    - any:
+        - {attr: marital_status, op: eq, value: widowed, note: "a widow who has remarried is no longer 'widowed'"}
+        - all:
+            - {attr: marital_status, op: eq, value: deserted}
+            - {attr: age, op: gt, value: 50}
+            - {attr: years_since_desertion, op: gt, value: 7}
+
+documents:
+  - Death certificate of the husband
+  - Income certificate
+  - Proof of permanent residence in Kerala
+  - Aadhaar card
+  - Bank account passbook
+
+apply_url: https://welfarepension.lsgkerala.gov.in/
+
+sources:
+  - url: https://maravanthuruthupanchayat.lsgkerala.gov.in/en/node/98
+    title: "Social Security Pension Description — Maravanthuruthu Grama Panchayat"
+    publisher: Local Self Government Department, Government of Kerala
+    retrieved: 2026-10-26
+    note: "Primary reference for the eligibility list, with Government Order citations. Page last updated 14-Oct-2026."
+  - url: https://karukachalpanchayat.lsgkerala.gov.in/en/node/74
+    title: "Information on Welfare Pensions — Karukachal Grama Panchayat"
+    publisher: Local Self Government Department, Government of Kerala
+    retrieved: 2026-10-26
+    note: "General conditions and grounds for losing the pension. Page last updated 23-Oct-2026."
+  - url: https://thidanadpanchayat.lsgkerala.gov.in/en/node/106
+    title: "Social Security Pension — Thidanad Grama Panchayat"
+    publisher: Local Self Government Department, Government of Kerala
+    retrieved: 2026-10-26
+    note: "Income limit, the Rs 2,000 rate and the 40 percent disability threshold. Page last updated 13-Oct-2026."
+
+notes: >
+  The deserted-wife branch comes from the Karukachal page only ("Women above 50 years of
+  age who have been abandoned by their husbands for more than 7 years may be eligible
+  subject to the prescribed conditions"). A deserted woman needs a desertion certificate,
+  not a death certificate; the documents list does not yet say so.
+
+  NOT ENCODED: "Women whose husbands have been missing for more than 7 years" — the
+  vocabulary has no value for a missing husband.
+
+  CONFLICT IN THE SOURCE: the Maravanthuruthu page asks for three years' residence in its
+  eligibility list and two years' in its documents list.
+
+  MODELLING LIMITATIONS, stated rather than hidden: the residence period in Kerala, the
+  2,000 sq ft / modern-flooring house test, the "non-taxi vehicle above 1000 CC except an
+  Ambassador" test and the air-conditioner test have no attribute in the vocabulary, so
+  they are not checked. A person who fails one of them is shown as eligible here; the
+  panchayat will catch it. owns_four_wheeler is deliberately NOT used as a stand-in — it
+  would wrongly exclude small cars and Ambassadors, which the rule allows.

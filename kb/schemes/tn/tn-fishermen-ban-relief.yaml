@@ -15,6 +15,8 @@ summary: >
 benefit_prose: >
   Rs 2,000 to Rs 5,000 per family for the ban period.
 
+value: {amount: 2000, max: 5000, per: once, per_family: true, note: "for each ban period"}
+
 eligibility_prose: >
   Marine fishermen families holding a valid family ration card, resident in a coastal
   district, during the 61-day annual fishing ban period.

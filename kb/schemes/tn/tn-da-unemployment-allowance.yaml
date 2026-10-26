@@ -15,6 +15,8 @@ summary: >
 benefit_prose: >
   Rs 600 to Rs 1,000 per month depending on educational qualification.
 
+value: {amount: 600, max: 1000, per: month}
+
 eligibility_prose: >
   Payable to differently abled persons aged 18 years and above who are unemployed and have
   completed one year of registration with the employment exchange, and who are resident in

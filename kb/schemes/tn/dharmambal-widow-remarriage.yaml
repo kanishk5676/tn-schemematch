@@ -15,6 +15,8 @@ benefit_prose: >
   Rs 15,000 in cash with a Rs 10,000 National Savings Certificate and an 8 gram gold coin,
   or Rs 30,000 with a Rs 20,000 certificate for a degree or diploma holder.
 
+value: {amount: 15000, max: 30000, per: once, note: "in cash, plus a savings certificate and a gold coin"}
+
 eligibility_prose: >
   The applicant must be a widow remarrying, aged between 20 and 40 years. There is no
   income ceiling for this scheme. The application must be made within six months of the

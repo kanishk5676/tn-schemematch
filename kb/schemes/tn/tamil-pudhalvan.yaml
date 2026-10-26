@@ -16,6 +16,8 @@ benefit_prose: >
   Rs 1,000 per month by direct benefit transfer until completion of the undergraduate
   degree, diploma or ITI course.
 
+value: {amount: 1000, per: month}
+
 eligibility_prose: >
   Male students who studied classes 6 to 12 in government schools in Tamil Nadu, passed
   class 12, and are currently enrolled in an undergraduate degree, professional course,

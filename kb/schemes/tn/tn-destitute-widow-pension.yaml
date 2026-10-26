@@ -16,6 +16,14 @@ benefit_prose: >
   Rs 1,000 per month, rising to Rs 1,500 per month at age 80, along with in-kind benefits
   including free sarees at Pongal and Deepavali.
 
+value: {amount: 1000, max: 1500, per: month, note: "Rs 1,500 from age 80"}
+
+cannot_combine_with:
+  - id: nsap-ignwps
+    reason: "The Tamil Nadu widow pension requires that the applicant not receive any other government pension."
+  - id: tn-srilankan-refugee-pension
+    reason: "Both require that the applicant not receive any other government pension."
+
 eligibility_prose: >
   The applicant must be a destitute widow aged 30 years or above and resident in Tamil
   Nadu. The total value of fixed assets such as land or a house must not exceed

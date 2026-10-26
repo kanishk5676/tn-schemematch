@@ -16,6 +16,8 @@ benefit_prose: >
   Free boarding and lodging, with mats, bed sheets, uniforms and a monthly miscellaneous
   allowance of Rs 50 for school hostels and Rs 75 for college and ITI hostels.
 
+value: {amount: 50, max: 75, per: month, note: "pocket allowance; boarding and lodging are free"}
+
 eligibility_prose: >
   Scheduled Caste, Scheduled Tribe and Scheduled Caste converted to Christianity students
   from the fourth standard to college whose annual family income is up to Rs 2 lakh, and

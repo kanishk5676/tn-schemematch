@@ -16,6 +16,8 @@ benefit_prose: >
   A free concrete house of 360 square feet, at an estimated construction cost of Rs 3.50
   lakh per house.
 
+value: {amount: 350000, per: once, in_kind: true, note: "the cost of building the house"}
+
 eligibility_prose: >
   The beneficiary must reside in Tamil Nadu, be currently living in a hut or an unsafe
   dwelling, belong to the economically weaker sections, and must not own a permanent

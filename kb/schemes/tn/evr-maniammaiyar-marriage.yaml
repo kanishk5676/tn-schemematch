@@ -16,6 +16,8 @@ benefit_prose: >
   Rs 25,000 and an 8 gram gold coin for a bride who has passed the tenth standard, or
   Rs 50,000 and an 8 gram gold coin for a degree or diploma holder.
 
+value: {amount: 25000, max: 50000, per: once, note: "Rs 50,000 for a degree or diploma holder; an 8 gram gold coin as well"}
+
 eligibility_prose: >
   The bride must be the daughter of a poor widow whose annual family income does not
   exceed Rs 72,000. The bride must be at least 18 years of age and the groom at least 21.

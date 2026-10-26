@@ -16,6 +16,8 @@ benefit_prose: >
   Rs 1,500 to Rs 4,500 for fishermen and Rs 4,500 for fisherwomen, including the state
   contribution.
 
+value: {amount: 1500, max: 4500, per: once, note: "the source does not say how often it is paid"}
+
 eligibility_prose: >
   Members of fishermen and fisherwomen cooperative societies who are below the poverty
   line.

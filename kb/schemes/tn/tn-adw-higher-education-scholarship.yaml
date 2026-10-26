@@ -16,6 +16,8 @@ benefit_prose: >
   Rs 7,500 a year for degree and polytechnic students and Rs 8,000 a year for
   postgraduate and professional course students.
 
+value: {amount: 7500, max: 8000, per: year}
+
 eligibility_prose: >
   Scheduled Caste and Scheduled Tribe students enrolled in degree or professional courses
   whose family income does not exceed Rs 2 lakh per annum.

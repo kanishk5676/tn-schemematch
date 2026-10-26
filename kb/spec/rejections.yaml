@@ -1,0 +1,162 @@
+# Why an application comes back rejected (v0.1)
+#
+# The tracker asks for one of these when a person marks an application rejected. Each
+# reason says what kind of problem it is, which facts and documents it concerns, and what
+# to do next — so "rejected" becomes a next step instead of an end.
+#
+#   kind      : eligibility — the office says the person does not qualify. If the rule
+#                engine said they DID qualify, that disagreement is flagged on the admin
+#                page: either the rule is wrong or the office is, and both need a person.
+#               documents   — a paper was missing, wrong or did not match.
+#               process     — the money or the queue failed, not the person.
+#   attrs     : facts the reason is about; the page shows the rule's clause on each beside
+#               what the person said
+#   documents : document types to look at; the page links their how-to-get guides
+#   appeal    : whether a written complaint is a sensible next step
+#
+# STATUS: written from common rejection patterns, not from a dated source — reviewed: false.
+
+version: "0.1"
+updated: "2026-10-26"
+reviewed: false
+
+reasons:
+
+  income_above_limit:
+    label: Income is above the limit
+    label_ta: வருமானம் வரம்பை விட அதிகம்
+    label_ml: വരുമാനം പരിധിക്ക് മുകളിൽ
+    kind: eligibility
+    attrs: [annual_family_income]
+    documents: [income_certificate]
+    appeal: true
+    next:
+      - Check the income printed on your income certificate. If it is wrong, apply for a corrected one.
+      - If the certificate is below the scheme's limit, ask the office in writing which limit and which figure they used.
+
+  age_not_met:
+    label: Age does not meet the rule, or was not proven
+    label_ta: வயது தகுதி இல்லை / நிரூபிக்கப்படவில்லை
+    label_ml: പ്രായം യോഗ്യതയില്ല / തെളിയിച്ചില്ല
+    kind: eligibility
+    attrs: [age]
+    documents: [aadhaar, birth_certificate, transfer_certificate]
+    appeal: true
+    next:
+      - Check that the date of birth is the same on your Aadhaar and your other papers.
+      - Take a birth certificate or school transfer certificate as a second proof of age.
+
+  owns_too_much:
+    label: Owns land, a house, a vehicle or other assets above the limit
+    label_ta: சொத்து வரம்பை விட அதிகம்
+    label_ml: സ്വത്ത് പരിധിക്ക് മുകളിൽ
+    kind: eligibility
+    attrs: [fixed_assets_value, land_owned_acres, house_ownership, owns_four_wheeler]
+    documents: [land_record]
+    appeal: true
+    next:
+      - Ask which property the office counted. Land in someone else's name, or sold, may still be in old records.
+      - If the land record is out of date, apply to correct it, then apply again.
+
+  already_receives_pension:
+    label: Already receives another government pension
+    label_ta: ஏற்கனவே வேறு அரசு ஓய்வூதியம் பெறுகிறார்
+    label_ml: മറ്റൊരു സർക്കാർ പെൻഷൻ ഇതിനകം ലഭിക്കുന്നു
+    kind: eligibility
+    attrs: [receives_other_pension, monthly_pension_amount]
+    appeal: false
+    next:
+      - Only one social security pension is paid at a time. Keep the one that pays more.
+
+  not_resident:
+    label: Not a resident of the state or area
+    label_ta: மாநிலத்தில் வசிப்பவர் அல்ல
+    label_ml: സംസ്ഥാനത്തെ താമസക്കാരനല്ല
+    kind: eligibility
+    attrs: [state, district]
+    documents: [aadhaar, ration_card]
+    appeal: true
+    next:
+      - Make sure your Aadhaar and family card show your current address.
+
+  not_in_list:
+    label: Name not in the beneficiary or poverty list
+    label_ta: பயனாளர் / வறுமைப் பட்டியலில் பெயர் இல்லை
+    label_ml: ഗുണഭോക്തൃ / ദാരിദ്ര്യ പട്ടികയിൽ പേരില്ല
+    kind: eligibility
+    attrs: [is_bpl, is_secc_deprived_household, ration_card_type]
+    documents: [ration_card]
+    appeal: true
+    next:
+      - Ask the panchayat or taluk office how to be added to the list, and when it is next revised.
+
+  category_not_proven:
+    label: Community or category not proven
+    label_ta: சாதி / பிரிவு நிரூபிக்கப்படவில்லை
+    label_ml: ജാതി / വിഭാഗം തെളിയിച്ചില്ല
+    kind: documents
+    attrs: [social_category]
+    documents: [community_certificate]
+    appeal: false
+    next:
+      - Get a community certificate in your own name and apply again.
+
+  documents_missing:
+    label: A document was missing
+    label_ta: ஆவணம் இல்லை
+    label_ml: രേഖ ഇല്ല
+    kind: documents
+    appeal: false
+    next:
+      - Ask the office to write down which document was missing.
+      - Collect it — the checklist on your profile shows how — and apply again.
+
+  name_mismatch:
+    label: Name or details differ between documents
+    label_ta: ஆவணங்களில் பெயர் / விவரங்கள் வேறுபடுகின்றன
+    label_ml: രേഖകളിൽ പേര് / വിവരങ്ങൾ വ്യത്യസ്തം
+    kind: documents
+    documents: [aadhaar, bank_passbook, ration_card]
+    appeal: false
+    next:
+      - Find which document has the different spelling or date, and correct that one to match your Aadhaar.
+      - Aadhaar details are corrected at an Aadhaar centre; a bank corrects its own records.
+
+  bank_not_linked:
+    label: Money could not be paid — bank account not linked to Aadhaar
+    label_ta: வங்கிக் கணக்கு ஆதாருடன் இணைக்கப்படவில்லை
+    label_ml: ബാങ്ക് അക്കൗണ്ട് ആധാറുമായി ബന്ധിപ്പിച്ചിട്ടില്ല
+    kind: process
+    attrs: [has_bank_account]
+    documents: [bank_passbook]
+    appeal: false
+    next:
+      - Ask your bank to link (seed) your Aadhaar to the account for government payments.
+      - Then ask the scheme office to send the payment again.
+
+  quota_or_funds:
+    label: No funds or the quota is full this year
+    label_ta: இந்த ஆண்டு நிதி / ஒதுக்கீடு இல்லை
+    label_ml: ഈ വർഷം ഫണ്ട് / ക്വാട്ട ഇല്ല
+    kind: process
+    appeal: true
+    next:
+      - Ask whether your application stays on the waiting list or must be made again next year.
+
+  no_reason_given:
+    label: No reason was given
+    label_ta: காரணம் சொல்லப்படவில்லை
+    label_ml: കാരണം പറഞ്ഞിട്ടില്ല
+    kind: process
+    appeal: true
+    next:
+      - You can ask for the reason in writing. A complaint can ask for it.
+
+  other:
+    label: Another reason
+    label_ta: வேறு காரணம்
+    label_ml: മറ്റൊരു കാരണം
+    kind: process
+    appeal: true
+    next:
+      - Write down exactly what the office said, in the note.

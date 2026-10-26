@@ -17,6 +17,8 @@ benefit_prose: >
   Power Finance, released with accrued interest at age 18 on completion of the SSLC
   examination.
 
+value: {amount: 25000, per: once, note: "for each of the two girls; released with interest at 18"}
+
 eligibility_prose: >
   The family must have two girl children and no male child, both born on or after
   1 August 2011, and a parent must have undergone a family planning procedure. The annual

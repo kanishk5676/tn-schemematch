@@ -17,6 +17,12 @@ benefit_prose: >
   nutrition kits worth Rs 2,000. Part of the amount is contributed by the central
   government under Pradhan Mantri Matru Vandana Yojana.
 
+value: {amount: 18000, per: once, note: "per pregnancy, in instalments and nutrition kits"}
+
+cannot_combine_with:
+  - id: pmmvy
+    reason: "Part of the MRMBS amount is the central contribution under PMMVY, so it is the same money."
+
 eligibility_prose: >
   Pregnant women resident in Tamil Nadu who register the pregnancy through the Pregnancy
   and Infant Cohort Monitoring and Evaluation portal or at an Anganwadi centre are

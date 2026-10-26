@@ -7,7 +7,7 @@
 # Every type declares:
 #   kind      : document (something you can photograph and upload) | action (something you
 #               do or fill in at the office — shown on the checklist, never uploaded)
-#   label     : English name;  label_ta : Tamil name
+#   label     : English name;  label_ta / label_ml : Tamil and Malayalam names
 #   evidences : attributes a reader may take FROM this document. A fact the model reports
 #               for any other attribute is discarded — a ration card cannot prove caste.
 #   implies   : facts that follow from merely holding the document, applied with no model
@@ -21,7 +21,7 @@
 # fails the suite, so adding a scheme means mapping its documents here.
 
 version: "0.1"
-updated: "2026-10-25"
+updated: "2026-10-26"
 
 types:
 
@@ -29,6 +29,7 @@ types:
     kind: document
     label: Aadhaar card
     label_ta: ஆதார் அட்டை
+    label_ml: ആധാർ കാർഡ്
     evidences: [age, gender, district, state]
     implies: {has_aadhaar: true}
     matches:
@@ -36,11 +37,13 @@ types:
       - Age proof
       - Proof of identity and address
       - Proof of residence in the gram panchayat
+      - Proof of permanent residence in Kerala
 
   bank_passbook:
     kind: document
     label: Bank passbook
     label_ta: வங்கிக் கணக்குப் புத்தகம்
+    label_ml: ബാങ്ക് പാസ്ബുക്ക്
     evidences: []
     implies: {has_bank_account: true}
     matches:
@@ -53,6 +56,7 @@ types:
     kind: document
     label: Ration / family card
     label_ta: குடும்ப அட்டை
+    label_ml: റേഷൻ കാർഡ്
     evidences: [ration_card_type, family_size, district, state]
     implies: {}
     matches:
@@ -68,12 +72,14 @@ types:
       - Ration card or family identification
       - Ration card or deprivation declaration
       - Proof of identity and address
+      - Proof of permanent residence in Kerala
       - Proof of residence in the gram panchayat
 
   income_certificate:
     kind: document
     label: Income certificate
     label_ta: வருமானச் சான்றிதழ்
+    label_ml: വരുമാന സർട്ടിഫിക്കറ്റ്
     evidences: [annual_family_income, fixed_assets_value, district]
     implies: {}
     matches:
@@ -87,6 +93,7 @@ types:
     kind: document
     label: Community certificate
     label_ta: சாதிச் சான்றிதழ்
+    label_ml: ജാതി സർട്ടിഫിക്കറ്റ്
     evidences: [social_category, religion]
     implies: {has_community_certificate: true}
     matches:
@@ -99,6 +106,7 @@ types:
     kind: document
     label: Birth certificate
     label_ta: பிறப்புச் சான்றிதழ்
+    label_ml: ജനന സർട്ടിഫിക്കറ്റ്
     # A birth certificate is usually a child's, so it proves nothing about the applicant.
     evidences: []
     implies: {}
@@ -111,6 +119,7 @@ types:
     kind: document
     label: School transfer certificate
     label_ta: மாற்றுச் சான்றிதழ் (TC)
+    label_ml: ടി.സി. (വിടുതൽ സർട്ടിഫിക്കറ്റ്)
     evidences: [age, education_level, studied_in_government_school]
     implies: {}
     matches:
@@ -121,6 +130,7 @@ types:
     kind: document
     label: Mark sheet / educational certificate
     label_ta: மதிப்பெண் சான்றிதழ்
+    label_ml: മാർക്ക് ലിസ്റ്റ്
     evidences: [previous_exam_percent, education_level, studied_in_government_school]
     implies: {}
     matches:
@@ -134,6 +144,7 @@ types:
     kind: document
     label: Bonafide certificate
     label_ta: கல்வி நிலையச் சான்றிதழ் (Bonafide)
+    label_ml: ബോണഫൈഡ് സർട്ടിഫിക്കറ്റ്
     evidences: [enrolled_in_higher_education, course_mode]
     implies: {}
     matches:
@@ -145,6 +156,7 @@ types:
     kind: document
     label: Disability certificate
     label_ta: மாற்றுத்திறனாளிச் சான்றிதழ்
+    label_ml: ഭിന്നശേഷി സർട്ടിഫിക്കറ്റ്
     evidences: [disability_percent]
     implies: {}
     matches:
@@ -155,6 +167,7 @@ types:
     kind: document
     label: Death certificate
     label_ta: இறப்புச் சான்றிதழ்
+    label_ml: മരണ സർട്ടിഫിക്കറ്റ്
     # Always someone else's — it cannot state a fact about the applicant.
     evidences: []
     implies: {}
@@ -166,6 +179,7 @@ types:
     kind: document
     label: Widow certificate
     label_ta: விதவைச் சான்றிதழ்
+    label_ml: വിധവ സർട്ടിഫിക്കറ്റ്
     evidences: [marital_status]
     implies: {}
     matches:
@@ -176,6 +190,7 @@ types:
     kind: document
     label: Desertion certificate or divorce decree
     label_ta: கைவிடப்பட்டவர் சான்றிதழ்
+    label_ml: ഉപേക്ഷിക്കപ്പെട്ടവർക്കുള്ള സർട്ടിഫിക്കറ്റ്
     evidences: [marital_status, years_since_desertion]
     implies: {}
     matches:
@@ -185,6 +200,7 @@ types:
     kind: document
     label: Unmarried status certificate
     label_ta: திருமணமாகாதவர் சான்றிதழ்
+    label_ml: അവിവാഹിത സർട്ടിഫിക്കറ്റ്
     evidences: [marital_status]
     implies: {}
     matches:
@@ -194,6 +210,7 @@ types:
     kind: document
     label: Destitution certificate
     label_ta: ஆதரவற்றவர் சான்றிதழ்
+    label_ml: അശരണ സർട്ടിഫിക്കറ്റ്
     evidences: [is_destitute]
     implies: {}
     matches:
@@ -203,6 +220,7 @@ types:
     kind: document
     label: No-house certificate or affidavit
     label_ta: வீடு இல்லாச் சான்றிதழ்
+    label_ml: ഭവനരഹിത സർട്ടിഫിക്കറ്റ്
     evidences: [house_ownership]
     implies: {}
     matches:
@@ -214,6 +232,7 @@ types:
     kind: document
     label: Marriage registration certificate
     label_ta: திருமணப் பதிவுச் சான்றிதழ்
+    label_ml: വിവാഹ സർട്ടിഫിക്കറ്റ്
     evidences: [marital_status]
     implies: {}
     matches:
@@ -225,6 +244,7 @@ types:
     kind: document
     label: Marriage invitation
     label_ta: திருமண அழைப்பிதழ்
+    label_ml: വിവാഹ ക്ഷണക്കത്ത്
     evidences: [has_upcoming_marriage]
     implies: {}
     matches:
@@ -236,6 +256,7 @@ types:
     kind: document
     label: Land record (patta / chitta)
     label_ta: பட்டா / சிட்டா
+    label_ml: ഭൂനികുതി രസീത് / ഭൂരേഖ
     evidences: [land_owned_acres, wetland_acres, dryland_acres, district]
     implies: {}
     matches:
@@ -247,6 +268,7 @@ types:
     kind: document
     label: Family planning certificate
     label_ta: குடும்பக் கட்டுப்பாடு சான்றிதழ்
+    label_ml: കുടുംബാസൂത്രണ സർട്ടിഫിക്കറ്റ്
     evidences: []
     implies: {has_undergone_family_planning: true}
     matches:
@@ -256,6 +278,7 @@ types:
     kind: document
     label: Mother and child protection card
     label_ta: தாய் சேய் நல அட்டை
+    label_ml: അമ്മയും കുഞ്ഞും കാർഡ് (MCP)
     evidences: [pregnancy_status, pregnancy_order]
     implies: {}
     matches:
@@ -268,6 +291,7 @@ types:
     kind: document
     label: Fishermen identity card
     label_ta: மீனவர் அடையாள அட்டை
+    label_ml: മത്സ്യത്തൊഴിലാളി തിരിച്ചറിയൽ കാർഡ്
     evidences: [occupation, district]
     implies: {}
     matches:
@@ -277,6 +301,7 @@ types:
     kind: document
     label: Cooperative society membership certificate
     label_ta: கூட்டுறவுச் சங்க உறுப்பினர் சான்றிதழ்
+    label_ml: സഹകരണ സംഘം അംഗത്വ സർട്ടിഫിക്കറ്റ്
     evidences: [is_member_of_fishermen_cooperative]
     implies: {}
     matches:
@@ -286,6 +311,7 @@ types:
     kind: document
     label: Vending certificate or recommendation letter
     label_ta: சாலையோர வியாபாரச் சான்றிதழ்
+    label_ml: വഴിയോര കച്ചവട സർട്ടിഫിക്കറ്റ്
     evidences: [has_vending_certificate]
     implies: {}
     matches:
@@ -295,6 +321,7 @@ types:
     kind: document
     label: Proof of trade
     label_ta: தொழில் சான்று
+    label_ml: തൊഴിൽ തെളിവ്
     evidences: [traditional_trade, occupation]
     implies: {}
     matches:
@@ -304,6 +331,7 @@ types:
     kind: document
     label: Refugee camp identity card
     label_ta: முகாம் அடையாள அட்டை
+    label_ml: അഭയാർത്ഥി ക്യാമ്പ് തിരിച്ചറിയൽ കാർഡ്
     evidences: [is_srilankan_tamil_refugee, district]
     implies: {}
     matches:
@@ -313,6 +341,7 @@ types:
     kind: document
     label: Employment exchange registration card
     label_ta: வேலைவாய்ப்பு அலுவலகப் பதிவு அட்டை
+    label_ml: എംപ്ലോയ്മെന്റ് എക്സ്ചേഞ്ച് രജിസ്ട്രേഷൻ കാർഡ്
     evidences: [employment_exchange_registration_years, education_level]
     implies: {}
     matches:
@@ -322,10 +351,21 @@ types:
     kind: document
     label: Ayushman card
     label_ta: ஆயுஷ்மான் அட்டை
+    label_ml: ആയുഷ്മാൻ കാർഡ്
     evidences: []
     implies: {}
     matches:
       - Ayushman card
+
+  welfare_fund_certificate:
+    kind: document
+    label: Welfare fund board certificate
+    label_ta: நல வாரியச் சான்றிதழ்
+    label_ml: ക്ഷേമനിധി ബോർഡ് സർട്ടിഫിക്കറ്റ്
+    evidences: []
+    implies: {}
+    matches:
+      - Certificate of release from the Agricultural Labour Welfare Fund
 
   # ------------------------------------------------------------------ actions
   # Not uploads. They stay on the checklist so the citizen arrives at the office knowing
@@ -335,6 +375,7 @@ types:
     kind: action
     label: Done at the office or online
     label_ta: அலுவலகத்தில் / இணையத்தில் செய்ய வேண்டியவை
+    label_ml: ഓഫീസിലോ ഓൺലൈനിലോ ചെയ്യേണ്ടവ
     evidences: []
     implies: {}
     matches:

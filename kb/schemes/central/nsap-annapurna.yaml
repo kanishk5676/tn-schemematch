@@ -14,6 +14,10 @@ summary: >
 benefit_prose: >
   10 kg of food grains per month, free of cost.
 
+cannot_combine_with:
+  - id: nsap-ignoaps
+    reason: "Annapurna is for older people who qualify for IGNOAPS but are not covered by it."
+
 eligibility_prose: >
   Senior citizens aged 65 years or above who, though eligible for the Indira Gandhi
   National Old Age Pension Scheme, are not receiving that pension.

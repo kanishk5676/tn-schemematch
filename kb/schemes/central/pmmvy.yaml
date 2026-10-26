@@ -15,6 +15,8 @@ benefit_prose: >
   Rs 5,000 in two instalments for the first child, and Rs 6,000 in a single instalment
   for a second child who is a girl, paid by direct benefit transfer.
 
+value: {amount: 5000, max: 6000, per: once}
+
 eligibility_prose: >
   The beneficiary must be between 18 years 7 months and 55 years of age at the time of
   childbirth. The benefit is available for the first child, and for the second child only

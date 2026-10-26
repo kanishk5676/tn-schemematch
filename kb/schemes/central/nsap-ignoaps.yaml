@@ -15,6 +15,8 @@ benefit_prose: >
   Rs 200 per month of central assistance for beneficiaries aged 60 to 79, rising to
   Rs 500 per month at 80. States routinely add a contribution of their own on top.
 
+value: {amount: 200, max: 500, per: month, note: "central share; states add their own"}
+
 eligibility_prose: >
   All individuals aged 60 years and above who live below the poverty line, as identified
   by the criteria prescribed by the Government of India, are eligible to apply.

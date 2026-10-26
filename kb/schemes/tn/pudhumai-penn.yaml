@@ -18,6 +18,8 @@ benefit_prose: >
   Rs 1,000 per month by direct benefit transfer, from enrolment in higher education until
   the uninterrupted completion of the undergraduate degree, diploma or ITI course.
 
+value: {amount: 1000, per: month}
+
 eligibility_prose: >
   Girl students who studied classes 6 to 12 in government schools, and from 15 July 2024
   also in government-aided schools, in Tamil Nadu, and who have passed class 12 and are

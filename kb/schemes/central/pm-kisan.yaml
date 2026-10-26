@@ -16,6 +16,8 @@ benefit_prose: >
   Rs 6,000 per year per landholding farmer family, transferred as three instalments of
   Rs 2,000 by direct benefit transfer.
 
+value: {amount: 6000, per: year, per_family: true}
+
 eligibility_prose: >
   All landholding farmer families — defined as a family comprising husband, wife and
   minor children that owns cultivable land in the records of the concerned State or

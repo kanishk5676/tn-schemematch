@@ -44,3 +44,7 @@ log and are exempt; their provenance is recorded in
 | 2026-09-08 | https://pmaymis.gov.in/ | 200 OK — woman-ownership clause only, no income thresholds | (pmay-u probe) |
 | 2026-09-08 | https://pmvishwakarma.gov.in/ | 200 OK — confirms the existing pm-vishwakarma encoding | (pm-vishwakarma) |
 | 2026-09-08 | https://pmkisan.gov.in/ | 200 OK — confirms the existing pm-kisan exclusions | (pm-kisan) |
+| 2026-10-26 | https://welfarepension.lsgkerala.gov.in/ | TLS: certificate rejected — fell back to the local bodies' own pages | kl-* pensions (apply_url only) |
+| 2026-10-26 | https://maravanthuruthupanchayat.lsgkerala.gov.in/en/node/98 | 200 OK — eligibility lists with G.O. citations extracted | kl-old-age-pension, kl-widow-pension, kl-disability-pension, kl-agricultural-labour-pension, kl-unmarried-women-pension |
+| 2026-10-26 | https://karukachalpanchayat.lsgkerala.gov.in/en/node/74 | 200 OK — general conditions, widow and deserted-wife clauses | same five |
+| 2026-10-26 | https://thidanadpanchayat.lsgkerala.gov.in/en/node/106 | 200 OK — Rs 1,00,000 limit, Rs 2,000 rate, 40% disability | same five |

@@ -16,6 +16,8 @@ benefit_prose: >
   low-performing states, Rs 1,400 rural and Rs 1,000 urban. A woman below the poverty line
   delivering at home receives Rs 500.
 
+value: {amount: 600, max: 1400, per: once, note: "depends on the state and on rural or urban delivery"}
+
 eligibility_prose: >
   In Low Performing States all pregnant women delivering in government health facilities
   are eligible for the cash benefit. In High Performing States the benefit is restricted to

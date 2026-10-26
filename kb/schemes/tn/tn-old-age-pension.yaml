@@ -16,6 +16,20 @@ benefit_prose: >
   Rs 1,000 per month, with in-kind benefits including free sarees or dhotis at Pongal and
   Deepavali and subsidised rice.
 
+value: {amount: 1000, per: month}
+
+cannot_combine_with:
+  - id: nsap-ignoaps
+    reason: "The Tamil Nadu pension is the state's implementation of IGNOAPS, 'administered by the state with central assistance' — one pension, not two."
+  - id: tn-widow-pension
+    reason: "'Widows aged 60 and above should instead apply under the Old Age Pension Scheme.'"
+  - id: tn-srilankan-refugee-pension
+    reason: "Both require that the applicant not receive any other government pension."
+  - id: tn-deserted-wives-pension
+    reason: "The old age pension requires that the applicant not receive any other government pension."
+  - id: tn-unmarried-women-pension
+    reason: "The old age pension requires that the applicant not receive any other government pension."
+
 eligibility_prose: >
   The applicant must be aged 60 years or above, destitute, without any income or source of
   income, and resident in Tamil Nadu. Fixed assets such as land or a house must be valued

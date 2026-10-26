@@ -10,14 +10,17 @@
 #   domain      : (number) [min, max] ; (enum) list of canonical values
 #   aliases     : surface forms -> canonical value. Used by the normalizer and by
 #                 the attribute-extraction step of the grounding pipeline. Includes
-#                 Tamil script, romanized Tamil, and English variants, because queries
-#                 are code-mixed.
+#                 Tamil and Malayalam script, romanized Tamil and Malayalam (Tanglish,
+#                 Manglish), and English variants, because queries are code-mixed.
+#   aliases_by_state: surface forms that mean a value only in one state ("white card"
+#                 is a rice card in Tamil Nadu, the most affluent card in Kerala). Tried
+#                 first when the person's state is known, never when it is not.
 #   derived_from: (optional) attribute is computed, never elicited directly.
 #   elicitable  : whether an agent may ask the citizen for it (derived attrs: false)
 #   sensitivity : low | medium | high — used for elicitation-burden analysis.
 
-version: "0.2"
-updated: "2026-09-04"
+version: "0.3"
+updated: "2026-10-26"
 
 attributes:
 
@@ -28,8 +31,9 @@ attributes:
     domain: [0, 120]
     description: Age of the applicant in completed years.
     elicitable: true
+    grows_with_time: true
     sensitivity: low
-    aliases_text: ["age", "vayasu", "வயசு", "வயது", "years old", "vayathu"]
+    aliases_text: ["age", "vayasu", "வயசு", "வயது", "years old", "vayathu", "വയസ്സ്", "vayassu"]
 
   gender:
     type: enum
@@ -38,8 +42,8 @@ attributes:
     elicitable: true
     sensitivity: low
     aliases:
-      male: ["male", "m", "man", "ஆண்", "aan", "aambalai", "ஆம்பளை"]
-      female: ["female", "f", "woman", "பெண்", "pen", "penn", "ponnu", "பொண்ணு", "magalir", "மகளிர்"]
+      male: ["male", "m", "man", "ஆண்", "aan", "aambalai", "ஆம்பளை", "ആൺ", "purushan", "പുരുഷൻ"]
+      female: ["female", "f", "woman", "பெண்", "pen", "penn", "ponnu", "பொண்ணு", "magalir", "மகளிர்", "സ്ത്രീ", "sthree", "പെൺ"]
       transgender: ["transgender", "trans", "thirunangai", "திருநங்கை", "third gender", "tg"]
 
   marital_status:
@@ -49,30 +53,32 @@ attributes:
     elicitable: true
     sensitivity: medium
     aliases:
-      unmarried: ["unmarried", "single", "kalyanam aagala", "கல்யாணம் ஆகல", "thirumanam aagavillai"]
-      married: ["married", "kalyanam aachu", "கல்யாணம் ஆச்சு", "manaivi", "kanavan", "thirumanam aanavar"]
-      widowed: ["widow", "widowed", "widower", "vidhavai", "விதவை", "kanavan iranthavar", "கணவன் இறந்தவர்"]
-      divorced: ["divorced", "divorce aagiduchu", "விவாகரத்து", "vivagarathu"]
-      deserted: ["deserted", "abandoned wife", "kaividapatta", "கைவிடப்பட்ட", "husband left"]
+      unmarried: ["unmarried", "single", "kalyanam aagala", "கல்யாணம் ஆகல", "thirumanam aagavillai", "അവിവാഹിത", "avivahitha", "kalyanam kazhinjittilla"]
+      married: ["married", "kalyanam aachu", "கல்யாணம் ஆச்சு", "manaivi", "kanavan", "thirumanam aanavar", "വിവാഹിത", "kalyanam kazhinju", "കല്യാണം കഴിഞ്ഞു"]
+      widowed: ["widow", "widowed", "widower", "vidhavai", "விதவை", "kanavan iranthavar", "கணவன் இறந்தவர்", "വിധവ", "vidhava", "bharthavu marichu"]
+      divorced: ["divorced", "divorce aagiduchu", "விவாகரத்து", "vivagarathu", "വിവാഹമോചനം", "vivahamochanam"]
+      deserted: ["deserted", "abandoned wife", "kaividapatta", "கைவிடப்பட்ட", "husband left", "ഉപേക്ഷിക്കപ്പെട്ട", "upekshikkappetta"]
 
   social_category:
     type: enum
     domain: [SC, SCA, ST, MBC, DNC, BC, BCM, FC]
     description: >
-      Tamil Nadu reservation category. SCA = Arunthathiyar (sub-quota within SC);
-      DNC = Denotified Communities; BCM = Backward Class Muslim; FC = Forward /
-      "Others" (no category benefit).
+      Reservation category. Tamil Nadu's list: SCA = Arunthathiyar (sub-quota within
+      SC); DNC = Denotified Communities; BCM = Backward Class Muslim; FC = Forward /
+      "Others" (no category benefit). MODELLING LIMITATION for Kerala: OBC / SEBC is
+      read as BC, and Kerala's Other Eligible Communities (OEC) have no value yet, so an
+      OEC answer is not understood and is asked again rather than guessed.
     elicitable: true
     sensitivity: high
     aliases:
-      SC: ["sc", "scheduled caste", "ஆதிதிராவிடர்", "adi dravidar", "adi dravida", "தாழ்த்தப்பட்ட"]
+      SC: ["sc", "scheduled caste", "ஆதிதிராவிடர்", "adi dravidar", "adi dravida", "தாழ்த்தப்பட்ட", "പട്ടികജാതി", "pattikajathi"]
       SCA: ["sca", "arunthathiyar", "அருந்ததியர்", "arunthathiya"]
-      ST: ["st", "scheduled tribe", "பழங்குடி", "malai vazh makkal", "மலைவாழ் மக்கள்", "tribal"]
+      ST: ["st", "scheduled tribe", "பழங்குடி", "malai vazh makkal", "மலைவாழ் மக்கள்", "tribal", "പട്ടികവർഗ്ഗം", "pattikavargam", "adivasi", "ആദിവാസി"]
       MBC: ["mbc", "most backward class", "மிகவும் பிற்படுத்தப்பட்டோர்", "migavum pirpaduthapattor"]
       DNC: ["dnc", "denotified", "denotified community", "ஆறுமுக", "dnt"]
-      BC: ["bc", "backward class", "பிற்படுத்தப்பட்டோர்", "pirpaduthapattor", "obc"]
+      BC: ["bc", "backward class", "பிற்படுத்தப்பட்டோர்", "pirpaduthapattor", "obc", "sebc", "പിന്നാക്ക", "pinnakka"]
       BCM: ["bcm", "backward class muslim", "bc muslim", "பிற்படுத்தப்பட்ட முஸ்லிம்"]
-      FC: ["fc", "forward caste", "oc", "open category", "general", "others", "பொது"]
+      FC: ["fc", "forward caste", "oc", "open category", "general", "others", "பொது", "മുന്നാക്ക", "munnakka"]
 
   religion:
     type: enum
@@ -81,9 +87,9 @@ attributes:
     elicitable: true
     sensitivity: high
     aliases:
-      hindu: ["hindu", "இந்து", "indhu"]
-      muslim: ["muslim", "islam", "இஸ்லாம்", "musleem"]
-      christian: ["christian", "kirithavar", "கிறிஸ்தவர்", "catholic", "protestant"]
+      hindu: ["hindu", "இந்து", "indhu", "ഹിന്ദു"]
+      muslim: ["muslim", "islam", "இஸ்லாம்", "musleem", "മുസ്ലിം"]
+      christian: ["christian", "kirithavar", "கிறிஸ்தவர்", "catholic", "protestant", "ക്രിസ്ത്യൻ", "kristhyan"]
       sikh: ["sikh", "சீக்கியர்"]
       buddhist: ["buddhist", "புத்த"]
       jain: ["jain", "சமணர்"]
@@ -93,20 +99,24 @@ attributes:
   # ---------------------------------------------------------------- location
   state:
     type: enum
-    domain: [TN, other]
+    domain: [TN, KL, other]
     description: >
-      Domicile state, collapsed to TN vs other. Central schemes are open to both;
-      TN state schemes require TN. Expand this domain if the KB is extended to
-      other states.
+      State of residence. Central schemes are open to every state; a state's own
+      schemes require that state. A code is added here only together with that
+      state's first schemes and its districts in kb/spec/jurisdictions.yaml.
     elicitable: true
     sensitivity: low
     aliases:
       TN: ["tamil nadu", "tamilnadu", "tn", "தமிழ்நாடு", "tamizhagam", "தமிழகம்"]
+      KL: ["kerala", "keralam", "കേരളം", "കേരള", "கேரளா"]
       other: ["other state", "outside tn", "vera state", "வேறு மாநிலம்"]
 
   district:
     type: enum
-    description: District of residence (38 Tamil Nadu districts). Used for district-scoped schemes.
+    description: >
+      District of residence. The 38 Tamil Nadu and 14 Kerala districts; which state each
+      belongs to is in kb/spec/jurisdictions.yaml, and a state scheme may only name its
+      own districts.
     elicitable: true
     sensitivity: low
     domain:
@@ -116,7 +126,9 @@ attributes:
        Perambalur, Pudukkottai, Ramanathapuram, Ranipet, Salem, Sivaganga,
        Tenkasi, Thanjavur, Theni, Thoothukudi, Tiruchirappalli, Tirunelveli,
        Tirupattur, Tiruppur, Tiruvallur, Tiruvannamalai, Tiruvarur, Vellore,
-       Viluppuram, Virudhunagar]
+       Viluppuram, Virudhunagar,
+       Thiruvananthapuram, Kollam, Pathanamthitta, Alappuzha, Kottayam, Idukki,
+       Ernakulam, Thrissur, Palakkad, Malappuram, Kozhikode, Wayanad, Kannur, Kasaragod]
     aliases:
       Chennai: ["chennai", "madras", "சென்னை", "chennai city"]
       Coimbatore: ["coimbatore", "kovai", "கோயம்புத்தூர்", "கோவை", "cbe"]
@@ -137,6 +149,20 @@ attributes:
       Sivaganga: ["sivaganga", "sivagangai", "சிவகங்கை"]
       Ramanathapuram: ["ramanathapuram", "ramnad", "இராமநாதபுரம்"]
       Virudhunagar: ["virudhunagar", "விருதுநகர்"]
+      Thiruvananthapuram: ["thiruvananthapuram", "trivandrum", "tvm", "തിരുവനന്തപുരം"]
+      Kollam: ["kollam", "quilon", "കൊല്ലം"]
+      Pathanamthitta: ["pathanamthitta", "പത്തനംതിട്ട"]
+      Alappuzha: ["alappuzha", "alleppey", "ആലപ്പുഴ"]
+      Kottayam: ["kottayam", "കോട്ടയം"]
+      Idukki: ["idukki", "ഇടുക്കി"]
+      Ernakulam: ["ernakulam", "kochi", "cochin", "എറണാകുളം"]
+      Thrissur: ["thrissur", "trichur", "തൃശ്ശൂർ", "തൃശൂർ"]
+      Palakkad: ["palakkad", "palghat", "പാലക്കാട്"]
+      Malappuram: ["malappuram", "മലപ്പുറം"]
+      Kozhikode: ["kozhikode", "calicut", "കോഴിക്കോട്"]
+      Wayanad: ["wayanad", "വയനാട്"]
+      Kannur: ["kannur", "cannanore", "കണ്ണൂർ"]
+      Kasaragod: ["kasaragod", "kasargod", "കാസർഗോഡ്"]
 
   residence_type:
     type: enum
@@ -145,8 +171,8 @@ attributes:
     elicitable: true
     sensitivity: low
     aliases:
-      rural: ["rural", "village", "gramam", "கிராமம்", "ooru", "ஊரு", "panchayat"]
-      urban: ["urban", "city", "town", "நகரம்", "nagaram", "corporation", "municipality"]
+      rural: ["rural", "village", "gramam", "கிராமம்", "ooru", "ஊரு", "panchayat", "ഗ്രാമം", "grama panchayat"]
+      urban: ["urban", "city", "town", "நகரம்", "nagaram", "corporation", "municipality", "നഗരം", "pattanam", "പട്ടണം"]
 
   # ------------------------------------------------------------------ income
   annual_family_income:
@@ -295,20 +321,35 @@ attributes:
   # ------------------------------------------------------- household / assets
   ration_card_type:
     type: enum
-    domain: [aay, phh_rice, nphh_sugar, nphh_no_commodity, none]
+    domain: [aay, phh_rice, nphh_sugar, nphh_no_commodity, nps, npns, none]
     description: >
-      Tamil Nadu PDS family card class. AAY = Antyodaya Anna Yojana (poorest);
-      phh_rice = priority household rice card; nphh_sugar = non-priority sugar card;
-      nphh_no_commodity = "no commodity" card (typically higher income);
-      none = no family card.
+      Ration (family) card class. AAY = Antyodaya Anna Yojana (poorest); phh_rice =
+      priority household card; nphh_sugar = Tamil Nadu non-priority sugar card;
+      nphh_no_commodity = Tamil Nadu "no commodity" card (typically higher income);
+      nps / npns = Kerala's non-priority subsidy (blue) and non-priority non-subsidy
+      (white) cards; none = no card. Kerala's yellow card is AAY and pink is PHH.
     elicitable: true
+    action: {text: "Apply for a family (ration) card", document: ration_card, from: [none]}
     sensitivity: medium
     aliases:
       aay: ["aay", "antyodaya", "annapurna card"]
-      phh_rice: ["rice card", "arisi card", "அரிசி கார்டு", "phh", "priority household", "ration card irukku", "white card"]
-      nphh_sugar: ["sugar card", "sakkarai card", "சர்க்கரை கார்டு", "khaki card", "nphh"]
-      nphh_no_commodity: ["no commodity card", "no commodity", "green card"]
-      none: ["no ration card", "card illa", "கார்டு இல்ல", "none"]
+      phh_rice: ["rice card", "arisi card", "அரிசி கார்டு", "phh", "priority household", "ration card irukku", "മുൻഗണന"]
+      nphh_sugar: ["sugar card", "sakkarai card", "சர்க்கரை கார்டு", "nphh"]
+      nphh_no_commodity: ["no commodity card", "no commodity"]
+      nps: ["nps", "non priority subsidy"]
+      npns: ["npns", "non priority non subsidy"]
+      none: ["no ration card", "card illa", "கார்டு இல்ல", "none", "card ഇല്ല", "റേഷൻ കാർഡ് ഇല്ല"]
+    # Card colours mean different classes in different states.
+    aliases_by_state:
+      TN:
+        phh_rice: ["white card"]
+        nphh_sugar: ["khaki card"]
+        nphh_no_commodity: ["green card"]
+      KL:
+        aay: ["yellow card", "manja card", "മഞ്ഞ കാർഡ്"]
+        phh_rice: ["pink card", "പിങ്ക് കാർഡ്"]
+        nps: ["blue card", "neela card", "നീല കാർഡ്"]
+        npns: ["white card", "vella card", "വെള്ള കാർഡ്"]
 
   house_ownership:
     type: enum
@@ -346,19 +387,19 @@ attributes:
     elicitable: true
     sensitivity: low
     aliases:
-      farmer: ["farmer", "vivasayi", "விவசாயி", "agriculturist", "cultivator", "vevasayam", "விவசாயம்"]
-      agri_labourer: ["agricultural labourer", "farm labour", "vivasaya coolie", "விவசாய கூலி", "kuthagai"]
-      fisher: ["fisherman", "fisher", "meenavar", "மீனவர்", "fishing"]
-      weaver: ["weaver", "nesavalar", "நெசவாளர்", "handloom", "powerloom worker"]
+      farmer: ["farmer", "vivasayi", "விவசாயி", "agriculturist", "cultivator", "vevasayam", "விவசாயம்", "karshakan", "കർഷകൻ", "കർഷക", "krishi", "കൃഷി"]
+      agri_labourer: ["agricultural labourer", "farm labour", "vivasaya coolie", "விவசாய கூலி", "kuthagai", "karshaka thozhilali", "കർഷകത്തൊഴിലാളി"]
+      fisher: ["fisherman", "fisher", "meenavar", "மீனவர்", "fishing", "matsyathozhilali", "മത്സ്യത്തൊഴിലാളി"]
+      weaver: ["weaver", "nesavalar", "நெசவாளர்", "handloom", "powerloom worker", "neythukaran", "നെയ്ത്തുകാരൻ"]
       artisan: ["artisan", "craftsman", "kaithozhilali", "கைத்தொழிலாளி", "potter", "blacksmith", "carpenter"]
-      daily_wage: ["daily wage", "coolie", "கூலி", "kooli velai", "labourer", "construction worker"]
-      salaried_private: ["private job", "company velai", "கம்பெனி வேலை", "private employee", "it job"]
-      salaried_government: ["government job", "govt job", "arasu velai", "அரசு வேலை", "government servant"]
+      daily_wage: ["daily wage", "coolie", "கூலி", "kooli velai", "labourer", "construction worker", "coolipani", "കൂലിപ്പണി"]
+      salaried_private: ["private job", "company velai", "கம்பெனி வேலை", "private employee", "it job", "private joli"]
+      salaried_government: ["government job", "govt job", "arasu velai", "அரசு வேலை", "government servant", "sarkar joli", "സർക്കാർ ജോലി"]
       self_employed: ["self employed", "business", "sontha thozhil", "சொந்த தொழில்", "shop", "kadai", "vendor"]
-      student: ["student", "manavar", "மாணவர்", "studying", "padikren", "படிக்கிறேன்"]
-      homemaker: ["housewife", "homemaker", "veetamma", "இல்லத்தரசி", "illatharasi"]
-      unemployed: ["unemployed", "no job", "velai illa", "வேலை இல்ல", "jobless"]
-      retired: ["retired", "ooivu", "ஓய்வு", "pensioner"]
+      student: ["student", "manavar", "மாணவர்", "studying", "padikren", "படிக்கிறேன்", "vidyarthi", "വിദ്യാർത്ഥി"]
+      homemaker: ["housewife", "homemaker", "veetamma", "இல்லத்தரசி", "illatharasi", "veettamma", "വീട്ടമ്മ"]
+      unemployed: ["unemployed", "no job", "velai illa", "வேலை இல்ல", "jobless", "ജോലിയില്ല", "thozhil illa"]
+      retired: ["retired", "ooivu", "ஓய்வு", "pensioner", "വിരമിച്ച", "viramichu"]
 
   education_level:
     type: enum
@@ -517,18 +558,21 @@ attributes:
     type: bool
     description: Holds an Aadhaar number. Near-universal precondition for DBT schemes.
     elicitable: true
+    action: {text: "Get an Aadhaar", document: aadhaar}
     sensitivity: low
 
   has_bank_account:
     type: bool
     description: Holds a bank account (required for direct benefit transfer).
     elicitable: true
+    action: {text: "Open a bank account", document: bank_passbook}
     sensitivity: low
 
   has_community_certificate:
     type: bool
     description: Holds a caste/community certificate. Required to claim category-reserved benefits.
     elicitable: true
+    action: {text: "Get a community certificate", document: community_certificate}
     sensitivity: medium
 
 
@@ -647,6 +691,7 @@ attributes:
       Years since the applicant was deserted by her husband. Tamil Nadu's deserted-wives
       pension requires desertion for at least five years, or a legal separation.
     elicitable: true
+    grows_with_time: true
     sensitivity: high
 
   spouse_is_government_employee:
@@ -684,6 +729,7 @@ attributes:
       Registered as an unorganised worker (e-Shram card, or a Tamil Nadu welfare board).
       Read as an inclusion criterion by PMMVY and by the state welfare board schemes.
     elicitable: true
+    action: {text: "Register as an unorganised worker on e-Shram", online: "https://eshram.gov.in/"}
     sensitivity: low
     aliases_text: ["e-shram", "eshram", "labour card", "welfare board", "தொழிலாளர் அட்டை"]
 
@@ -691,6 +737,7 @@ attributes:
     type: bool
     description: Holds an MGNREGA job card. One of the qualifying categories for PMMVY.
     elicitable: true
+    action: {text: "Apply for an MGNREGA job card at the gram panchayat"}
     sensitivity: low
     aliases_text: ["job card", "nrega", "mgnrega", "100 days work", "நூறு நாள் வேலை"]
 
@@ -708,6 +755,10 @@ attributes:
       Member of a fishermen or fisherwomen cooperative society. Membership, not
       occupation, is what the fisheries relief schemes actually test.
     elicitable: true
+    # Only for people who fish: the relief schemes test membership, not occupation, so
+    # without this a farmer would be told to join a fishermen's society.
+    action: {text: "Join your fishermen's cooperative society", document: cooperative_membership,
+             only_if: {occupation: [fisher]}}
     sensitivity: low
 
   is_srilankan_tamil_refugee:
@@ -746,6 +797,7 @@ attributes:
       Years since registering with the district employment exchange. The differently
       abled unemployment allowance requires one completed year of registration.
     elicitable: true
+    grows_with_time: true
     sensitivity: low
 
 # Derivation rules, applied by normalize.derive() after base attributes are set.

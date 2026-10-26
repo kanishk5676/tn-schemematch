@@ -18,6 +18,12 @@ benefit_prose: >
   pre-existing conditions covered from day one. Beneficiaries aged 70 and above receive an
   additional Rs 5 lakh cover of their own.
 
+cover: 500000
+
+cannot_combine_with:
+  - id: cmchis
+    reason: "Tamil Nadu implements PM-JAY through its own CMCHIS rather than as a separate card."
+
 eligibility_prose: >
   Households identified as deprived under the Socio Economic and Caste Census 2011,
   covering approximately the bottom 50 percent of the population, are eligible. Since

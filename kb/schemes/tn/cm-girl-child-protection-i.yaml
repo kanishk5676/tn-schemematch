@@ -16,6 +16,8 @@ benefit_prose: >
   A deposit of Rs 50,000 in the girl child's name with Tamil Nadu Power Finance,
   released with accrued interest at age 18 on completion of the SSLC examination.
 
+value: {amount: 50000, per: once, note: "a deposit released with interest at 18"}
+
 eligibility_prose: >
   The family must have one girl child and no male child, the girl child having been born
   on or after 1 August 2011, and a parent must have undergone a family planning

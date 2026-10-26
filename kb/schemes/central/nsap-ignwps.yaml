@@ -15,6 +15,8 @@ benefit_prose: >
   Rs 300 per month of central assistance (Rs 200 under the original norms, revised
   subsequently), routinely topped up by state contributions.
 
+value: {amount: 300, per: month, note: "central share; states add their own"}
+
 eligibility_prose: >
   The applicant must be a widow aged 40 to 59 years belonging to a household below the
   poverty line according to the criteria prescribed by the Government of India. On

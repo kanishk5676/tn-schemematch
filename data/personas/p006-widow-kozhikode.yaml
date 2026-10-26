@@ -1,0 +1,98 @@
+id: p006
+persona_sketch: 'Widow of 56 in a Kozhikode village with ten cents of land and a pink ration card,
+  living on about Rs 5,000 a month. The first Kerala test profile: the Kerala widow pension and
+  the central IGNWPS are one pension, so only the Kerala one may be counted.
+
+  '
+profile:
+  age: 56
+  gender: female
+  marital_status: widowed
+  social_category: BC
+  religion: muslim
+  state: KL
+  district: Kozhikode
+  residence_type: rural
+  annual_family_income: 60000
+  is_income_tax_payer: false
+  is_government_employee: false
+  is_class_iv_employee: false
+  monthly_pension_amount: 0
+  is_registered_professional: false
+  held_constitutional_post: false
+  fixed_assets_value: 150000
+  annual_electricity_units: 1200
+  is_destitute: false
+  is_head_of_household: true
+  land_owned_acres: 0.1
+  wetland_acres: 0.0
+  dryland_acres: 0.1
+  ration_card_type: phh_rice
+  house_ownership: owns_kutcha
+  owns_four_wheeler: false
+  family_size: 2
+  occupation: homemaker
+  education_level: secondary
+  studied_in_government_school: true
+  is_first_generation_learner: true
+  enrolled_in_higher_education: false
+  course_mode: not_applicable
+  previous_exam_percent: 0
+  traditional_trade: none
+  availed_govt_credit_scheme_last_5y: false
+  disability_percent: 0
+  pregnancy_status: not_applicable
+  receives_other_pension: false
+  has_aadhaar: true
+  has_bank_account: true
+  has_community_certificate: true
+  is_bpl: true
+  is_secc_deprived_household: true
+  has_lpg_connection: true
+  pregnancy_order: 0
+  daughters_count: 1
+  sons_count: 0
+  has_undergone_family_planning: true
+  is_orphan: false
+  is_daughter_of_widow: false
+  has_upcoming_marriage: false
+  is_inter_caste_marriage: false
+  years_since_desertion: 0
+  spouse_is_government_employee: false
+  family_has_income_tax_payer: false
+  is_covered_by_epfo_esic_nps: false
+  is_registered_unorganised_worker: false
+  has_mgnrega_job_card: false
+  has_vending_certificate: false
+  is_member_of_fishermen_cooperative: false
+  is_srilankan_tamil_refugee: false
+  is_inter_state_migrant: false
+  spouse_is_differently_abled: false
+  employment_exchange_registration_years: 0
+queries:
+  code_mixed: എന്റെ ഭർത്താവ് മരിച്ചിട്ട് മൂന്ന് വർഷമായി. 56 vayassu, Kozhikode-il aanu thamasam.
+    pathu sentu sthalam und, maasam 5000 roopa maathram varumanam. enthenkilum pension kittumo?
+  english: My husband died three years ago. I am 56 and live in Kozhikode. I have ten cents of
+    land and only about 5,000 rupees a month. Can I get any pension?
+stated_in_query:
+- marital_status
+- age
+- district
+- land_owned_acres
+- annual_family_income
+annotation:
+  author: seed (project author)
+  validated_by: ''
+  validated_on: ''
+  codemix_naturalness: null
+  profile_plausibility: null
+  parallel_faithful: null
+  notes: 'SEED PERSONA — NOT YET NATIVELY VALIDATED.
+
+
+    Design intent: the can''t-combine check. She qualifies for the Kerala widow pension (Rs 2,000
+    a month) and the central IGNWPS (Rs 300), but Kerala''s widow pension is the state''s implementation
+    of IGNWPS. A list that shows both, or a total that adds both, is wrong. The query mixes Malayalam
+    script and Manglish, and gives land in cents, the unit Kerala uses.
+
+    '
