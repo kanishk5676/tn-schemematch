@@ -18,3 +18,21 @@ document.addEventListener('languagechange', (event) => {
   url.searchParams.set('lang', event.detail);
   window.location.replace(url);
 });
+
+// Helpers record where the application stands, from the sheet itself.
+const track = document.getElementById('track-form');
+track?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const box = track.closest('.pack-track');
+  const form = new FormData(track);
+  const note = document.getElementById('track-note');
+  const response = await fetch(`/api/profiles/${box.dataset.pid}/applications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      scheme_id: box.dataset.scheme, status: form.get('status'),
+      reference: form.get('reference'), applied_on: form.get('applied_on') || null,
+    }),
+  });
+  note.textContent = response.ok ? '✓' : (await response.json()).error?.message || '!';
+});

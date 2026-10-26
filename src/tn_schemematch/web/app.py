@@ -11,6 +11,8 @@ tested offline against a ``ScriptedClient``, with no key and no network.
 
 from __future__ import annotations
 
+import os
+import secrets
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +30,7 @@ from ..systems.base import LLMClient
 from ..vault import DEFAULT_VAULT_DIR, VaultError
 from .http import error as _error
 from .chat_api import register_chat_api
+from .helper_api import HelperAuth, claim, is_helper, register_helper
 from .profiles_api import register_document_api, register_pack_routes, register_profile_api
 from .state import AppContext, SessionStore
 
@@ -55,9 +58,13 @@ def _personas(ctx: AppContext):
 
 def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
                max_questions: int = 15, debug: bool = False,
-               vault_dir: str | Path | None = None, documents=None) -> Flask:
+               vault_dir: str | Path | None = None, documents=None,
+               helper_pin: str | None = None, secret_key: str | None = None) -> Flask:
     app = Flask(__name__)
     app.json.sort_keys = False
+    # Signs the session cookie that holds the helper login and "profiles I created".
+    app.secret_key = secret_key or os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+    app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
     # A little over the image limit, so the module's own check answers with a clear message
     # and Flask's 413 only catches what is grossly oversized.
     app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES + 512 * 1024
@@ -78,10 +85,12 @@ def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
         documents=documents or load_documents(spec),
         questions=default_questions(),
         meter=getattr(client, "meter", None),
+        auth=HelperAuth(helper_pin),
     )
     app.extensions["schemematch"] = ctx
     app.config["MAX_QUESTIONS"] = max_questions
 
+    register_helper(app, ctx)  # first: its access guard runs before every route
     _register_pages(app, ctx)
     _register_session_api(app, ctx)
     _register_catalogue_api(app, ctx)
@@ -118,7 +127,7 @@ def _turn_payload(ctx: AppContext, session) -> dict[str, Any]:
 def _register_pages(app: Flask, ctx: AppContext) -> None:
     def page(template: str, name: str, **extra: Any):
         return render_template(template, model=ctx.model_name, n_schemes=len(ctx.active),
-                               page=name, **extra)
+                               page=name, helper_link=is_helper(ctx), **extra)
 
     @app.get("/")
     def assistant():
@@ -314,6 +323,7 @@ def _register_session_api(app: Flask, ctx: AppContext) -> None:
             else:
                 pid = ctx.vault.create_profile(body.get("name") or "",
                                                relation=body.get("relation") or "")["id"]
+                claim(pid)
             facts = [
                 (attr, value, state.sources.get(attr, "form"),
                  state.query if state.sources.get(attr) == "query" else "")

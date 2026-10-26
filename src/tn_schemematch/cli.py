@@ -182,9 +182,9 @@ def cmd_serve(args) -> int:
         return 1
 
     app = create_app(client=client, max_questions=args.max_questions, debug=args.debug,
-                     vault_dir=args.vault_dir)
-    print(f"\n  TN-SchemeMatch \u2192 http://{args.host}:{args.port}")
-    print(f"  model: {getattr(client, 'name', 'none (rules only)')}\n")
+                     vault_dir=args.vault_dir, helper_pin=os.environ.get("HELPER_PIN") or None)
+    print(f"\n  Udhavi \u2192 http://{args.host}:{args.port}")
+    print(f"  model: {getattr(client, 'name', 'none — guided mode only')}\n")
     app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)
     return 0
 

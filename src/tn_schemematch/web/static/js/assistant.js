@@ -503,6 +503,16 @@ document.addEventListener('languagechange', async () => {
 });
 
 (async function init() {
+  // A helper's "talk to this person" link: /?profile=<id> starts a chat for them.
+  const asked = new URLSearchParams(window.location.search).get('profile');
+  if (asked) {
+    rememberProfile(asked);
+    try { sessionStorage.removeItem(CHAT_KEY); } catch { /* storage blocked */ }
+    window.history.replaceState(null, '', '/');
+    await fillPicker($('who'), { blank: t('someone_new'), selected: asked });
+    await startChat(asked);
+    return;
+  }
   await fillPicker($('who'), { blank: t('someone_new') });
   let resumed = false;
   try {

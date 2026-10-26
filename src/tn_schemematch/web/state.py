@@ -102,6 +102,8 @@ class AppContext:
     questions: Any = None
     # The usage meter the model client reports to, if any.
     meter: Any = None
+    # The helper PIN (helper_api.HelperAuth); None or disabled means everyone is a helper.
+    auth: Any = None
     documents: DocumentVocabulary | None = None
     vault_dir: Path = DEFAULT_VAULT_DIR
     _vault: Vault | None = None

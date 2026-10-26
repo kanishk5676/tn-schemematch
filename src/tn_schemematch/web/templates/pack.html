@@ -59,6 +59,23 @@
   </section>
   {% endif %}
 
+  {% if helper_link %}
+  <section class="no-print pack-track" data-pid="{{ pid }}" data-scheme="{{ pack.id }}">
+    <h2>📌 {{ 'விண்ணப்ப நிலை' if ta else 'Application status' }}</h2>
+    <form class="app-fields" id="track-form">
+      <select name="status" aria-label="status">
+        {% for value, ta_label, en_label in [('planned', 'போகத் திட்டம்', 'Planning to go'), ('applied', 'விண்ணப்பித்தாகிவிட்டது', 'Applied'), ('sanctioned', 'அனுமதி கிடைத்தது', 'Sanctioned'), ('rejected', 'நிராகரிக்கப்பட்டது', 'Rejected')] %}
+        <option value="{{ value }}" {% if application and application.status == value %}selected{% endif %}>{{ ta_label if ta else en_label }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="reference" maxlength="60" placeholder="{{ 'விண்ணப்ப எண்' if ta else 'Application number' }}" value="{{ application.reference if application else '' }}">
+      <input type="date" name="applied_on" value="{{ application.applied_on if application and application.applied_on else '' }}">
+      <button class="btn primary">{{ 'சேமி' if ta else 'Save' }}</button>
+      <span class="tiny muted" id="track-note" aria-live="polite"></span>
+    </form>
+  </section>
+  {% endif %}
+
   <footer class="pack-foot">
     {% if pack.apply_url %}<p>{{ 'இணையதளம்' if ta else 'Website' }}: {{ pack.apply_url }}</p>{% endif %}
     {% if pack.authority %}<p>{{ pack.authority }}</p>{% endif %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}உதவுபவர் · Helper{% endblock %}
+{% block body_class %}helper-page{% endblock %}
+{% block body %}
+<section class="card helper-login" id="login" hidden>
+  <h1 data-i18n="helper_login_title">உதவுபவர் உள்நுழைவு</h1>
+  <p class="muted" data-i18n="helper_login_note"></p>
+  <form id="login-form" class="row">
+    <input type="password" inputmode="numeric" autocomplete="current-password" id="pin"
+           class="number-input" data-i18n-placeholder="pin" aria-label="PIN">
+    <button class="btn primary big" data-i18n="login">உள்நுழை</button>
+  </form>
+  <p class="err" id="login-error" aria-live="polite"></p>
+</section>
+
+<div id="desk" hidden>
+  <div class="helper-head">
+    <h1 data-i18n="helper_title">யாருக்கு என்ன தேவை</h1>
+    <div class="row">
+      <button type="button" class="btn small" id="refresh" data-i18n="refresh">புதுப்பி</button>
+      <button type="button" class="btn small" id="logout" data-i18n="logout" hidden>வெளியேறு</button>
+    </div>
+  </div>
+  <div class="stat-row" id="totals"></div>
+
+  <details class="card add-person" id="add-card">
+    <summary data-i18n="add_person">புதிய நபரைச் சேர்</summary>
+    <form id="add-form" class="add-grid">
+      <label><span data-i18n="your_name">பெயர்</span><input type="text" id="add-name" maxlength="80" required></label>
+      <label><span data-i18n="relation">உறவு</span><input type="text" id="add-relation" maxlength="40"></label>
+      <label><span data-i18n="family">குடும்பம்</span><select id="add-household"></select></label>
+      <button class="btn primary" data-i18n="add_and_talk">சேர்த்துப் பேசத் தொடங்கு</button>
+    </form>
+  </details>
+
+  <div id="people" class="people"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/helper.js') }}"></script>
+{% endblock %}
