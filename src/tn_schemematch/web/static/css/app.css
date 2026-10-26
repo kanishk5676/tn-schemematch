@@ -619,8 +619,8 @@ body.busy .answer-btn, body.busy .mic { opacity: .6; pointer-events: none; }
 .result-official { margin: 4px 0 8px; font-size: 12.5px; color: var(--faint); }
 .result-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .result-actions .btn { min-height: 46px; }
-.card.bring h3, .card.near h3 { font-size: 16px; color: var(--ink); }
-.card.bring ul, .card.near ul { margin: 0; padding-left: 22px; display: grid; gap: 4px; font-size: 16px; }
+.card.bring h3, .card.near h3, .card.later h3 { font-size: 16px; color: var(--ink); }
+.card.bring ul, .card.near ul, .card.later ul { margin: 0; padding-left: 22px; display: grid; gap: 4px; font-size: 16px; }
 
 /* The rail. */
 .counts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -653,4 +653,45 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
 @media print {
   .topbar, .foot, .no-print, .voice-bar, .tools-row, .mode-bar { display: none !important; }
   body { background: #fff; color: #000; }
+}
+
+/* ------------------------------------------------------------ application sheet */
+
+.pack-tools { max-width: 800px; margin: 0 auto 14px; }
+.pack-tools .btn { min-height: 46px; }
+.pack {
+  max-width: 800px; margin: 0 auto; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px; padding: 26px 28px; font-size: 17px; line-height: 1.55;
+}
+.pack h1 { margin: 2px 0 6px; font-size: 27px; line-height: 1.25; }
+.pack h2 { font-size: 18px; margin: 20px 0 8px; }
+.pack-kicker { margin: 0; color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: .05em; }
+.pack-what { font-size: 19px; margin: 0 0 6px; }
+.pack-official { color: var(--muted); font-size: 13.5px; margin: 0 0 8px; }
+.pack-caveat { background: var(--open-bg); border-radius: 8px; padding: 8px 12px; font-size: 15px; margin: 8px 0 0; }
+.pack-big { font-size: 19px; font-weight: 600; margin: 0; }
+.pack-docs { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.pack-docs li { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; font-size: 18px; }
+.pack-docs .box { width: 26px; height: 26px; border: 2px solid var(--ink); border-radius: 5px; display: grid; place-items: center; font-weight: 700; }
+.pack-docs .doc-have .box { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+.pack-docs .doc-status { color: var(--muted); font-size: 14px; }
+.pack-facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; }
+.pack-facts dt { color: var(--muted); }
+.pack-facts dd { margin: 0; font-weight: 650; }
+.pack-foot { margin-top: 22px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.pack-foot p { margin: 2px 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .pack { padding: 18px 16px; } .pack h1 { font-size: 23px; } }
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  .pack { border: 0; padding: 0; max-width: none; font-size: 12.5pt; line-height: 1.4; }
+  .pack h1 { font-size: 20pt; }
+  .pack h2 { font-size: 13.5pt; margin: 10px 0 5px; }
+  .pack-what, .pack-big { font-size: 14pt; }
+  .pack-docs { gap: 3px; }
+  .pack-docs li { font-size: 13pt; }
+  .pack-facts { gap: 2px 14px; }
+  .pack-foot { margin-top: 10px; font-size: 9.5pt; }
+  .pack-docs .box { border-color: #000; }
+  .pack-caveat { border: 1px solid #000; background: none; }
 }

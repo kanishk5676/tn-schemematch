@@ -226,6 +226,12 @@ function showResult(result) {
       el('h3', {}, `🗂️ ${t('bring_title')}`),
       el('ul', {}, ...result.bring.map((item) => el('li', {}, item.label)))));
   }
+  if (result.later?.length) {
+    parts.push(el('div', { class: 'card later' },
+      el('h3', {}, `⏳ ${t('later_title')}`),
+      el('ul', {}, ...result.later.map((line) => el('li', {},
+        el('b', {}, line.name), ` — ${t('later_at', { age: line.at_age, years: line.in_years })}`)))));
+  }
   if (result.near?.length) {
     parts.push(el('div', { class: 'card near' },
       el('h3', {}, t('near_title')),

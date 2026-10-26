@@ -30,7 +30,8 @@ from ..guided import answer as guided_answer
 from ..guided import opening as guided_opening
 from ..guided import BUTTONS, phrase, question_card, told
 from ..serialize import near_misses, profile_rows
-from ..spoken import spoken_result
+from ..pack import coming_up, coming_up_text
+from ..spoken import scheme_line, spoken_result
 from ..systems.budget import BudgetExceeded, ModelUnavailable
 from .http import error
 from .state import AppContext, Session
@@ -62,11 +63,19 @@ def _held(ctx: AppContext, session: Session) -> set[str]:
 
 
 def result_payload(ctx: AppContext, session: Session, lang: str) -> dict[str, Any]:
-    """The result as the person hears it, plus the cards it was built from."""
+    """The result as the person hears it, plus the cards it was built from, and what
+    opens up for them in the next few years."""
     profile = session.state.profile
     near = [n["id"] for n in near_misses(ctx.active, profile, ctx.spec)]
-    return spoken_result(ctx.active, profile, lang, documents=ctx.documents,
-                         held=_held(ctx, session), near_ids=near)
+    result = spoken_result(ctx.active, profile, lang, documents=ctx.documents,
+                           held=_held(ctx, session), near_ids=near)
+    later = coming_up(ctx.active, profile, ctx.spec)
+    result["later"] = [{**scheme_line(ctx.active[row["id"]], result["lang"]), **row}
+                       for row in later]
+    said = coming_up_text(ctx.active, later, result["lang"])
+    if said:
+        result["text"] = f"{result['text']} {said}"
+    return result
 
 
 def chat_payload(ctx: AppContext, session: Session, *, transcript: bool = True) -> dict[str, Any]:

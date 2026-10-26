@@ -155,3 +155,45 @@ def test_usage_is_reported_on_the_stats_endpoint(kb, spec, tmp_path):
     http = create_app(kb=kb, spec=spec, client=client, vault_dir=tmp_path / "v").test_client()
     usage = http.get("/api/stats").get_json()["usage"]
     assert usage["daily_budget_usd"] == 1.0
+
+
+# ------------------------------------------------------------ application sheet
+
+
+def saved_widow(http):
+    pid = http.post("/api/profiles", json={"name": "Selvi"}).get_json()["id"]
+    for attr, value in {"age": 62, "gender": "female", "marital_status": "widowed",
+                        "state": "TN", "is_destitute": True, "fixed_assets_value": 10000,
+                        "receives_other_pension": False, "is_bpl": True}.items():
+        http.post(f"/api/profiles/{pid}/facts", json={"attr": attr, "value": value})
+    return pid
+
+
+def test_an_eligible_scheme_has_a_printable_sheet(guided_http):
+    pid = saved_widow(guided_http)
+    body = guided_http.get(f"/api/profiles/{pid}/pack/tn-old-age-pension?lang=en").get_json()
+    assert body["name"] == "Old age pension (Tamil Nadu)" and body["person"] == "Selvi"
+    assert body["share_url"].startswith("https://wa.me/?text=")
+    page = guided_http.get(f"/profile/{pid}/pack/tn-old-age-pension")
+    assert page.status_code == 200
+    assert "முதியோர் ஓய்வூதியம்" in page.get_data(as_text=True)
+
+
+def test_a_scheme_the_rules_rule_out_has_no_sheet(guided_http):
+    pid = saved_widow(guided_http)
+    api = guided_http.get(f"/api/profiles/{pid}/pack/pudhumai-penn")
+    assert api.status_code == 404 and api.get_json()["error"]["code"] == "not_eligible"
+    assert guided_http.get(f"/profile/{pid}/pack/pudhumai-penn").status_code == 404
+
+
+def test_the_result_says_what_opens_up_later(guided_http):
+    pid = guided_http.post("/api/profiles", json={"name": "Kamala"}).get_json()["id"]
+    for attr, value in {"age": 57, "gender": "female", "marital_status": "widowed",
+                        "state": "TN", "is_destitute": True, "fixed_assets_value": 10000,
+                        "receives_other_pension": False, "is_bpl": True}.items():
+        guided_http.post(f"/api/profiles/{pid}/facts", json={"attr": attr, "value": value})
+    chat_id = guided_http.post("/api/chat", json={"profile_id": pid}).get_json()["chat_id"]
+    result = guided_http.get(f"/api/chat/{chat_id}/result?lang=en").get_json()
+    assert any(row["id"] == "tn-old-age-pension" and row["at_age"] == 60
+               for row in result["later"])
+    assert "at 60" in result["text"]

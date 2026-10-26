@@ -28,7 +28,7 @@ from ..systems.base import LLMClient
 from ..vault import DEFAULT_VAULT_DIR, VaultError
 from .http import error as _error
 from .chat_api import register_chat_api
-from .profiles_api import register_document_api, register_profile_api
+from .profiles_api import register_document_api, register_pack_routes, register_profile_api
 from .state import AppContext, SessionStore
 
 SAMPLE_QUERIES = [
@@ -87,6 +87,7 @@ def create_app(*, kb=None, spec=None, client: LLMClient | None = None,
     _register_catalogue_api(app, ctx)
     register_profile_api(app, ctx)
     register_document_api(app, ctx)
+    register_pack_routes(app, ctx)
     register_chat_api(app, ctx)
 
     @app.errorhandler(413)
