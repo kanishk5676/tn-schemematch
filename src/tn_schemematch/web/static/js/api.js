@@ -72,7 +72,6 @@ export const api = {
   result: (sid) => call(`/api/session/${sid}/result`),
   explain: (sid, schemeId, lang) =>
     call(`/api/session/${sid}/explain/${schemeId}?lang=${lang}`),
-  compare: (sid) => post(`/api/session/${sid}/compare`),
   schemes: (params) => call('/api/schemes' + (params ? `?${params}` : '')),
   scheme: (id, sid) => call(`/api/schemes/${id}` + (sid ? `?session=${sid}` : '')),
   stats: () => call('/api/stats'),

@@ -56,13 +56,7 @@ def test_deprecated_schemes_are_excluded_from_ground_truth_but_kept_for_retrieva
     assert deprecated, "expect at least one discontinued scheme — recommending one is a real harm"
     for scheme_id in deprecated:
         assert scheme_id not in kb.active()
-        assert scheme_id in kb  # still indexable, so a system can be caught returning it
-
-
-def test_retrieval_text_contains_the_eligibility_wording(kb):
-    """The baseline must see the real criteria; a straw-man baseline proves nothing."""
-    for scheme in kb:
-        assert scheme.eligibility_prose[:40] in scheme.retrieval_text()
+        assert scheme_id in kb  # still loaded, so the assistant can say it has closed
 
 
 # ------------------------------------------------------------------- persona set

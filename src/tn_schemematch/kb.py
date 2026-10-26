@@ -2,20 +2,17 @@
 
 Every scheme carries two representations of the same eligibility conditions:
 
-* ``eligibility_prose`` — the wording as published by the issuing department. This
-  is what the RAG baseline retrieves over, and it is also the audit trail: a
-  reviewer can read the prose beside the encoded rule and check they agree.
-* ``eligibility`` — a machine-readable rule (see :mod:`tn_schemematch.rules`) that
-  the grounding pipeline evaluates deterministically.
-
-Keeping both, from the same dated source, is what lets us attribute a system's
-errors to *reasoning* rather than to the two systems having seen different facts.
+* ``eligibility_prose`` — the wording as published by the issuing department. This is
+  the audit trail: a reviewer can read the prose beside the encoded rule and check
+  they agree.
+* ``eligibility`` — a machine-readable rule (see :mod:`tn_schemematch.rules`) that the
+  rule engine evaluates deterministically. Every verdict a citizen sees comes from it.
 
 Provenance is mandatory, not decorative. Welfare rules change — income ceilings get
 revised, schemes get renamed or merged — so every scheme records the URL it was read
 from, the date it was read, and whether a human has verified the encoded rule against
-that source. ``verified: false`` schemes are excluded from benchmark releases by
-default; see :meth:`SchemeKB.verified`.
+that source. Only ``status: verified`` schemes may be told to a citizen as "you can
+apply"; see :meth:`SchemeKB.verified`.
 """
 
 from __future__ import annotations
@@ -94,7 +91,7 @@ class Scheme:
     # Which government runs it. Required iff level == state, empty for central schemes.
     # Kept as an explicit field rather than inferred from the rule: a rule may reach
     # `state` through a disjunction or an `in` list, so reading the jurisdiction back off
-    # it is guesswork, and this value is what the retrieval corpus and the UI display.
+    # it is guesswork, and this value is what the UI displays.
     eligibility: Node               # parsed rule AST
     eligibility_prose: str          # verbatim eligibility wording from the source
     jurisdiction: str = ""
@@ -131,26 +128,6 @@ class Scheme:
     @property
     def is_verified(self) -> bool:
         return self.status == "verified"
-
-    def retrieval_text(self) -> str:
-        """The prose blob the RAG baseline indexes.
-
-        Deliberately contains everything a well-built retrieval system would have:
-        withholding text here would make the baseline a straw man.
-        """
-        parts = [
-            f"Scheme: {self.name}",
-            f"Tamil name: {self.name_ta}" if self.name_ta else "",
-            f"Implemented by: {self.authority}" if self.authority else "",
-            f"Level: {'Central Government' if self.level == 'central' else 'Government of ' + jurisdiction_name(self.jurisdiction)}",
-            f"State: {jurisdiction_name(self.jurisdiction)}" if self.jurisdiction else "",
-            f"Sectors: {', '.join(self.sectors)}" if self.sectors else "",
-            f"Summary: {self.summary}" if self.summary else "",
-            f"Benefit: {self.benefit_prose}" if self.benefit_prose else "",
-            f"Eligibility: {self.eligibility_prose}",
-            f"Documents required: {', '.join(self.documents)}" if self.documents else "",
-        ]
-        return "\n".join(p for p in parts if p)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -212,10 +189,10 @@ class SchemeKB:
     def active(self) -> "SchemeKB":
         """Schemes that are still open for application.
 
-        Ground truth is computed over this view. Deprecated schemes stay in the KB and
-        in the retrieval corpus on purpose — recommending a discontinued scheme sends a
-        citizen to a district office for nothing, so it must be counted as a false
-        positive rather than quietly dropped from the evaluation.
+        Everything a citizen is told is computed over this view. Deprecated schemes stay in
+        the KB so the assistant can recognise one when a person names it and say that it
+        has closed — sending someone to an office for a discontinued scheme costs them a
+        day's wages.
         """
         return SchemeKB(
             {k: v for k, v in self.schemes.items() if v.status != "deprecated"}, self.spec
@@ -236,7 +213,7 @@ class SchemeKB:
     def match(self, profile: Mapping[str, Any]) -> dict[Verdict, list[str]]:
         """Partition all schemes by verdict against ``profile``.
 
-        With a fully-specified profile this is the benchmark's ground truth. With a
+        With a fully-specified profile this is the final answer for that person. With a
         partial profile it is the state of knowledge mid-conversation, and the
         UNDETERMINED bucket is what elicitation has to shrink.
         """
@@ -455,7 +432,7 @@ def validate_kb(kb: SchemeKB) -> list[str]:
 
     for scheme in kb:
         if not scheme.summary:
-            problems.append(f"{scheme.id}: empty summary (weakens the RAG baseline unfairly)")
+            problems.append(f"{scheme.id}: empty summary (the scheme card would be blank)")
         if scheme.status == "verified" and not scheme.verified_on:
             problems.append(f"{scheme.id}: marked verified but has no verified_on date")
         if scheme.level == "state" and "state" not in scheme.attributes:
@@ -486,14 +463,14 @@ def validate_kb(kb: SchemeKB) -> list[str]:
 def _check_jurisdiction_scoping(kb: "SchemeKB", saturated: dict[str, Any]) -> list[str]:
     """Prove each state scheme is refuted for a resident of every other state.
 
-    This is the check that stands in for personas we have not written. The benchmark's
-    personas are all Tamil Nadu residents, so a Karnataka scheme copied from a Tamil Nadu
+    This is the check that stands in for test profiles we have not written. They are all
+    Tamil Nadu residents, so a Karnataka scheme copied from a Tamil Nadu
     one that still says ``value: TN`` passes everything else in this file: its rule *does*
-    constrain ``state``, no persona lives in Karnataka so no gold label moves, and the
+    constrain ``state``, no test profile lives in Karnataka so no gold label moves, and the
     gold-set diff is clean. The scheme is simply unreachable, forever, and nothing says so.
 
     Being a property of the rules rather than of any persona, this holds for every state
-    in the vocabulary whether or not anybody in the benchmark lives there.
+    in the vocabulary whether or not any test profile lives there.
     """
     problems: list[str] = []
     spec = kb.spec

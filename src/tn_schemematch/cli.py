@@ -1,9 +1,9 @@
 """Command line entry point.
 
-    schemematch validate          check the KB and persona set
-    schemematch stats             coverage and benchmark statistics
-    schemematch build             export the KB and benchmark as released artifacts
-    schemematch explain           print the rule trace for a persona against a scheme
+    schemematch validate          check the KB and the test profiles
+    schemematch stats             coverage statistics
+    schemematch build             export the KB and the test profiles as JSON
+    schemematch explain           print the rule trace for a test profile against a scheme
     schemematch ask               show what an agent should ask next, and why
     schemematch verify-queue      list what still needs human verification
     schemematch serve             run the browser front end
@@ -204,7 +204,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("validate", help="check the KB and persona set").set_defaults(func=cmd_validate)
-    sub.add_parser("stats", help="coverage and benchmark statistics").set_defaults(func=cmd_stats)
+    sub.add_parser("stats", help="coverage statistics").set_defaults(func=cmd_stats)
 
     build = sub.add_parser("build", help="export released artifacts")
     build.add_argument("--out", default=None)

@@ -1,5 +1,6 @@
-/* Coverage statistics and any scored runs on disk. Bars are CSS widths — no chart library,
-   nothing loaded from a CDN, so the page renders identically with the network unplugged. */
+/* The curator's view: KB coverage and verification status. Bars are CSS widths — no chart
+   library, nothing loaded from a CDN, so the page renders identically with the network
+   unplugged. */
 
 import { api, el, $ } from './api.js';
 
@@ -13,53 +14,6 @@ function bars(container, rows, unit = '') {
     el('span', { class: 'lbl', title: label }, label),
     el('span', { class: 'track' }, el('i', { class: 'fill', style: `width:${(value / max) * 100}%` })),
     el('span', { class: 'n' }, `${value}${unit}`))));
-}
-
-const pct = (x) => (x === null || x === undefined ? '—' : x.toFixed(3));
-
-function renderRuns(runs) {
-  if (!runs.length) {
-    $('runs').replaceChildren(el('div', { class: 'muted tiny' },
-      'No scored runs recorded yet. Produce one with ',
-      el('span', { class: 'mono' }, 'python scripts/run_experiment.py --backend anthropic --allow-unverified'),
-      '.'));
-    return;
-  }
-  $('runs').replaceChildren(...runs.map((run) => {
-    const meta = run.metadata || {};
-    const table = el('table', { class: 'data' },
-      el('thead', {}, el('tr', {},
-        ...['System', 'Condition', 'P', 'R', 'F1', 'FP rate', 'Harmful', 'Exact', 'Qs', 'Runs', 'Errors']
-          .map((h) => el('th', {}, h)))),
-      el('tbody', {}, ...run.systems.map((row) => el('tr', {},
-        el('td', {}, row.system),
-        el('td', {}, row.condition),
-        el('td', {}, pct(row.precision)),
-        el('td', {}, pct(row.recall)),
-        el('td', {}, pct(row.f1)),
-        el('td', { class: 'fpr' }, pct(row.fpr)),
-        el('td', {}, pct(row.harmful_fpr)),
-        el('td', {}, pct(row.exact_match)),
-        el('td', {}, row.n_questions === null || row.n_questions === undefined
-          ? '—' : row.n_questions.toFixed(1)),
-        el('td', {}, String(row.n_runs ?? '—')),
-        el('td', {}, String(row.n_errors ?? '—'))))));
-
-    return el('div', { style: 'margin-bottom:22px' },
-      el('div', { class: 'row', style: 'margin-bottom:8px' },
-        el('span', { class: 'mono tiny' }, run.dir),
-        /* Show the backend, not just the model name. run_experiment.py records --model
-           even when --backend none, so a rules-only run would otherwise display
-           "model: claude-sonnet-5" and read as though a model had been called. */
-        el('span', { class: 'pill' },
-           (meta.backend && meta.backend !== 'none')
-             ? `model: ${meta.model || 'unknown'}`
-             : 'rules only — no model called'),
-        el('span', { class: 'pill' }, `${meta.n_personas ?? '?'} personas`),
-        meta.kb_verified ? el('span', { class: 'badge ok' }, 'kb verified')
-          : el('span', { class: 'badge open' }, 'kb unverified — not reportable')),
-      el('div', { class: 'scroll-x' }, table));
-  }));
 }
 
 (async () => {
@@ -86,5 +40,4 @@ function renderRuns(runs) {
   }
   bars('sector-bars', Object.entries(kb.by_sector || {}).sort((a, b) => b[1] - a[1]).slice(0, 14));
   bars('attr-bars', (data.attribute_usage || []).map((row) => [row.attr, row.n_schemes]));
-  renderRuns(data.runs || []);
 })();

@@ -16,10 +16,7 @@
   <nav class="nav">
     <a href="/" class="{{ 'on' if page == 'assistant' }}">Assistant</a>
     <a href="/profile" class="{{ 'on' if page == 'profile' }}">My profile</a>
-    <span class="nav-sep" aria-hidden="true"></span>
-    <a href="/interview" class="{{ 'on' if page == 'interview' }}">Interview</a>
     <a href="/schemes" class="{{ 'on' if page == 'schemes' }}">Schemes</a>
-    <a href="/dashboard" class="{{ 'on' if page == 'dashboard' }}">Dashboard</a>
   </nav>
   <div class="topmeta">
     <span class="pill">{{ n_schemes }} schemes</span>
@@ -28,8 +25,9 @@
 </header>
 <main>{% block body %}{% endblock %}</main>
 <footer class="foot">
-  Eligibility rules are encoded from published government sources and are
-  <strong>unverified draft data</strong>. This is a research demo, not advice.
+  Eligibility rules are encoded from published government sources. Most are not yet
+  checked by a person — always confirm at the e-Sevai centre or the department office
+  before you apply.
 </footer>
 {% block scripts %}{% endblock %}
 </body>

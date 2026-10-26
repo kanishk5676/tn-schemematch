@@ -37,7 +37,6 @@ class Session:
     last_seen: float
     # Cached model output, keyed so a re-click on stage never pays for a second call.
     explanations: dict[str, str] = field(default_factory=dict)
-    comparison: dict[str, Any] | None = None
     # The saved profile this session reads from and writes back to, if any.
     profile_id: str | None = None
     # Agent sessions only: the API message history (append-only — earlier turns carry

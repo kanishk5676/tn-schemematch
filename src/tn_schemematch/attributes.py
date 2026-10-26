@@ -1,9 +1,9 @@
 """Attribute vocabulary, typing, and normalization.
 
 The attribute space is declared in ``kb/spec/attributes.yaml`` and loaded here.
-Everything downstream — scheme rules, persona profiles, and the extraction step of
-the grounding pipeline — is typed against this vocabulary, so a rule can never
-reference an attribute the benchmark does not define.
+Everything downstream — scheme rules, test profiles, saved citizen profiles, and the
+facts the assistant records — is typed against this vocabulary, so a rule can never
+reference an attribute the product does not define.
 
 The normalizer exists because code-mixed queries carry quantities in whatever unit
 the speaker thinks in ("rendu ekkar", "2 acre", "80 cent", "month-ku 8000") and

@@ -1,17 +1,13 @@
-"""Citizen personas, their paired queries, and the ground truth derived from them.
+"""Test profiles: whole people, with the answer the rule engine must give for each.
 
-A persona is a complete attribute profile plus two renderings of the *same*
-underspecified question — one in code-mixed Tamil-English, one in clean English. The
-pairing is the experiment: because the profile, the KB, and the revealed attributes are
-held fixed, any difference in a system's output between the two conditions is
-attributable to the language of the query and nothing else. That is RQ2, and it only
-works if the two queries really do reveal the same facts, which is why
-``stated_in_query`` is annotated once per persona and shared by both variants.
+A test profile (called a *persona* in the code and the data files) is a complete attribute
+profile plus the first sentence that person might say, in code-mixed Tamil-English and in
+English. ``stated_in_query`` records which facts that sentence reveals.
 
-Ground truth is *computed*, never written by hand: the eligible set is whatever the rule
-engine returns for the full profile over active schemes. Annotators verify the encoded
-rules and the query wording; they do not label eligible sets. This keeps labels
-internally consistent and makes the whole benchmark regenerable when a rule is corrected.
+They are regression tests for the rules. Ground truth is *computed*, never written by
+hand: the eligible set is whatever the rule engine returns for the full profile over
+active schemes. So a rule change that silently drops someone from a scheme shows up as a
+moved gold label in ``scripts/gold_diff.py`` before it reaches a citizen.
 """
 
 from __future__ import annotations
@@ -212,7 +208,7 @@ def load_persona(path: str | Path, spec: AttributeSpec | None = None) -> Persona
     if missing_conditions:
         raise PersonaError(
             f"{path.name}: missing query variant(s) {sorted(missing_conditions)} — "
-            "the paired design requires both, or RQ2 cannot be measured on this persona"
+            "every test profile carries both opening sentences"
         )
 
     stated = tuple(raw.get("stated_in_query") or ())
@@ -362,10 +358,10 @@ def validate_personas(personas: PersonaSet, kb: SchemeKB) -> list[str]:
         if persona.annotation.parallel_faithful is False:
             problems.append(
                 f"{persona.id}: annotator marked the two variants as not faithful parallels; "
-                "exclude from the RQ2 analysis or re-author"
+                "re-author the code-mixed variant"
             )
 
-    # A benchmark where every persona qualifies for everything measures nothing.
+    # A test set where every profile qualifies for everything tests nothing.
     gold = personas.gold(kb)
     if gold:
         all_ids = set(active.ids())

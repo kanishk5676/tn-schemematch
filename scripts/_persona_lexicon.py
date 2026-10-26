@@ -1,7 +1,7 @@
 """Surface renderings of a fact, in code-mixed Tamil-English and in clean English.
 
-The pairing of the two conditions is the whole RQ2 experiment, and it only measures the
-language of the query if both variants reveal *exactly* the same facts. Rather than
+Every test profile carries its opening sentence in two registers, and both must reveal
+*exactly* the same facts. Rather than
 authoring two texts and hoping they match, this module renders each fact once into both
 registers from a single entry, and the query builder emits the same fact list to both.
 Faithfulness of the parallel is then a property of the construction, not a judgement an

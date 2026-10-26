@@ -3,7 +3,7 @@
 Thin by construction: every route is a projection of something the library already
 computes. Nothing here decides eligibility, ranks a question, or normalizes a value — it
 serializes what :mod:`tn_schemematch.interview` and :mod:`tn_schemematch.serialize`
-return. That is the same division of labour the pipeline itself argues for, one level up.
+return. The rule engine decides; the web layer only shows what it decided.
 
 The app factory takes injected ``kb`` / ``spec`` / ``client`` so the whole API can be
 tested offline against a ``ScriptedClient``, with no key and no network.
@@ -11,8 +11,6 @@ tested offline against a ``ScriptedClient``, with no key and no network.
 
 from __future__ import annotations
 
-import json
-import threading
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +20,7 @@ from ..attributes import default_spec
 from ..documents import MAX_UPLOAD_BYTES, load_documents
 from ..elicitation import resolving_power
 from ..interview import Interview
-from ..kb import DEFAULT_KB_DIR, load_kb
+from ..kb import load_kb
 from ..rules import Verdict
 from ..serialize import filter_cards, scheme_detail, scheme_summary
 from ..systems.base import LLMClient
@@ -31,10 +29,6 @@ from .http import error as _error
 from .chat_api import register_chat_api
 from .profiles_api import register_document_api, register_profile_api
 from .state import AppContext, SessionStore
-
-# The repo root is derived from the KB's own default, never recomputed here:
-# Path(__file__).parent.parent.parent resolves to src/ from this file, not the repo root.
-RUNS_DIR = DEFAULT_KB_DIR.parent.parent / "data" / "runs"
 
 SAMPLE_QUERIES = [
     {"label": "Farmer, two acres",
@@ -50,8 +44,8 @@ SAMPLE_QUERIES = [
 
 
 def _personas(ctx: AppContext):
-    """Load the benchmark on first use only — 247 YAML files is ~0.8s, and most sessions
-    never touch it."""
+    """Load the test profiles on first use only — 247 YAML files is ~0.8s, and most
+    sessions never touch them."""
     if getattr(ctx, "_personas", None) is None:
         from ..personas import load_personas
         ctx._personas = load_personas(None, ctx.spec)
@@ -143,9 +137,14 @@ def _register_pages(app: Flask, ctx: AppContext) -> None:
     def schemes_page():
         return page("schemes.html", "schemes")
 
+    @app.get("/admin")
+    def admin_page():
+        # The curator's view: coverage and verification status. Not in the citizen nav.
+        return page("dashboard.html", "admin")
+
     @app.get("/dashboard")
-    def dashboard_page():
-        return page("dashboard.html", "dashboard")
+    def dashboard_redirect():
+        return redirect("/admin", code=301)
 
 
 # ----------------------------------------------------------------------- interview
@@ -161,7 +160,7 @@ def _register_session_api(app: Flask, ctx: AppContext) -> None:
         max_questions = int(body.get("max_questions") or app.config["MAX_QUESTIONS"])
 
         if persona_id:
-            # Replay: answer the whole interview from a benchmark persona's true profile.
+            # Replay: answer the whole interview from a test profile's true answers.
             # No typing, no model, no network — the rehearsable path when a demo has to
             # work regardless of the room's wifi.
             try:
@@ -346,22 +345,6 @@ def _register_session_api(app: Flask, ctx: AppContext) -> None:
         return jsonify({"scheme_id": scheme_id, "lang": language,
                         "text": session.explanations[cache_key]})
 
-    @app.post("/api/session/<session_id>/compare")
-    def compare(session_id: str):
-        session, failure = _load(session_id)
-        if failure:
-            return failure
-        if iv.client is None:
-            return _error("no_model", "This server is running rules-only.", 503)
-        if session.comparison is None:
-            from .compare import compare_against_direct
-            try:
-                session.comparison = compare_against_direct(
-                    iv.client, ctx.kb, ctx.spec, session.state)
-            except Exception as exc:  # noqa: BLE001
-                return _error("compare_failed", f"{type(exc).__name__}: {exc}", 503)
-        return jsonify(session.comparison)
-
 
 # ----------------------------------------------------------------------- catalogue
 
@@ -436,45 +419,9 @@ def _register_catalogue_api(app: Flask, ctx: AppContext) -> None:
                 "by_type": by_type, "by_sensitivity": by_sensitivity,
             },
             "attribute_usage": [{"attr": a, "n_schemes": len(ids)} for a, ids in usage],
-            "runs": _read_runs(),
         })
 
     @app.get("/api/health")
     def health():
         return jsonify({"ok": True, "schemes": len(ctx.active),
                         "model": ctx.model_name, "sessions": len(ctx.sessions)})
-
-
-def _read_runs() -> list[dict[str, Any]]:
-    """Scored experiment runs, if any exist. A malformed run is skipped, never a 500."""
-    runs: list[dict[str, Any]] = []
-    if not RUNS_DIR.exists():
-        return runs
-    for directory in sorted(RUNS_DIR.iterdir(), reverse=True):
-        report = directory / "report.json"
-        if not report.is_file():
-            continue
-        try:
-            data = json.loads(report.read_text())
-        except (OSError, ValueError):
-            continue
-        rows = []
-        for key, metrics in (data.get("summary") or {}).items():
-            system, _, condition = key.partition("|")
-            rows.append({
-                "system": system, "condition": condition,
-                "n_runs": metrics.get("n_runs"), "n_errors": metrics.get("n_errors"),
-                # Metric names come from eval/runner.summarize; `fpr` and `harmful_fpr`
-                # are deliberately reported beside F1 rather than folded into it.
-                **{m: (metrics.get(m) or {}).get("mean")
-                   for m in ("precision", "recall", "f1", "fpr", "harmful_fpr",
-                             "exact_match", "n_questions")},
-            })
-        runs.append({
-            "dir": directory.name,
-            "generated": data.get("generated"),
-            "metadata": data.get("metadata", {}),
-            "systems": rows,
-            "rq2": data.get("rq2_codemix_delta") or {},
-        })
-    return runs

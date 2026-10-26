@@ -337,29 +337,6 @@ corrected. A validation check enforces the precondition: no scheme may return
 `UNDETERMINED` for a fully-specified profile, because that would mean its rule reads an
 attribute personas cannot supply, and its label would be a silent guess.
 
-### 2. The headline metric is not F1
-
-`false_positive_rate` — the fraction of returned schemes the citizen does not qualify for
-— is reported **separately** from F1. The two errors are not interchangeable. A false
-negative means someone does not hear about a benefit; that is bad, and it is the status
-quo. A false positive sends them to a district office for nothing. F1 averages those
-together and hides exactly the thing that matters.
-
-`harmful_recommendation_rate` isolates **discontinued** schemes. The KB deliberately
-retains two — a Tamil Nadu marriage grant dead since 2022-23, and RSBY, subsumed into
-PM-JAY in 2018-19. Both are still described in the present tense across most of the web,
-so a retrieval corpus scraped today will surface them. Recommending one is the most costly
-single error available, and the benchmark catches it.
-
-### 3. Asking questions in batches costs accuracy
-
-Every answer changes which question is most informative next, so a batch of three spends
-questions a prior answer would have made unnecessary. On one persona that waste was enough
-to drop a scheme she genuinely qualified for. `ask_batch_size` therefore defaults to 1 —
-and this is recorded as a test, not a comment.
-
----
-
 ## Data model
 
 ```mermaid
@@ -527,29 +504,6 @@ Documents are images only (JPEG, PNG, WebP); PDFs are not read.
 family-scoped conditions approximated by applicant-level tests, block-level geography that
 the vocabulary cannot express, and a "greenfield enterprise" condition with no attribute
 behind it.
-
----
-
-## Research framing
-
-Three questions, of which the second is the spine:
-
-- **RQ1** — Can current agents do *matching*, not just retrieval, when rules involve
-  numeric thresholds and category constraints?
-- **RQ2 (primary)** — Does eligibility-matching accuracy degrade under code-mixing versus
-  clean English, holding the persona and the rules fixed? If robustness degrades for the
-  population that most needs these schemes, that is a finding with direct equity stakes.
-- **RQ3** — Does a structured eligibility-grounding layer beat plain RAG over scheme text?
-
-RQ2 is measured with a **paired bootstrap** over shared personas. Pairing is what makes
-the comparison clean: the two conditions describe the same person against the same rules,
-so persona difficulty cancels.
-
-**An honest confound, stated up front.** BM25 is not language-neutral — a code-mixed query
-carries fewer English content words, so lexical retrieval degrades for reasons that have
-nothing to do with reasoning. The harness therefore reports `retrieval_recall` and
-`matching_recall` side by side, and ships an `OracleRetriever` that removes retrieval error
-entirely. Whatever gap survives is reasoning.
 
 ---
 

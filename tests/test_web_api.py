@@ -229,12 +229,23 @@ def test_stats_endpoint_returns_coverage(client):
     body = client.get("/api/stats").get_json()
     assert body["kb"]["n_schemes"] > 0
     assert body["spec"]["n_elicitable"] > 0
-    assert isinstance(body["runs"], list)
+    assert "runs" not in body
 
 
 def test_pages_render(client):
-    for path in ("/", "/interview", "/profile", "/schemes", "/dashboard"):
+    for path in ("/", "/interview", "/profile", "/schemes", "/admin"):
         assert client.get(path).status_code == 200
+
+
+def test_dashboard_moved_to_admin(client):
+    response = client.get("/dashboard")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith("/admin")
+
+
+def test_compare_route_is_gone(client):
+    sid = client.post("/api/session", json={"query": "", "use_ai": False}).get_json()["session_id"]
+    assert client.post(f"/api/session/{sid}/compare").status_code in (404, 405)
 
 
 def test_rules_only_assistant_points_to_the_interview(client):

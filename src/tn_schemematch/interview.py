@@ -1,16 +1,12 @@
 """A headless, resumable eligibility interview.
 
-The loop in :class:`~tn_schemematch.systems.grounding.GroundingPipeline` runs to
-completion inside one call, driving a :class:`SimulatedCitizen` that answers from a
-persona. That is exactly right for benchmarking and unusable anywhere a real person is
-answering, because there is nowhere to suspend while the question sits on a screen.
+A real person answers one question at a time, often with a pause in between, so every
+operation here takes an :class:`InterviewState` and returns a new outcome. A caller can
+persist the state between turns — an HTTP session, a terminal loop, a test driving it
+question by question. The state is deliberately a plain JSON-serializable record, so
+persisting it is ``json.dump`` and nothing more.
 
-This module inverts it: every operation takes an :class:`InterviewState` and returns a new
-outcome, so a caller can persist the state between turns — an HTTP session, a terminal
-loop, a test driving it question by question. The state is deliberately a plain
-JSON-serializable record, so persisting it is ``json.dump`` and nothing more.
-
-The division of labour is the one the project argues for. The model reads a messy sentence
+The division of labour is the product's safety guarantee. The model reads a messy sentence
 and fills attribute slots, and it normalizes a free-text answer the alias table cannot.
 Everything that decides anything — which question comes next, what each scheme's verdict
 is — is a rule evaluation. Two invariants enforce that here rather than trusting callers:
@@ -45,9 +41,21 @@ from .serialize import (
 )
 from .systems.base import LLMClient, attribute_catalogue, parse_json_response
 
-# Imported rather than restated: the benchmark and the live app must extract with the same
-# prompt, or the numbers stop describing the thing being demonstrated.
-from .systems.grounding import EXTRACTION_SYSTEM_PROMPT
+EXTRACTION_SYSTEM_PROMPT = """\
+You extract structured facts from a citizen's question about Indian government welfare \
+schemes. The question may be written in code-mixed Tamil and English, in Tamil script, \
+in romanized Tamil, or in English.
+
+You will be given a list of attributes. Return ONLY the attributes the question actually \
+states or unambiguously implies. Do not guess, do not infer from stereotypes, and do not \
+fill in what a typical person might answer. Leaving an attribute out is correct and \
+expected; inventing one is not.
+
+Keep quantities in the words the citizen used — write "2 ekkar" or "80 cent" or "month-ku \
+8000" rather than converting them. Conversion happens downstream.
+
+Reply with JSON only: {"attribute_name": value, ...}. Use an empty object {} if the \
+question states nothing."""
 
 __all__ = [
     "EXTRACTION_SYSTEM_PROMPT",
@@ -133,9 +141,8 @@ class AnswerOutcome:
 def extract_attributes(client: LLMClient, spec: AttributeSpec, query: str) -> dict[str, Any]:
     """Ask the model which attribute slots a query fills.
 
-    Mirrors ``GroundingPipeline._extract``, including raising on a non-object payload: a
-    system that cannot emit parseable output is producing a real result about itself, and
-    repairing it here would flatter it.
+    Raises on a non-object payload rather than repairing it: a guess at what the model
+    meant is exactly the kind of unearned fact the rule engine must never see.
     """
     user = (
         "ATTRIBUTES:\n"

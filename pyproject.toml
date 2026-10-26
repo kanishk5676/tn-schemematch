@@ -5,16 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tn-schemematch"
 version = "0.1.0"
-description = "Eligibility matching for Indian welfare schemes under code-mixed Tamil-English queries: benchmark, rule KB, and structured-grounding pipeline."
+description = "Udhavi: a voice-first assistant that tells Tamil Nadu families which welfare schemes they can get, what to bring and where to go. A rule engine decides eligibility; the model only talks."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "CC-BY-4.0" }
 authors = [{ name = "TN-SchemeMatch authors" }]
-keywords = ["nlp", "code-mixing", "tamil", "welfare", "eligibility", "benchmark", "indic-nlp"]
+keywords = ["tamil", "welfare", "government-schemes", "eligibility", "rule-engine", "voice", "accessibility", "civic-tech"]
 
 dependencies = [
     "PyYAML>=6.0",
     "jsonschema>=3.2",
+    "flask>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -22,7 +23,6 @@ dev = ["pytest>=7.0"]
 # Model backends are optional so the KB + rule engine stay dependency-light.
 # anthropic 1.x: messages take `effort`, not `temperature`; Pillow shrinks document photos.
 models = ["openai>=1.0", "anthropic>=1.0", "pillow>=10.0"]
-retrieval = ["sentence-transformers>=2.2", "numpy>=1.24"]
 
 [project.scripts]
 schemematch = "tn_schemematch.cli:main"

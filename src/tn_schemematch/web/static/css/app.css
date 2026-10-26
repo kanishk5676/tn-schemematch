@@ -354,18 +354,6 @@ table.data th { color: var(--muted); font-weight: 600; font-size: 11.5px; text-t
 table.data td.fpr { font-weight: 700; }
 .scroll-x { overflow-x: auto; }
 
-/* ------------------------------------------------------------- comparison */
-
-.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media (max-width: 760px) { .vs { grid-template-columns: 1fr; } }
-.vs-col { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: var(--panel); }
-.vs-col.grounded { border-left: 3px solid var(--ok); }
-.vs-col.direct { border-left: 3px solid var(--ai); }
-.vs-list { display: grid; gap: 5px; margin-top: 9px; font-size: 13px; }
-.vs-list div { padding: 5px 8px; border-radius: 6px; background: var(--panel-2); }
-.vs-list div.fp { background: var(--no-bg); color: var(--no); font-weight: 600; }
-.vs-list div.hall { background: var(--no-bg); color: var(--no); font-family: var(--mono); font-size: 12px; }
-
 .spinner {
   width: 15px; height: 15px; border: 2px solid var(--line); border-top-color: var(--ai);
   border-radius: 50%; animation: spin .7s linear infinite; display: inline-block;
