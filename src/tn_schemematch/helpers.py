@@ -6,8 +6,8 @@ do not give them:
 
 - **Quick intake.** A handful of facts that decide most schemes (:data:`QUICK_INTAKE`),
   saved as a person in one step and added to the day's camp.
-- **One sheet per family** to hand over: the schemes, what each is worth, the papers to
-  collect and where to get them (:func:`print_sheet`).
+- **Each family's papers to hand over**: the application sheet for every scheme they can
+  get (:mod:`.pack`), linked from their line in the camp's queue.
 - **A report a panchayat or NGO can see** without seeing anyone (:func:`anonymous_report`):
   counts only, and any count from 1 to 4 shown as "<5", so a small group cannot be picked
   out. Five is the threshold most official small-area statistics use.
@@ -16,16 +16,14 @@ do not give them:
 from __future__ import annotations
 
 from collections import Counter
-from datetime import date
 from typing import Any, Iterable, Mapping
 
 from .attributes import AttributeSpec, SchemaError
-from .benefits import group_view, rupees, totals
+from .benefits import rupees, totals
 from .documents import checklist
 from .kb import SchemeKB
-from .outlook import unlock
 from .rules import Verdict
-from .serialize import attribute_form, label_for, scheme_summary
+from .serialize import attribute_form, label_for
 
 # The facts that settle the most schemes for the least asking, in the order a helper asks
 # them; everything else can be added later on the person's profile. Measured, not guessed:
@@ -79,35 +77,11 @@ def person_summary(active: SchemeKB, vault: Any, documents: Any, pid: str) -> di
     return {
         **person,
         "n_eligible": len(eligible),
-        "schemes": [active[i].name for i in money["take"]],
+        "schemes": [{"id": i, "name": active[i].name} for i in money["take"]],
         "yearly_text": money["yearly_text"],
         "one_time_text": money["one_time_text"],
         "documents_to_collect": [entry["label"] for entry in to_collect],
         "n_undetermined": len(active.match(profile)[Verdict.UNKNOWN]),
-    }
-
-
-def print_sheet(active: SchemeKB, spec: AttributeSpec, vault: Any, documents: Any,
-                pid: str, *, today: date | None = None) -> dict[str, Any]:
-    """Everything a family takes home, for the printed page."""
-    person = vault.get_profile(pid)
-    profile, _ = vault.profile(pid)
-    eligible = active.match(profile)[Verdict.TRUE]
-    money = totals(active, eligible)
-    state = profile.get("state")
-    plan = checklist(documents, active, money["take"], _held(vault, pid), state=state)
-    return {
-        "person": person,
-        "date": (today or date.today()).strftime("%d-%m-%Y"),
-        "schemes": [scheme_summary(active[i]) for i in money["take"]],
-        "only_one_of": group_view(active, money["groups"]),
-        "money": money,
-        "to_collect": plan["to_collect"],
-        "n_ready": plan["n_ready"],
-        "questions": unlock(active, spec, profile, limit=4)["questions"],
-        "applications": [{"scheme": active[a["scheme_id"]].name if a["scheme_id"] in active
-                          else a["scheme_id"], "status": a["status"]}
-                         for a in vault.applications(pid)],
     }
 
 
@@ -138,7 +112,7 @@ def anonymous_report(active: SchemeKB, vault: Any, documents: Any,
         eligible = active.match(profile)[Verdict.TRUE]
         take = totals(active, eligible)["take"]
         applied = {a["scheme_id"] for a in vault.applications(pid)
-                   if a["status"] not in {"planned", "withdrawn"}}
+                   if a["status"] != "planned"}
         eligible_count.update(take)
         applied_count.update(set(take) & applied)
         unclaimed = [i for i in take if i not in applied]

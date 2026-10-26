@@ -47,6 +47,21 @@ eligibility:
     - not: {attr: spouse_is_government_employee, op: eq, value: true,
             note: "family-scoped: 'employees of Central and State governments' are excluded at family level"}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "மகளிர் உரிமைத் தொகை"
+    what: "குடும்பத் தலைவிக்கு மாதம் 1,000 ரூபாய், வங்கிக் கணக்கில் நேரடியாக."
+    who: "ரேஷன் கார்டில் குடும்பத் தலைவியாக உள்ள 21 வயதுக்கு மேற்பட்ட பெண். குடும்ப வருமானம் வருடத்துக்கு 2.5 லட்சத்துக்குள். வருமான வரி கட்டும் அல்லது அரசு ஊழியர் உள்ள குடும்பங்களுக்கு இல்லை."
+    where: "இ-சேவை மையம் அல்லது kmut.tn.gov.in இணையதளம்."
+  en:
+    name: "Women's rights grant (Magalir Urimai Thogai)"
+    what: "₹1,000 a month to the woman who heads the family, paid into her bank account."
+    who: "A woman aged 21 or more named as head of the family on the ration card, with family income under ₹2.5 lakh a year. Not for families with an income tax payer or a government employee."
+    where: "e-Sevai centre or the kmut.tn.gov.in website."
+
 documents:
   - Family card (ration card)
   - Aadhaar card

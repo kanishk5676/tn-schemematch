@@ -240,13 +240,7 @@ function renderResults(data) {
       'Every verdict below is a rule evaluation, not a model assertion. Open a trace to see the clauses.'),
     el('div', { style: 'margin-top:14px' }, saveBox()),
     el('div', { class: 'row', style: 'margin-top:14px' },
-      el('button', { class: 'btn', onclick: () => location.reload() }, 'Start over'),
-      hasModel
-        ? el('button', { class: 'btn', id: 'cmp-btn', onclick: runComparison },
-            'Compare with asking the model directly')
-        : null)));
-
-  wrap.append(el('div', { id: 'comparison' }));
+      el('button', { class: 'btn', onclick: () => location.reload() }, 'Start over'))));
 
   if (data.eligible.length) {
     wrap.append(el('div', { class: 'eyebrow', style: 'margin-top:20px' }, 'Eligible'));
@@ -272,51 +266,9 @@ function renderResults(data) {
   paintProfile(data.profile);
 }
 
-/* ------------------------------------------------------------- comparison */
-
-async function runComparison() {
-  const box = $('comparison');
-  const button = $('cmp-btn');
-  button.disabled = true;
-  box.replaceChildren(el('div', { class: 'card', style: 'margin-top:14px' },
-    el('span', { class: 'spinner' }), ' asking the model the same question, with no rules in the loop…'));
-  try {
-    const data = await api.compare(sid);
-    const list = (items, klass) => el('div', { class: 'vs-list' },
-      ...(items.length ? items.map((s) => el('div', { class: klass || '' }, s.name || s))
-        : [el('div', { class: 'muted' }, 'none')]));
-
-    box.replaceChildren(el('div', { class: 'card', style: 'margin-top:14px' },
-      el('div', { class: 'eyebrow' }, 'Same person, two systems'),
-      el('div', { class: 'vs' },
-        el('div', { class: 'vs-col grounded' },
-          el('h3', {}, `Grounded pipeline — ${data.counts.grounded}`),
-          el('div', { class: 'tiny muted' }, 'every entry carries a rule trace'),
-          list(data.grounded)),
-        el('div', { class: 'vs-col direct' },
-          el('h3', {}, `Model answering directly — ${data.counts.direct}`),
-          el('div', { class: 'tiny muted' }, 'no rules, no trace, no way to check'),
-          list(data.direct))),
-      data.false_positives.length ? el('div', { style: 'margin-top:14px' },
-        el('div', { class: 'eyebrow' }, `False positives — ${data.counts.false_positives}`),
-        el('div', { class: 'tiny muted' },
-          'the rules rule these out; a citizen sent to a district office for one loses a day of work'),
-        list(data.false_positives, 'fp')) : null,
-      data.hallucinated.length ? el('div', { style: 'margin-top:14px' },
-        el('div', { class: 'eyebrow' }, `Schemes that do not exist — ${data.counts.hallucinated}`),
-        list(data.hallucinated, 'hall')) : null,
-      !data.false_positives.length && !data.hallucinated.length
-        ? el('p', { class: 'tiny muted', style: 'margin-top:14px' },
-            'The model agreed with the rules this time. It still cannot show why — there is no trace to open on the right.')
-        : null));
-  } catch (error) {
-    box.replaceChildren(el('div', { class: 'card', style: 'margin-top:14px' }, error.message));
-  } finally { button.disabled = false; }
-}
-
 /* -------------------------------------------------------------- listeners */
 
-/* Replay mode: /?persona=p001 runs a whole interview from a benchmark persona and lands
+/* Replay mode: /?persona=p001 runs a whole interview from a test profile and lands
    on the results. Nothing is typed and nothing leaves the machine. */
 async function replay(personaId) {
   hide('ask');

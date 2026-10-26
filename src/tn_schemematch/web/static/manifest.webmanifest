@@ -1,0 +1,16 @@
+{
+  "name": "உதவி · Udhavi — government schemes for your family",
+  "short_name": "உதவி",
+  "description": "Find the Tamil Nadu and central government schemes your family can get, by speaking or tapping, in Tamil or English.",
+  "lang": "ta",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf8",
+  "theme_color": "#15803d",
+  "icons": [
+    {"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/static/icons/icon.svg", "sizes": "any", "type": "image/svg+xml"}
+  ]
+}

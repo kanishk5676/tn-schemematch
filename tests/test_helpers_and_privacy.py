@@ -27,37 +27,23 @@ def make(kb, spec, tmp_path, **kwargs):
 
 
 # --------------------------------------------------------------------- sign-in
+# The PIN itself is the helper API's and is tested in test_helper.py; these check that the
+# camp and report routes sit behind it.
 
 
-def test_without_a_pin_helper_pages_are_open(kb, spec, tmp_path):
+def test_without_a_pin_camps_are_open(kb, spec, tmp_path):
     _, http = make(kb, spec, tmp_path)
-    assert http.get("/api/helper").get_json() == {"pin_required": False, "signed_in": True}
     assert http.get("/api/camps").status_code == 200
 
 
-def test_with_a_pin_helper_routes_need_it(kb, spec, tmp_path):
+def test_with_a_pin_camps_and_reports_need_it(kb, spec, tmp_path):
     _, http = make(kb, spec, tmp_path, helper_pin="2468")
     assert http.get("/api/camps").status_code == 401
-    assert http.get("/api/outcomes").status_code == 401
     assert http.get("/api/reports/summary").status_code == 401
-    assert b"Helper sign-in" in http.get("/camp").data
-    assert http.post("/api/helper/login", json={"pin": "0000"}).status_code == 401
-    assert http.post("/api/helper/login", json={"pin": "2468"}).status_code == 200
+    assert b"/api/helper/login" in http.get("/camp").data  # the sign-in form, not the camp
+    http.post("/api/helper/login", json={"pin": "2468"})
     assert http.get("/api/camps").status_code == 200
-    http.post("/api/helper/logout")
-    assert http.get("/api/camps").status_code == 401
-
-
-def test_repeated_wrong_pins_lock_sign_in(kb, spec, tmp_path):
-    _, http = make(kb, spec, tmp_path, helper_pin="2468")
-    for _ in range(5):
-        http.post("/api/helper/login", json={"pin": "1111"})
-    assert http.post("/api/helper/login", json={"pin": "2468"}).status_code == 429
-
-
-def test_the_pin_is_not_kept_in_plain_text(kb, spec, tmp_path):
-    app, _ = make(kb, spec, tmp_path, helper_pin="2468")
-    assert "2468" not in str(app.config["HELPER_PIN_HASH"])
+    assert http.get("/api/reports/summary").status_code == 200
 
 
 # ------------------------------------------------------------------------ camps
@@ -73,7 +59,7 @@ def test_camp_intake_saves_a_person_with_consent(kb, spec, tmp_path):
                        json={"name": "Murugan", "facts": FARMER, "consent": True, "lang": "ta"})
     assert person.status_code == 201
     body = person.get_json()
-    assert body["n_eligible"] > 0 and "Mahatma Gandhi National Rural Employment Guarantee Act (MGNREGA)" in body["schemes"]
+    assert body["n_eligible"] > 0 and "mgnrega" in {s["id"] for s in body["schemes"]}
     vault = app.extensions["schemematch"].vault
     assert vault.consent(body["id"])["given_by"] == "helper"
     assert vault.consent(body["id"])["lang"] == "ta"
@@ -96,14 +82,18 @@ def test_check_facts_reads_the_state_first(spec):
     assert values["ration_card_type"] == "npns" and not errors
 
 
-def test_a_printed_sheet_names_schemes_and_where_to_get_papers(kb, spec, tmp_path):
+def test_the_application_sheet_says_what_it_pays_and_where_to_get_papers(kb, spec, tmp_path):
+    """Each family's printed page is the application sheet; the camp links to it."""
     _, http = make(kb, spec, tmp_path)
     cid = http.post("/api/camps", json={"name": "Ward 4"}).get_json()["id"]
     pid = http.post(f"/api/camps/{cid}/people",
                     json={"name": "Murugan", "facts": FARMER, "consent": True}).get_json()["id"]
-    page = http.get(f"/print/{pid}").data.decode()
-    assert "Murugan" in page and "MGNREGA" in page and "Papers to collect" in page
-    assert http.get(f"/print/camp/{cid}").status_code == 200
+    sheet = http.get(f"/api/profiles/{pid}/pack/cmchis?lang=en").get_json()
+    assert sheet["value_text"] == "cover of ₹5,00,000"
+    missing = [d for d in sheet["documents"] if d["status"] == "missing"]
+    assert missing and all(d["guide"] and d["guide"]["issued_by"] for d in missing)
+    page = http.get(f"/profile/{pid}/pack/cmchis?lang=en").data.decode()
+    assert "Get it from" in page
 
 
 # ---------------------------------------------------------------------- reports
@@ -127,7 +117,7 @@ def test_counts_under_five_are_suppressed_and_names_never_appear(kb, spec, tmp_p
         pid = vault.create_profile(f"Farmer{i}")["id"]
         vault.record_many(pid, facts)
         ids.append(pid)
-    vault.open_application(ids[0], "pm-kisan", status="applied", verdict="eligible")
+    vault.set_application(ids[0], "pm-kisan", status="applied", verdict="eligible")
     report = anonymous_report(kb.active(), vault, None, ids)
     row = next(s for s in report["schemes"] if s["scheme_id"] == "pm-kisan")
     assert row["eligible"] == 6

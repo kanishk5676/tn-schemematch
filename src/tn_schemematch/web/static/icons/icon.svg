@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Udhavi">
+  <rect width="512" height="512" rx="112" fill="#15803d"/>
+  <!-- Two hands holding a circle: help, given and received. -->
+  <circle cx="256" cy="210" r="78" fill="#fef3c7"/>
+  <path d="M96 300c40-6 74 6 104 34l38 36c10 10 26 10 36 0l38-36c30-28 64-40 104-34v62c-28-4-52 4-74 24l-58 54c-28 26-72 26-100 0l-58-54c-22-20-46-28-74-24z" fill="#ffffff"/>
+</svg>

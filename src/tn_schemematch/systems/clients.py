@@ -1,19 +1,22 @@
 """Model backends.
 
 Kept behind the tiny :class:`~tn_schemematch.systems.base.LLMClient` protocol and imported
-lazily, so the core package — KB, rules, elicitation, metrics — has no model dependency at
-all and the whole test suite runs without a key.
+lazily, so the core package — KB, rules, elicitation — has no model dependency at all and
+the whole test suite runs without a key.
 
-Every client records its decoding configuration in ``name``, because that string ends up
-in the results file and in the paper's system column. A run whose decoding parameters
-cannot be reconstructed from its own output is not reproducible.
+Every client records its model and decoding configuration in ``name``, which the page shows
+and the usage meter prices by.
 
 **Sampling parameters are gone.** The Anthropic API no longer accepts ``temperature``,
 ``top_p`` or ``top_k`` (the 1.x SDK does not even take them as arguments, and current models
-reject them), so a run can no longer be made repeatable by pinning temperature to zero.
-Reproducibility now comes from the other direction: :class:`CachingClient` can dump every
-raw response to a JSONL file that ships with the run, and a re-score replays that file
-instead of calling the model again. What the model said is the record, not a seed.
+reject them). ``effort`` is the one decoding knob. :class:`CachingClient` can dump every raw
+response to a JSONL file and replay it, which is how a demo is rehearsed once and then
+replayed for free.
+
+**Money.** An optional :class:`~tn_schemematch.systems.budget.UsageMeter` is checked before
+each call and fed after it. A spent daily cap, a spent credit balance or a rejected key all
+raise :class:`~tn_schemematch.systems.budget.ModelUnavailable`, which the assistant answers
+by carrying on in guided mode rather than failing the person's turn.
 
 Two capabilities sit beside the protocol's ``complete`` and are detected with ``hasattr``
 by the code that needs them, so a backend without them degrades with a clear message:
@@ -33,6 +36,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Sequence
 
+from .budget import CreditExhausted, KeyRejected, ModelUnavailable
+
 DEFAULT_ANTHROPIC_MODEL = "claude-opus-5-5"
 
 # Server-side refusal fallback: when a safety classifier declines a request, the API re-runs
@@ -42,7 +47,7 @@ FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 class ModelRefusal(RuntimeError):
     """The model (and any fallback) declined the request. Callers treat it like any other
-    model failure: the interview degrades to rules-only, the benchmark records an error."""
+    model failure: the interview degrades to rules only."""
 
 
 @dataclass
@@ -62,6 +67,8 @@ class AnthropicClient:
     # Server-side refusal fallback. Off for Haiku, which has none.
     fallbacks: bool | None = None
     api_key: str | None = None
+    # A :class:`~.budget.UsageMeter`: checked before each call, fed after it.
+    meter: Any = None
     name: str = field(init=False)
     _client: Any = field(init=False, default=None, repr=False)
 
@@ -110,10 +117,17 @@ class AnthropicClient:
         if self.fallbacks:
             kwargs["betas"] = [FALLBACK_BETA]
             kwargs["fallbacks"] = "default"
+        if self.meter is not None:
+            self.meter.check()  # over today's cap: no call is made at all
         try:
             response = self._ensure().beta.messages.create(**kwargs)
         except Exception as exc:  # noqa: BLE001 — surfaced to the caller with our name on it
+            unavailable = _unavailable(exc)
+            if unavailable is not None:
+                raise unavailable(f"{self.name}: {exc}") from exc
             raise RuntimeError(f"{self.name} failed: {type(exc).__name__}: {exc}") from exc
+        if self.meter is not None and getattr(response, "usage", None) is not None:
+            self.meter.record(getattr(response, "model", None) or self.model, response.usage)
         if response.stop_reason == "refusal":
             details = getattr(response, "stop_details", None)
             category = getattr(details, "category", None) if details else None
@@ -161,6 +175,19 @@ class AnthropicClient:
         ``content`` the caller must append to the history unchanged."""
         return self._request(system=system, messages=messages, tools=tools, effort=effort,
                              cache=True)
+
+
+def _unavailable(exc: Exception) -> type[ModelUnavailable] | None:
+    """Errors that mean "the model is not usable now", as opposed to a bad request.
+
+    Matched by the SDK's class names, so this module still imports without the SDK.
+    """
+    names = {cls.__name__ for cls in type(exc).__mro__}
+    if names & {"AuthenticationError", "PermissionDeniedError"}:
+        return KeyRejected
+    if "credit balance" in str(exc).lower():
+        return CreditExhausted
+    return None
 
 
 @dataclass
@@ -217,13 +244,12 @@ class OpenAIClient:
 class CachingClient:
     """Wraps another client and memoizes on (system, user).
 
-    Runs are re-scored far more often than they are re-generated — every metric change
-    during error analysis would otherwise mean paying for the whole grid again. The cache
-    is keyed on the exact prompt pair, so a prompt edit correctly misses.
+    The same sentence extracted twice costs once. The cache is keyed on the exact prompt
+    pair, so a prompt edit correctly misses.
 
-    It is also the run's record. With sampling parameters gone a second call need not
-    return the same text, so :meth:`dump` writes every response beside the results, and
-    :meth:`load` replays them — a re-score of a saved run makes no model call at all.
+    It is also a recording. With sampling parameters gone a second call need not return
+    the same text, so :meth:`dump` writes every response to a file and :meth:`load`
+    replays them — a rehearsed demo makes no model call at all.
     """
 
     inner: Any
@@ -241,6 +267,10 @@ class CachingClient:
         if hasattr(self.inner, "converse"):
             # Conversations are stateful and never repeat exactly; nothing to cache.
             self.converse = self.inner.converse
+
+    @property
+    def meter(self) -> Any:
+        return getattr(self.inner, "meter", None)
 
     def complete(self, system: str, user: str, *, json_mode: bool = False) -> str:
         key = (system, user)
@@ -305,13 +335,13 @@ def has_credentials(backend: str) -> bool:
 
 
 def make_client(backend: str, model: str | None = None, *,
-                max_retries: int = 3) -> CachingClient | None:
+                max_retries: int = 3, meter: Any = None) -> CachingClient | None:
     """The one place a backend name becomes a client. ``none`` means rules only."""
     if backend == "none":
         return None
     if backend == "anthropic":
         inner: Any = AnthropicClient(model=model or DEFAULT_ANTHROPIC_MODEL,
-                                     max_retries=max_retries)
+                                     max_retries=max_retries, meter=meter)
     elif backend == "openai":
         inner = OpenAIClient(model=model or OpenAIClient.model, max_retries=max_retries)
     else:

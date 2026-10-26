@@ -26,6 +26,21 @@ eligibility:
     - {attr: age, op: gte, value: 60}
     - {attr: is_bpl, op: eq, value: true, note: "BPL is an administrative list, not an income threshold"}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "முதியோர் ஓய்வூதியம் (மத்திய அரசு)"
+    what: "மத்திய அரசின் பங்கு மாதம் 200 ரூபாய்; 80 வயதில் 500 ரூபாய். மாநில அரசு மேலும் சேர்க்கும்."
+    who: "வறுமைக் கோட்டுக்குக் கீழ் உள்ள குடும்பங்களைச் சேர்ந்த 60 வயதுக்கு மேற்பட்டவர்கள்."
+    where: "தாலுகா அலுவலகம் அல்லது இ-சேவை மையம்."
+  en:
+    name: "Old age pension (central)"
+    what: "The central share is ₹200 a month, ₹500 from age 80. The state adds more."
+    who: "People over 60 from families below the poverty line."
+    where: "Taluk office or e-Sevai centre."
+
 documents:
   - Age proof
   - BPL card

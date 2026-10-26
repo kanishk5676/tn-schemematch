@@ -33,6 +33,21 @@ eligibility:
        note: "the district source says 'not exceeding Rs 50,000' for this scheme and 'less than Rs 50,000' for the others; the wording difference is preserved rather than harmonised"}
     - {attr: receives_other_pension, op: eq, value: false}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "திருமணமாகாத பெண்களுக்கான உதவித்தொகை"
+    what: "மாதம் 1,000 ரூபாய்."
+    who: "50 வயதுக்கு மேற்பட்ட, திருமணமாகாத, ஆதரவற்ற பெண்கள்; சொத்து 50,000 ரூபாய்க்குள்."
+    where: "தாலுகா அலுவலகம் அல்லது இ-சேவை மையம்."
+  en:
+    name: "Pension for unmarried women"
+    what: "₹1,000 a month."
+    who: "Unmarried women over 50 with no support and property under ₹50,000."
+    where: "Taluk office or e-Sevai centre."
+
 documents:
   - Certificate of unmarried status from the Village Administrative Officer
   - Income and asset certificate

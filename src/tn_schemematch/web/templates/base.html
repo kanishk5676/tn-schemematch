@@ -1,39 +1,49 @@
 <!doctype html>
-<html lang="en">
+<html lang="ta">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}TN-SchemeMatch{% endblock %}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{% block title %}உதவி · Udhavi{% endblock %}</title>
+<meta name="description" content="Find the Tamil Nadu and central government schemes your family can get — in Tamil or English, by speaking or tapping.">
+<meta name="theme-color" content="#15803d">
+<link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+<link rel="icon" href="{{ url_for('static', filename='icons/icon.svg') }}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>&#127978;</text></svg>">
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
+<a class="skip-link" href="#main" data-i18n="nav_assistant">பேசுங்கள்</a>
 <header class="topbar">
-  <a class="brand" href="/">
+  <a class="brand" href="/" aria-label="Udhavi">
     <span class="brand-mark" aria-hidden="true"></span>
-    <span>TN&#8209;SchemeMatch</span>
+    <span class="brand-ta">உதவி</span><span class="brand-en">Udhavi</span>
   </a>
-  <nav class="nav">
-    <a href="/" class="{{ 'on' if page == 'assistant' }}">Assistant</a>
-    <a href="/profile" class="{{ 'on' if page == 'profile' }}">My profile</a>
-    <span class="nav-sep" aria-hidden="true"></span>
-    <a href="/camp" class="{{ 'on' if page == 'camp' }}">Camp</a>
-    <a href="/reports" class="{{ 'on' if page == 'reports' }}">Reports</a>
-    <span class="nav-sep" aria-hidden="true"></span>
-    <a href="/interview" class="{{ 'on' if page == 'interview' }}">Interview</a>
-    <a href="/schemes" class="{{ 'on' if page == 'schemes' }}">Schemes</a>
-    <a href="/dashboard" class="{{ 'on' if page == 'dashboard' }}">Dashboard</a>
+  <nav class="nav" aria-label="Main">
+    <a href="/" class="{{ 'on' if page == 'assistant' }}" data-i18n="nav_assistant">பேசுங்கள்</a>
+    <a href="/profile" class="{{ 'on' if page == 'profile' }}" data-i18n="nav_profile">என் விவரங்கள்</a>
+    <a href="/schemes" class="{{ 'on' if page == 'schemes' }}" data-i18n="nav_schemes">எல்லாத் திட்டங்கள்</a>
+    {% if helper_link %}<a href="/helper" class="{{ 'on' if page == 'helper' }}" data-i18n="nav_helper">உதவுபவர்</a>
+    <a href="/camp" class="{{ 'on' if page == 'camp' }}" data-i18n="nav_camp">முகாம்</a>
+    <a href="/reports" class="{{ 'on' if page == 'reports' }}" data-i18n="nav_reports">அறிக்கை</a>{% endif %}
   </nav>
   <div class="topmeta">
-    <span class="pill">{{ n_schemes }} schemes</span>
-    <span class="pill mono" title="model backend">{{ model }}</span>
+    <button type="button" class="btn small lang-btn" id="lang-switch" data-i18n="lang_switch">English</button>
   </div>
 </header>
-<main>{% block body %}{% endblock %}</main>
-<footer class="foot">
-  Eligibility rules are encoded from published government sources and are
-  <strong>unverified draft data</strong>. This is a research demo, not advice.
+<main id="main">{% block body %}{% endblock %}</main>
+<footer class="foot" data-i18n="footer">
+  விதிகள் அரசு வெளியீடுகளிலிருந்து எடுக்கப்பட்டவை. பெரும்பாலானவை இன்னும் ஒருவரால்
+  சரிபார்க்கப்படவில்லை — விண்ணப்பிக்கும் முன் இ-சேவை மையத்தில் உறுதி செய்யுங்கள்.
 </footer>
+<script type="module">
+  import { initLanguage } from "{{ url_for('static', filename='js/i18n.js') }}";
+  initLanguage();
+  // Installable on a phone, and the app shell loads on a slow connection. A failure to
+  // register is harmless: the page works exactly the same without it.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  }
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

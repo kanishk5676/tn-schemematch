@@ -21,8 +21,9 @@ Three decisions shape it:
 
 Storage is a single SQLite file under ``data/vault/`` (git-ignored) plus uploaded files
 beside it. It is local by design: nothing here leaves the machine the server runs on.
-There is no authentication — a profile id is a bearer token, like a session id — which is
-acceptable for a server bound to 127.0.0.1 and stated, not hidden, in the README.
+Who may read which profile is decided in the web layer (:mod:`.web.helper_api`): with a
+helper PIN set, a browser sees only the profiles it created unless a helper logs in.
+Photos are deleted once read unless kept on purpose (:meth:`Vault.discard_file`).
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ import sqlite3
 import threading
 import time
 import uuid
+from datetime import date
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -74,28 +76,32 @@ CREATE TABLE IF NOT EXISTS documents (
     media_type  TEXT NOT NULL,
     reading     TEXT,
     status      TEXT NOT NULL,
-    uploaded_at REAL NOT NULL
+    uploaded_at REAL NOT NULL,
+    keep_photo  INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS applications (
-    id          TEXT PRIMARY KEY,
     profile_id  TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     scheme_id   TEXT NOT NULL,
+    status      TEXT NOT NULL,
     reference   TEXT NOT NULL DEFAULT '',
-    office      TEXT NOT NULL DEFAULT '',
-    created_at  REAL NOT NULL,
-    updated_at  REAL NOT NULL
+    note        TEXT NOT NULL DEFAULT '',
+    applied_on  TEXT,
+    updated_at  REAL NOT NULL,
+    PRIMARY KEY (profile_id, scheme_id)
 );
+-- Every change to an application, with what the rules said at that moment: the history
+-- behind the one row above, and what the outcome report counts.
 CREATE TABLE IF NOT EXISTS application_events (
-    seq            INTEGER PRIMARY KEY AUTOINCREMENT,
-    application_id TEXT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
-    status         TEXT NOT NULL,
-    on_date        TEXT,
-    reason         TEXT,
-    note           TEXT NOT NULL DEFAULT '',
-    verdict        TEXT NOT NULL,
-    recorded_at    REAL NOT NULL
+    seq          INTEGER PRIMARY KEY AUTOINCREMENT,
+    profile_id   TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    scheme_id    TEXT NOT NULL,
+    status       TEXT NOT NULL,
+    reason       TEXT,
+    verdict      TEXT NOT NULL,
+    on_date      TEXT,
+    recorded_at  REAL NOT NULL
 );
-CREATE INDEX IF NOT EXISTS events_by_application ON application_events (application_id, seq);
+CREATE INDEX IF NOT EXISTS events_by_application ON application_events (profile_id, scheme_id, seq);
 CREATE TABLE IF NOT EXISTS camps (
     id          TEXT PRIMARY KEY,
     name        TEXT NOT NULL,
@@ -140,6 +146,11 @@ CREATE TABLE IF NOT EXISTS api_keys (
 );
 """
 
+# Where an application has got to. "planned" is a helper's note to go; the others are what
+# the office said. A rejection is recorded, not deleted: it is the most useful thing to
+# follow up on, and a pattern of them is how a wrong rule is found.
+APPLICATION_STATUSES = ("planned", "applied", "sanctioned", "rejected")
+
 MAX_NAME_LENGTH = 80
 
 
@@ -161,6 +172,18 @@ class Vault:
         self._db.row_factory = sqlite3.Row
         self._db.execute("PRAGMA foreign_keys = ON")
         self._db.executescript(_SCHEMA)
+        # Vaults written before photos could be discarded lack the column.
+        columns = {row["name"] for row in self._db.execute("PRAGMA table_info(documents)")}
+        if "keep_photo" not in columns:
+            self._db.execute("ALTER TABLE documents ADD COLUMN keep_photo INTEGER NOT NULL "
+                             "DEFAULT 0")
+            self._db.commit()
+        # ...and vaults written before rejections carried a reason and a verdict.
+        columns = {row["name"] for row in self._db.execute("PRAGMA table_info(applications)")}
+        for column in ("reason", "verdict"):
+            if column not in columns:
+                self._db.execute(f"ALTER TABLE applications ADD COLUMN {column} TEXT")
+                self._db.commit()
         self._lock = threading.Lock()
 
     def close(self) -> None:
@@ -331,7 +354,7 @@ class Vault:
 
     def add_document(self, pid: str, *, doc_type: str, filename: str, data: bytes,
                      media_type: str, extension: str, reading: Mapping[str, Any] | None = None,
-                     status: str = "stored") -> dict[str, Any]:
+                     status: str = "stored", keep_photo: bool = False) -> dict[str, Any]:
         self.get_profile(pid)
         doc_id = uuid.uuid4().hex
         directory = self.files_dir / pid
@@ -341,10 +364,24 @@ class Vault:
         with self._lock, self._db:
             self._db.execute(
                 "INSERT INTO documents (id, profile_id, doc_type, filename, stored_path,"
-                " media_type, reading, status, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " media_type, reading, status, uploaded_at, keep_photo)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (doc_id, pid, doc_type, (filename or "upload")[:120], str(path), media_type,
                  json.dumps(reading, ensure_ascii=False) if reading is not None else None,
-                 status, time.time()))
+                 status, time.time(), int(keep_photo)))
+        return self.document(pid, doc_id)
+
+    def discard_file(self, pid: str, doc_id: str) -> dict[str, Any]:
+        """Delete a document's photo but keep its record and what was read from it.
+
+        The default once a photo has been read: the facts are what the checklist and the
+        rules need, and a photo of an Aadhaar card on a shared computer is a liability.
+        """
+        document = self.document(pid, doc_id)
+        if document["stored_path"]:
+            Path(document["stored_path"]).unlink(missing_ok=True)
+            with self._lock, self._db:
+                self._db.execute("UPDATE documents SET stored_path = '' WHERE id = ?", (doc_id,))
         return self.document(pid, doc_id)
 
     def update_document(self, pid: str, doc_id: str, *, doc_type: str | None = None,
@@ -380,69 +417,75 @@ class Vault:
         document = self.document(pid, doc_id)
         with self._lock, self._db:
             self._db.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
-        Path(document["stored_path"]).unlink(missing_ok=True)
+        if document["stored_path"]:
+            Path(document["stored_path"]).unlink(missing_ok=True)
 
-    # -------------------------------------------------------------- applications
+    # --------------------------------------------------------------- applications
 
-    def open_application(self, pid: str, scheme_id: str, *, status: str, verdict: str,
-                         on_date: str | None = None, reference: str = "",
-                         office: str = "", note: str = "") -> dict[str, Any]:
-        """Start tracking an application. Its history is an event log, like facts:
-        every status change is a new row carrying what the rules said at that moment."""
+    def set_application(self, pid: str, scheme_id: str, *, status: str,
+                        reference: str = "", note: str = "",
+                        applied_on: str | None = None, reason: str | None = None,
+                        verdict: str = "") -> dict[str, Any]:
+        """Record where an application to one scheme has got to (one row per scheme).
+
+        ``reason`` is why a rejection happened (``kb/spec/rejections.yaml``); ``verdict``
+        is what the rule engine said when this was recorded. Every call also appends to
+        the application's history, so "the rules said eligible and the office said no"
+        stays on record after the row moves on.
+        """
         self.get_profile(pid)
-        aid = uuid.uuid4().hex
+        if status not in APPLICATION_STATUSES:
+            raise VaultError(f"status must be one of {list(APPLICATION_STATUSES)}")
+        if reason and status != "rejected":
+            raise VaultError("only a rejection has a reason")
+        if applied_on is not None and applied_on != "":
+            try:
+                date.fromisoformat(applied_on)
+            except ValueError:
+                raise VaultError("applied_on must be a date like 2026-10-26") from None
         now = time.time()
         with self._lock, self._db:
             self._db.execute(
-                "INSERT INTO applications (id, profile_id, scheme_id, reference, office,"
-                " created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (aid, pid, scheme_id, reference[:60], office[:120], now, now))
-        self.add_application_event(pid, aid, status=status, verdict=verdict,
-                                   on_date=on_date, note=note)
-        return self.application(pid, aid)
-
-    def add_application_event(self, pid: str, aid: str, *, status: str, verdict: str,
-                              on_date: str | None = None, reason: str | None = None,
-                              note: str = "") -> dict[str, Any]:
-        self._row("SELECT id FROM applications WHERE id = ? AND profile_id = ?", aid, pid)
-        now = time.time()
-        with self._lock, self._db:
+                "INSERT INTO applications (profile_id, scheme_id, status, reference, note,"
+                " applied_on, updated_at, reason, verdict) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                " ON CONFLICT(profile_id, scheme_id) DO UPDATE SET status = excluded.status,"
+                " reference = excluded.reference, note = excluded.note,"
+                " applied_on = COALESCE(excluded.applied_on, applications.applied_on),"
+                " updated_at = excluded.updated_at, reason = excluded.reason,"
+                " verdict = excluded.verdict",
+                (pid, scheme_id, status, (reference or "").strip()[:60],
+                 (note or "").strip()[:300], applied_on or None, now, reason, verdict))
             self._db.execute(
-                "INSERT INTO application_events (application_id, status, on_date, reason,"
-                " note, verdict, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (aid, status, on_date, reason, (note or "")[:500], verdict, now))
-            self._db.execute("UPDATE applications SET updated_at = ? WHERE id = ?", (now, aid))
-        return self.application(pid, aid)
+                "INSERT INTO application_events (profile_id, scheme_id, status, reason,"
+                " verdict, on_date, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (pid, scheme_id, status, reason, verdict, applied_on or None, now))
+            self._db.execute("UPDATE profiles SET updated_at = ? WHERE id = ?", (now, pid))
+        return next(a for a in self.applications(pid) if a["scheme_id"] == scheme_id)
 
-    def application(self, pid: str, aid: str) -> dict[str, Any]:
-        row = self._row("SELECT * FROM applications WHERE id = ? AND profile_id = ?", aid, pid)
-        with self._lock:
-            events = self._db.execute(
-                "SELECT * FROM application_events WHERE application_id = ? ORDER BY seq",
-                (aid,)).fetchall()
-        return _application_dict(row, events)
-
-    def applications(self, pid: str) -> list[dict[str, Any]]:
+    def application_history(self, pid: str, scheme_id: str) -> list[dict[str, Any]]:
         self.get_profile(pid)
-        with self._lock:
-            ids = [r["id"] for r in self._db.execute(
-                "SELECT id FROM applications WHERE profile_id = ? ORDER BY updated_at DESC",
-                (pid,)).fetchall()]
-        return [self.application(pid, aid) for aid in ids]
-
-    def delete_application(self, pid: str, aid: str) -> None:
-        self._row("SELECT id FROM applications WHERE id = ? AND profile_id = ?", aid, pid)
-        with self._lock, self._db:
-            self._db.execute("DELETE FROM applications WHERE id = ?", (aid,))
-
-    def application_events(self) -> list[dict[str, Any]]:
-        """Every status change of every application, with its scheme — for the outcome
-        report, which counts them and never shows who they belong to."""
         with self._lock:
             rows = self._db.execute(
-                "SELECT a.scheme_id, a.id AS application_id, e.status, e.reason, e.verdict,"
-                " e.recorded_at FROM application_events e JOIN applications a"
-                " ON a.id = e.application_id ORDER BY e.seq").fetchall()
+                "SELECT status, reason, verdict, on_date, recorded_at FROM application_events"
+                " WHERE profile_id = ? AND scheme_id = ? ORDER BY seq", (pid, scheme_id)).fetchall()
+        return [dict(row) for row in rows]
+
+    def application_events(self) -> list[dict[str, Any]]:
+        """Every status change of every application — for the outcome report, which
+        counts them and never shows who they belong to."""
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT profile_id, scheme_id, status, reason, verdict, recorded_at"
+                " FROM application_events ORDER BY seq").fetchall()
+        return [dict(row) for row in rows]
+
+    def applications(self, pid: str | None = None) -> list[dict[str, Any]]:
+        query, args = "SELECT * FROM applications", ()
+        if pid is not None:
+            self.get_profile(pid)
+            query, args = query + " WHERE profile_id = ?", (pid,)
+        with self._lock:
+            rows = self._db.execute(query + " ORDER BY updated_at DESC", args).fetchall()
         return [dict(row) for row in rows]
 
     # --------------------------------------------------------------------- camps
@@ -608,24 +651,6 @@ def _profile_dict(row: sqlite3.Row) -> dict[str, Any]:
     }
 
 
-def _application_dict(row: sqlite3.Row, events: list[sqlite3.Row]) -> dict[str, Any]:
-    history = [{
-        "status": e["status"], "on_date": e["on_date"], "reason": e["reason"],
-        "note": e["note"], "verdict": e["verdict"], "recorded_at": e["recorded_at"],
-    } for e in events]
-    return {
-        "id": row["id"],
-        "profile_id": row["profile_id"],
-        "scheme_id": row["scheme_id"],
-        "reference": row["reference"],
-        "office": row["office"],
-        "created_at": row["created_at"],
-        "updated_at": row["updated_at"],
-        "status": history[-1]["status"] if history else None,
-        "events": history,
-    }
-
-
 def _document_dict(row: sqlite3.Row) -> dict[str, Any]:
     return {
         "id": row["id"],
@@ -637,6 +662,8 @@ def _document_dict(row: sqlite3.Row) -> dict[str, Any]:
         "reading": json.loads(row["reading"]) if row["reading"] else None,
         "status": row["status"],
         "uploaded_at": row["uploaded_at"],
+        "keep_photo": bool(row["keep_photo"]),
+        "has_photo": bool(row["stored_path"]),
     }
 
 

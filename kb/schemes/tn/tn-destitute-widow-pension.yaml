@@ -40,6 +40,21 @@ eligibility:
     - {attr: fixed_assets_value, op: lte, value: 50000}
     - {attr: receives_other_pension, op: eq, value: false}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "விதவை உதவித்தொகை"
+    what: "மாதம் 1,000 ரூபாய்; 80 வயதில் 1,500 ரூபாய். பொங்கல், தீபாவளிக்கு இலவசச் சேலை."
+    who: "30 வயதுக்கு மேற்பட்ட ஆதரவற்ற விதவைகள்; சொத்து 50,000 ரூபாய்க்குள். 60 வயதானால் முதியோர் ஓய்வூதியத்துக்கு விண்ணப்பிக்கவும்."
+    where: "தாலுகா அலுவலகம் அல்லது இ-சேவை மையம்."
+  en:
+    name: "Widow pension (Tamil Nadu)"
+    what: "₹1,000 a month, ₹1,500 from age 80, and a free saree at Pongal and Deepavali."
+    who: "Widows aged 30 or more with no support and property under ₹50,000. From 60, apply for the old age pension instead."
+    where: "Taluk office or e-Sevai centre."
+
 documents:
   - Death certificate of the husband
   - Income and asset certificate from the Village Administrative Officer

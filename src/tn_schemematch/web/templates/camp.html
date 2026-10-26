@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Camp — TN-SchemeMatch{% endblock %}
+{% block title %}முகாம் · Camp{% endblock %}
 {% block body %}
 <div class="split camp-page">
   <aside class="rail">
@@ -19,15 +19,14 @@
     <section class="card" id="camp-empty">
       <h2>Screen many families in a day</h2>
       <p class="muted">Start a camp on the left. For each person, read the consent notice aloud,
-        fill the few questions that decide most schemes, and save. Each family gets a printed
-        sheet; the panchayat gets a report with no names in it.</p>
+        fill the few questions that decide most schemes, and save. Each scheme they can get has
+        an application sheet to print; the panchayat gets a report with no names in it.</p>
     </section>
 
     <div id="camp-view" hidden>
       <section class="card profile-head">
         <div><h1 id="camp-title"></h1><div class="tiny muted" id="camp-meta"></div></div>
         <div class="row">
-          <a class="btn" id="camp-print" target="_blank">Print every sheet</a>
           <a class="btn" id="camp-report">Report</a>
         </div>
       </section>

@@ -54,11 +54,13 @@ function queueRow(person) {
       el('div', { class: 'tiny' }, `${person.n_eligible} scheme${person.n_eligible === 1 ? '' : 's'}`,
         person.yearly_text ? ` · at least ${person.yearly_text} a year` : '',
         person.one_time_text ? ` · ${person.one_time_text} one-time` : ''),
-      person.schemes.length ? el('div', { class: 'tiny muted' }, person.schemes.join(', ')) : null,
+      // Each scheme links to its application sheet — the page to print for the family.
+      person.schemes.length ? el('div', { class: 'tiny' }, ...person.schemes.flatMap((s, i) => [
+        i ? ', ' : '',
+        el('a', { href: `/profile/${person.id}/pack/${s.id}`, target: '_blank' }, s.name)])) : null,
       person.documents_to_collect.length ? el('div', { class: 'tiny' }, 'Collect: ', person.documents_to_collect.join(', ')) : null,
       person.n_undetermined ? el('div', { class: 'tiny muted' }, `${person.n_undetermined} schemes need more answers — open the profile`) : null),
     el('div', { class: 'row', style: 'flex-wrap:nowrap;gap:6px' },
-      el('a', { class: 'btn small', href: `/print/${person.id}`, target: '_blank' }, 'Print'),
       el('a', { class: 'btn small', href: `/profile?id=${person.id}` }, 'Profile')));
 }
 
@@ -70,7 +72,6 @@ async function openCamp(id) {
   $('camp-view').hidden = false;
   $('camp-title').textContent = camp.name;
   $('camp-meta').textContent = [camp.place, camp.held_on].filter(Boolean).join(' · ');
-  $('camp-print').href = `/print/camp/${id}`;
   $('camp-report').href = `/reports?camp=${id}`;
   $('queue-count').textContent = `· ${people.length}`;
   $('queue').replaceChildren(...(people.length ? people.slice().reverse().map(queueRow)

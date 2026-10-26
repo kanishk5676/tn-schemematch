@@ -1,9 +1,10 @@
-"""Looking ahead: actions that unlock schemes, schemes that come with age, the family."""
+"""Looking ahead: actions that unlock schemes, schemes that come and go with age, the family."""
 
 import pytest
 
 from tn_schemematch.benefits import totals
-from tn_schemematch.outlook import coming_up, household, unlock
+from tn_schemematch.outlook import household, unlock
+from tn_schemematch.pack import closing, coming_up
 from tn_schemematch.rules import Verdict
 
 pytest.importorskip("flask")
@@ -53,24 +54,29 @@ def test_questions_name_the_unknown_facts_that_hold_schemes_back(active, spec):
     assert all(q["n_schemes"] > 0 for q in result["questions"])
 
 
-def test_the_old_age_pension_comes_at_sixty(active, spec, personas):
-    profile = changed(spec, personas["p002"].profile, age=57, marital_status="married",
-                      is_destitute=True, fixed_assets_value=0, receives_other_pension=False)
-    events = coming_up(active, spec, profile)
-    at_sixty = next(e for e in events if e["age"] == 60)
-    assert at_sixty["in_years"] == 3
-    assert "tn-old-age-pension" in {s["id"] for s in at_sixty["gains"]}
+def test_closing_lists_what_stops_with_age(active, spec, personas):
+    """PMJJBY enrols up to 50; the farmer persona at 45 loses it at 51."""
+    profile = changed(spec, personas["p001"].profile, age=48)
+    row = next(r for r in closing(active, profile, spec) if r["id"] == "pmjjby")
+    assert row["at_age"] == 51 and row["in_years"] == 3
 
 
-def test_coming_up_also_reports_what_is_lost(active, spec, personas):
-    """PMJJBY enrols up to 50; the farmer persona at 45 loses it within the decade."""
-    events = coming_up(active, spec, personas["p001"].profile)
-    lost = {s["id"] for e in events for s in e["loses"]}
-    assert "pmjjby" in lost
+def test_coming_up_also_advances_years_of_registration(active, spec):
+    """The differently-abled unemployment allowance needs a year at the employment
+    exchange. Half a year in, it opens next year — age alone would never show that."""
+    profile = {"state": "TN", "age": 30.0, "disability_percent": 60.0,
+               "occupation": "unemployed", "employment_exchange_registration_years": 0.5}
+    profile.update(spec.derive(profile))
+    opens = {r["id"]: r for r in coming_up(active, profile, spec)}
+    assert opens["tn-da-unemployment-allowance"]["in_years"] == 1
+    # Not registered at all (0) is left alone: registering is an action, not time passing.
+    never = dict(profile, employment_exchange_registration_years=0.0)
+    assert "tn-da-unemployment-allowance" not in {r["id"] for r in coming_up(active, never, spec)}
 
 
 def test_without_an_age_nothing_is_predicted(active, spec):
-    assert coming_up(active, spec, {"gender": "female", "state": "TN"}) == []
+    assert coming_up(active, {"gender": "female", "state": "TN"}, spec) == []
+    assert closing(active, {"gender": "female", "state": "TN"}, spec) == []
 
 
 def test_a_household_counts_a_per_family_scheme_once(kb, spec, personas, tmp_path):
@@ -99,7 +105,8 @@ def test_planning_routes(kb, spec, personas, tmp_path):
     http = create_app(kb=kb, spec=spec, client=None, vault_dir=tmp_path / "vault").test_client()
     pid = http.post("/api/profiles", json={"name": "Lakshmi"}).get_json()["id"]
     http.post(f"/api/profiles/{pid}/facts", json={"attr": "age", "value": 58})
-    assert http.get(f"/api/profiles/{pid}/coming-up").get_json()["age_known"] is True
+    ahead = http.get(f"/api/profiles/{pid}/coming-up").get_json()
+    assert ahead["age_known"] is True and set(ahead) == {"opens", "closes", "age_known"}
     assert "questions" in http.get(f"/api/profiles/{pid}/unlock").get_json()
     family = http.get(f"/api/profiles/{pid}/household").get_json()
     assert family["members"][0]["id"] == pid

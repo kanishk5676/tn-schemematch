@@ -8,7 +8,9 @@ import json
 
 import pytest
 
+from tn_schemematch import DEFAULT_QUESTION_BUDGET
 from tn_schemematch.attributes import SchemaError
+from tn_schemematch.elicitation import necessary_questions
 from tn_schemematch.interview import (
     Interview,
     InterviewState,
@@ -16,7 +18,7 @@ from tn_schemematch.interview import (
     normalize_extraction,
     parse_answer,
 )
-from tn_schemematch.systems.base import ScriptedClient
+from tn_schemematch.systems.base import ScriptedClient, parse_json_response
 
 
 @pytest.fixture
@@ -24,9 +26,14 @@ def interview(kb, spec):
     return Interview(kb=kb, spec=spec, client=None)
 
 
-def drive(iv, persona, *, max_questions=40):
-    """Run a whole interview, answering truthfully from a persona's full profile."""
-    state = iv.start(persona.queries["code_mixed"], max_questions=max_questions, use_ai=False)
+def drive(iv, persona, *, max_questions=DEFAULT_QUESTION_BUDGET, opening=False):
+    """Run a whole interview, answering truthfully from a persona's full profile.
+
+    With ``opening``, the facts the persona's first sentence states are already known —
+    what a perfect reading of that sentence would give the interview to start from.
+    """
+    state = iv.start(persona.queries["code_mixed"], max_questions=max_questions, use_ai=False,
+                     seed_profile=persona.known_profile() if opening else None)
     while True:
         attr = iv.next_question(state)
         if attr is None:
@@ -83,11 +90,27 @@ def test_question_budget_is_enforced(interview):
 
 
 def test_interview_reaches_the_gold_set(interview, kb, sample_personas):
-    """The headless mirror of the grounding pipeline's gold-answer test."""
-    for persona in list(sample_personas)[:6]:
-        state = drive(interview, persona)
+    """Every test profile, answered truthfully, ends on the rule engine's own answer.
+
+    Also the guard on DEFAULT_QUESTION_BUDGET: twenty questions sufficed at ten schemes and
+    silently dropped schemes people qualified for at forty-one. A budget too small for the
+    KB fails here, not in front of a citizen.
+    """
+    for persona in sample_personas:
+        state = drive(interview, persona, opening=True)
         got = {card["id"] for card in interview.results(state)["eligible"]}
-        assert got == set(persona.gold_eligible(kb)), f"{persona.id} diverged"
+        assert got == set(persona.gold_eligible(kb)), (
+            f"{persona.id} unresolved at a budget of {DEFAULT_QUESTION_BUDGET}")
+
+
+def test_interview_never_asks_a_pointless_question(interview, kb, sample_personas):
+    """Every question asked must have been able to change some verdict."""
+    active = kb.active()
+    for persona in list(sample_personas)[:12]:
+        state = drive(interview, persona, opening=True)
+        known = dict(persona.known_profile())
+        allowed = necessary_questions(active, {**known, **kb.spec.derive(known)})
+        assert set(state.asked) <= allowed, f"{persona.id} asked {set(state.asked) - allowed}"
 
 
 def test_answers_settle_schemes(interview, personas):
@@ -132,10 +155,18 @@ def test_parse_answer_prefers_aliases_over_the_model(spec):
     assert client.calls == [], "the alias table should have settled this with no model call"
 
 
-def test_parse_answer_falls_back_to_the_model(spec):
-    """'rendu ekkar' has no digit, so the deterministic parser cannot read it."""
-    client = ScriptedClient(default=json.dumps({"value": 2.0}))
+def test_parse_answer_reads_number_words_without_the_model(spec):
+    """A spoken answer ("rendu ekkar") must work in guided mode, with no model at all."""
+    client = ScriptedClient(default=json.dumps({"value": 99.0}))
     value, source = parse_answer(spec, "land_owned_acres", "rendu ekkar", client)
+    assert (value, source) == (2.0, "aliases")
+    assert client.calls == []
+
+
+def test_parse_answer_falls_back_to_the_model(spec):
+    """A phrasing the deterministic parser cannot read goes to the model."""
+    client = ScriptedClient(default=json.dumps({"value": 2.0}))
+    value, source = parse_answer(spec, "land_owned_acres", "a little more than my brother's", client)
     assert (value, source) == (2.0, "model")
     assert len(client.calls) == 1
 
@@ -221,3 +252,18 @@ def test_start_without_ai_makes_no_model_call(kb, spec):
     state = iv.start("naan vivasayi", use_ai=False)
     assert client.calls == []
     assert state.used_ai is False
+
+
+# ------------------------------------------------------------------ model output parsing
+
+
+@pytest.mark.parametrize(
+    "raw", ['{"a": 1}', '```json\n{"a": 1}\n```', 'Here you go:\n{"a": 1}']
+)
+def test_json_extraction_tolerates_common_wrappers(raw):
+    assert parse_json_response(raw) == {"a": 1}
+
+
+def test_json_extraction_fails_loudly_on_prose():
+    with pytest.raises(Exception):
+        parse_json_response("I cannot answer that question.")

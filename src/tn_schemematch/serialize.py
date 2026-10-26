@@ -283,6 +283,10 @@ def scheme_summary(scheme: Scheme) -> dict[str, Any]:
         "value_text": value_text(scheme),
         "cover": scheme.cover,
         "cannot_combine_with": [other for other, _ in scheme.cannot_combine],
+        "plain": {lang: {part: scheme.plain_text(lang, part)
+                         for part in ("name", "what", "who", "where")}
+                  for lang in ("ta", "en")},
+        "plain_written": scheme.has_plain,
     }
 
 

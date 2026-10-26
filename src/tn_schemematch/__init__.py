@@ -1,4 +1,4 @@
-"""TN-SchemeMatch: eligibility matching for Indian welfare schemes under code-mixed queries."""
+"""TN-SchemeMatch (Udhavi): find the welfare schemes a Tamil Nadu family can get, in their own words."""
 
 from .attributes import AttributeSpec, SchemaError, default_spec, load_spec
 from .kb import KBError, Scheme, SchemeKB, load_kb, load_scheme, validate_kb
@@ -23,12 +23,13 @@ __all__ = [
     "__version__",
 ]
 
-# How many questions the benchmark's interview pipelines may ask before giving up.
+# How many questions a conversation may ask before giving up.
 #
 # It is a function of the KB, not a taste: it has to cover the *minimal confirming*
 # question set, which grows with the number of schemes a person might plausibly qualify
 # for. It went 20 -> 40 when the KB went 10 -> 41. Re-derive it, don't guess it —
-# tests/test_systems.py measures the worst observed interview and asserts headroom.
+# tests/test_interview.py runs every test profile at this budget and fails if one
+# is left unresolved.
 #
 # Distinct from the live web interview's budget, which is deliberately shorter (a citizen
 # on a screen will not answer forty questions) and honest about the consequence: schemes

@@ -44,6 +44,21 @@ eligibility:
     - {attr: fixed_assets_value, op: lt, value: 50000}
     - {attr: receives_other_pension, op: eq, value: false}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "முதியோர் ஓய்வூதியம் (தமிழ்நாடு)"
+    what: "மாதம் 1,000 ரூபாய். பொங்கல், தீபாவளிக்கு இலவச வேட்டி அல்லது சேலை."
+    who: "60 வயதுக்கு மேற்பட்ட, வருமானம் இல்லாத, 50,000 ரூபாய்க்குக் குறைவான சொத்து உள்ளவர்கள். வேறு அரசு ஓய்வூதியம் வாங்கக் கூடாது."
+    where: "தாலுகா அலுவலகம் அல்லது இ-சேவை மையம்."
+  en:
+    name: "Old age pension (Tamil Nadu)"
+    what: "₹1,000 a month, and a free saree or dhoti at Pongal and Deepavali."
+    who: "People over 60 with no income and property worth under ₹50,000, who get no other government pension."
+    where: "Taluk office or e-Sevai centre."
+
 documents:
   - Age proof
   - Income and asset certificate from the Village Administrative Officer

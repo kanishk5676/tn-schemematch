@@ -13,7 +13,8 @@
 #
 # `districts` lists, for each state whose districts the vocabulary carries, the values of
 # the `district` attribute that belong to it. Validation checks that the two agree and
-# that a state scheme names only its own state's districts.
+# that a state scheme names only its own state's districts. `ration_cards` lists the card
+# classes each state issues. Guided mode offers only these once the state is known.
 
 version: "0.2"
 updated: "2026-10-26"
@@ -43,3 +44,7 @@ districts:
        Viluppuram, Virudhunagar]
   KL: [Thiruvananthapuram, Kollam, Pathanamthitta, Alappuzha, Kottayam, Idukki, Ernakulam,
        Thrissur, Palakkad, Malappuram, Kozhikode, Wayanad, Kannur, Kasaragod]
+
+ration_cards:
+  TN: [aay, phh_rice, nphh_sugar, nphh_no_commodity, none]
+  KL: [aay, phh_rice, nps, npns, none]

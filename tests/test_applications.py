@@ -1,5 +1,6 @@
-"""The application tracker: status history, rejections, outcomes, complaints, calendar."""
+"""Around the tracker: history and verdicts, rejections, outcomes, complaints, calendar."""
 
+import time
 from datetime import date, timedelta
 
 import pytest
@@ -37,12 +38,16 @@ def saved_persona(http, persona, name="Murugan"):
     return pid
 
 
-def an_application(on_date=None, status="applied", reference="", events=None):
-    recorded = (date.today() - timedelta(days=1)).isoformat()
-    return {"id": "a1", "scheme_id": "pm-kisan", "status": status, "reference": reference,
-            "events": events or [{"status": status, "on_date": on_date or recorded,
-                                  "reason": None, "note": "", "verdict": "eligible",
-                                  "recorded_at": 0}]}
+def track(http, pid, scheme_id, status, **fields):
+    return http.post(f"/api/profiles/{pid}/applications",
+                     json={"scheme_id": scheme_id, "status": status, **fields})
+
+
+def a_row(status="applied", applied_on=None, reference="", reason=None, updated_at=None):
+    """A tracker row as the vault returns it."""
+    return {"scheme_id": "pm-kisan", "status": status, "reference": reference, "note": "",
+            "applied_on": applied_on, "reason": reason, "verdict": "eligible",
+            "updated_at": updated_at or time.time()}
 
 
 # ------------------------------------------------------------------- vocabulary
@@ -63,55 +68,46 @@ def test_an_unknown_attribute_in_a_reason_is_refused(spec, tmp_path):
         load_rejections(spec, path)
 
 
-def test_an_aadhaar_typed_as_a_reference_is_masked():
+def test_an_aadhaar_typed_as_a_reference_is_masked(http, personas):
     assert clean_reference("1234 5678 9012") == "XXXX XXXX XXXX"
     assert clean_reference("ESV/2026/000123") == "ESV/2026/000123"
-
-
-# -------------------------------------------------------------------- tracker
-
-
-def test_an_application_keeps_its_history_and_the_rules_verdict(http, personas):
     pid = saved_persona(http, personas["p001"])
-    created = http.post(f"/api/profiles/{pid}/applications",
-                        json={"scheme_id": "pm-kisan", "on_date": "2026-08-01"})
-    assert created.status_code == 201
-    aid = created.get_json()["id"]
-    body = http.post(f"/api/profiles/{pid}/applications/{aid}/status",
-                     json={"status": "approved", "on_date": "2026-09-01"}).get_json()
-    assert [e["status"] for e in body["events"]] == ["applied", "approved"]
-    assert {e["verdict"] for e in body["events"]} == {"eligible"}
-    assert body["status"] == "approved"
+    row = track(http, pid, "pm-kisan", "applied", reference="1234 5678 9012").get_json()
+    assert row["reference"] == "XXXX XXXX XXXX"
 
 
-def test_status_and_reason_are_checked(http, personas):
+# ---------------------------------------------------------------------- tracker
+
+
+def test_every_change_keeps_its_history_and_the_rules_verdict(http, personas):
     pid = saved_persona(http, personas["p001"])
-    aid = http.post(f"/api/profiles/{pid}/applications",
-                    json={"scheme_id": "pm-kisan"}).get_json()["id"]
-    route = f"/api/profiles/{pid}/applications/{aid}/status"
-    assert http.post(route, json={"status": "lost"}).status_code == 400
-    assert http.post(route, json={"status": "rejected", "reason": "bad luck"}).status_code == 400
-    assert http.post(route, json={"status": "approved", "reason": "other"}).status_code == 400
-    assert http.post(route, json={"status": "approved", "on_date": "1/9/26"}).status_code == 400
-    rejected = http.post(route, json={"status": "rejected"}).get_json()
-    assert rejected["events"][-1]["reason"] == "no_reason_given"
-    assert http.post(f"/api/profiles/{pid}/applications",
-                     json={"scheme_id": "no-such-scheme"}).status_code == 404
+    track(http, pid, "pm-kisan", "applied", applied_on="2026-08-01")
+    row = track(http, pid, "pm-kisan", "sanctioned").get_json()
+    assert row["status"] == "sanctioned" and row["verdict"] == "eligible"
+    assert [h["status"] for h in row["history"]] == ["applied", "sanctioned"]
+    assert {h["verdict"] for h in row["history"]} == {"eligible"}
+    listed = http.get(f"/api/profiles/{pid}/applications").get_json()["applications"]
+    assert listed[0]["history"] == row["history"]
+
+
+def test_reasons_are_checked(http, personas):
+    pid = saved_persona(http, personas["p001"])
+    assert track(http, pid, "pm-kisan", "rejected", reason="bad luck").status_code == 400
+    assert track(http, pid, "pm-kisan", "applied", reason="other").status_code == 400
+    plain = track(http, pid, "pm-kisan", "rejected").get_json()
+    assert plain["reason"] is None
+    assert plain["rejection"]["id"] == "no_reason_given"
 
 
 def test_a_rejection_is_explained_against_the_rule(http, personas):
     pid = saved_persona(http, personas["p001"])
-    aid = http.post(f"/api/profiles/{pid}/applications",
-                    json={"scheme_id": "cmchis"}).get_json()["id"]
-    body = http.post(f"/api/profiles/{pid}/applications/{aid}/status",
-                     json={"status": "rejected", "reason": "income_above_limit"}).get_json()
-    rejection = body["rejection"]
-    assert rejection["rules_say"] == "eligible"
-    assert rejection["disagrees"] is True
+    row = track(http, pid, "cmchis", "rejected", reason="income_above_limit").get_json()
+    rejection = row["rejection"]
+    assert rejection["rules_say"] == "eligible" and rejection["disagrees"] is True
     assert any(c["attr"] == "annual_family_income" and c["met"] == "eligible"
                for c in rejection["clauses"])
     assert rejection["guides"][0]["type"] == "income_certificate"
-    assert body["can_complain"] is True
+    assert row["can_complain"] is True
 
 
 def test_a_rejection_the_rules_agree_with_is_not_a_disagreement(kb, spec, personas, reasons):
@@ -122,11 +118,8 @@ def test_a_rejection_the_rules_agree_with_is_not_a_disagreement(kb, spec, person
 
 def test_outcomes_flag_rejections_that_contradict_the_rules(http, personas):
     pid = saved_persona(http, personas["p001"])
-    for scheme_id, reason in (("cmchis", "income_above_limit"), ("pm-kisan", "documents_missing")):
-        aid = http.post(f"/api/profiles/{pid}/applications",
-                        json={"scheme_id": scheme_id}).get_json()["id"]
-        http.post(f"/api/profiles/{pid}/applications/{aid}/status",
-                  json={"status": "rejected", "reason": reason})
+    track(http, pid, "cmchis", "rejected", reason="income_above_limit")
+    track(http, pid, "pm-kisan", "rejected", reason="documents_missing")
     report = http.get("/api/outcomes").get_json()
     assert report["needs_review"] == ["cmchis"]  # a missing paper is not the rule's fault
     rows = {r["scheme_id"]: r for r in report["schemes"]}
@@ -134,9 +127,17 @@ def test_outcomes_flag_rejections_that_contradict_the_rules(http, personas):
     assert "Murugan" not in str(report)
 
 
-def test_deleting_a_person_deletes_their_applications(http, personas):
+def test_outcomes_need_a_helper_when_a_pin_is_set(kb, spec, tmp_path):
+    http = create_app(kb=kb, spec=spec, client=None, vault_dir=tmp_path / "vault",
+                      helper_pin="2468").test_client()
+    assert http.get("/api/outcomes").status_code == 401
+    http.post("/api/helper/login", json={"pin": "2468"})
+    assert http.get("/api/outcomes").status_code == 200
+
+
+def test_deleting_a_person_deletes_their_history(http, personas):
     pid = saved_persona(http, personas["p001"])
-    http.post(f"/api/profiles/{pid}/applications", json={"scheme_id": "pm-kisan"})
+    track(http, pid, "pm-kisan", "applied")
     http.delete(f"/api/profiles/{pid}")
     assert http.get("/api/outcomes").get_json()["n_applications"] == 0
 
@@ -146,30 +147,26 @@ def test_deleting_a_person_deletes_their_applications(http, personas):
 
 def test_a_long_wait_asks_for_a_follow_up():
     old = (date.today() - timedelta(days=45)).isoformat()
-    assert follow_up(an_application(on_date=old))["kind"] == "no_decision"
-    assert follow_up(an_application()) is None
-    assert follow_up(an_application(on_date=old, status="received")) is None
+    assert follow_up(a_row(applied_on=old))["kind"] == "no_decision"
+    assert follow_up(a_row()) is None
+    assert follow_up(a_row(status="sanctioned", applied_on=old)) is None
 
 
 # ------------------------------------------------------------------ complaints
 
 
 def test_a_complaint_claims_eligibility_only_when_the_rules_do(kb, spec, personas, reasons):
-    application = an_application(status="rejected", reference="ESV/1", events=[
-        {"status": "applied", "on_date": "2026-08-01", "reason": None, "note": "",
-         "verdict": "eligible", "recorded_at": 0},
-        {"status": "rejected", "on_date": "2026-09-01", "reason": "income_above_limit",
-         "note": "", "verdict": "eligible", "recorded_at": 0}])
-    eligible = complaint(kb["pm-kisan"], spec, personas["p001"].profile, "Murugan",
-                         application, reasons)
+    row = a_row(status="rejected", applied_on="2026-08-01", reference="ESV/1",
+                reason="income_above_limit")
+    eligible = complaint(kb["pm-kisan"], spec, personas["p001"].profile, "Murugan", row, reasons)
     assert eligible["grounded_in_rules"] is True
     assert "I meet these conditions" in eligible["text"]
     assert "01-08-2026" in eligible["text"] and "ESV/1" in eligible["text"]
     assert "Income is above the limit" in eligible["text"]
 
-    not_eligible = complaint(kb["pm-kisan"], spec, dict(personas["p001"].profile,
-                                                        land_owned_acres=0.0),
-                             "Murugan", application, reasons)
+    not_eligible = complaint(kb["pm-kisan"], spec,
+                             dict(personas["p001"].profile, land_owned_acres=0.0),
+                             "Murugan", row, reasons)
     assert not_eligible["grounded_in_rules"] is False
     assert "I meet these conditions" not in not_eligible["text"]
     assert "reason for this decision" in not_eligible["text"]
@@ -178,17 +175,17 @@ def test_a_complaint_claims_eligibility_only_when_the_rules_do(kb, spec, persona
 @pytest.mark.parametrize("lang,word", [("ta", "பொருள்"), ("ml", "വിഷയം")])
 def test_complaints_in_tamil_and_malayalam(kb, spec, personas, reasons, lang, word):
     letter = complaint(kb["pm-kisan"], spec, personas["p001"].profile, "Murugan",
-                       an_application(), reasons, lang=lang)
+                       a_row(), reasons, lang=lang)
     assert word in letter["text"]
 
 
 def test_a_complaint_names_where_to_send_it(http, personas):
     pid = saved_persona(http, personas["p001"])
-    aid = http.post(f"/api/profiles/{pid}/applications",
-                    json={"scheme_id": "cmchis"}).get_json()["id"]
-    letter = http.get(f"/api/profiles/{pid}/applications/{aid}/complaint?lang=ta").get_json()
+    track(http, pid, "cmchis", "applied")
+    letter = http.get(f"/api/profiles/{pid}/applications/cmchis/complaint?lang=ta").get_json()
     assert letter["lang"] == "ta"
     assert letter["channels"]  # Tamil Nadu scheme: the state's grievance channel
+    assert http.get(f"/api/profiles/{pid}/applications/pm-kisan/complaint").status_code == 404
 
 
 # -------------------------------------------------------------------- calendar
@@ -224,8 +221,7 @@ def test_the_calendar_merges_follow_ups_windows_and_birthdays(spec, tmp_path, kb
     profile = {"age": 58.0, "state": "TN", "is_destitute": True, "fixed_assets_value": 0.0,
                "receives_other_pension": False}
     old = (date(2026, 6, 1) - timedelta(days=40)).isoformat()
-    items = calendar(small, spec, profile, [an_application(on_date=old)],
-                     today=date(2026, 6, 1))
+    items = calendar(small, spec, profile, [a_row(applied_on=old)], today=date(2026, 6, 1))
     kinds = [i["kind"] for i in items]
     assert kinds[:2] == ["follow_up", "window"]
     assert items[0]["overdue"] is True

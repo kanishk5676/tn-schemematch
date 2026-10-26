@@ -39,6 +39,21 @@ eligibility:
             - {attr: years_since_desertion, op: gte, value: 5}
     - {attr: receives_other_pension, op: eq, value: false}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "கணவரால் கைவிடப்பட்ட பெண்களுக்கான உதவித்தொகை"
+    what: "மாதம் 1,000 ரூபாய்."
+    who: "கணவர் கைவிட்டு 5 வருடம் ஆன, அல்லது விவாகரத்து பெற்ற, 30 வயதுக்கு மேற்பட்ட ஆதரவற்ற பெண்கள்; சொத்து 50,000 ரூபாய்க்குள்."
+    where: "தாலுகா அலுவலகம் அல்லது இ-சேவை மையம்."
+  en:
+    name: "Pension for deserted wives"
+    what: "₹1,000 a month."
+    who: "Women over 30 with no support, left by their husband for 5 years or divorced, with property under ₹50,000."
+    where: "Taluk office or e-Sevai centre."
+
 documents:
   - Desertion certificate from the Village Administrative Officer, or decree of divorce
   - Income and asset certificate

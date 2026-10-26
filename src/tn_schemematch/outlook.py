@@ -1,17 +1,14 @@
-"""Looking past today's list: what a person could unlock, what is coming, and the family.
+"""Looking past today's list: what a person could unlock, and the family together.
 
 Each view answers its question the same way the rest of the project does — by running the
-rule engine on a changed profile — so nothing here is a guess about the future:
+rule engine on a changed profile — so nothing here is a guess:
 
 - :func:`unlock` asks "what if you did this?" for the facts a person can change by acting
   (``action`` in the vocabulary: open a bank account, get a family card), and "what are
   we still missing?" for the unanswered questions that hold back the most money.
-- :func:`coming_up` re-runs the rules with every fact that ``grows_with_time`` advanced a
-  year at a time, so "you can get the old-age pension in three years" is a verdict on the
-  person at that age, not a reading of the scheme's prose. It assumes nothing else
-  changes, and says so.
 - :func:`household` puts a family's members side by side, counting a per-family scheme
-  once however many members qualify for it.
+  once however many members qualify for it. What opens with age comes from
+  :func:`~tn_schemematch.pack.coming_up`.
 """
 
 from __future__ import annotations
@@ -23,9 +20,6 @@ from .benefits import group_view, rupees, totals, worth
 from .kb import SchemeKB
 from .rules import Verdict
 from .serialize import label_for, question_text, scheme_summary
-
-COMING_UP_YEARS = 10
-
 
 def _base(spec: AttributeSpec, profile: Mapping[str, Any]) -> dict[str, Any]:
     """The stated facts only; derived ones are recomputed after every change."""
@@ -123,42 +117,6 @@ def unlock(active: SchemeKB, spec: AttributeSpec, profile: Mapping[str, Any], *,
     return {"actions": actions[:limit], "questions": questions[:limit]}
 
 
-# --------------------------------------------------------------------- coming up
-
-
-def coming_up(active: SchemeKB, spec: AttributeSpec, profile: Mapping[str, Any], *,
-              years: int = COMING_UP_YEARS) -> list[dict[str, Any]]:
-    """Year by year, the schemes gained and lost as time-bound facts advance.
-
-    A count of years that is still zero (registered at the employment exchange this year,
-    or not at all — the vocabulary cannot tell which) is left alone; only age always moves.
-    """
-    growing = [name for name, attr in spec.attributes.items()
-               if attr.grows_with_time and isinstance(profile.get(name), (int, float))
-               and (name == "age" or profile[name] > 0)]
-    if not growing:
-        return []
-    base = _base(spec, profile)
-    previous = set(active.match(profile)[Verdict.TRUE])
-    events = []
-    for step in range(1, years + 1):
-        changes = {}
-        for name in growing:
-            ceiling = spec[name].domain[1] if spec[name].domain else float("inf")
-            changes[name] = min(float(profile[name]) + step, ceiling)
-        eligible = set(active.match(_changed(spec, base, changes))[Verdict.TRUE])
-        gained, lost = eligible - previous, previous - eligible
-        if gained or lost:
-            events.append({
-                "in_years": step,
-                "age": changes.get("age"),
-                "gains": _brief(active, gained),
-                "loses": _brief(active, lost),
-            })
-        previous = eligible
-    return events
-
-
 # ---------------------------------------------------------------------- household
 
 
@@ -166,6 +124,7 @@ def household(active: SchemeKB, vault: Any, pid: str, *,
               documents: Any = None) -> dict[str, Any]:
     """Every member of ``pid``'s household, with one total for the family."""
     from .documents import checklist
+    from .pack import closing, coming_up
 
     person = vault.get_profile(pid)
     members = sorted(vault.profiles(person["household"]), key=lambda p: p["created_at"])
@@ -178,7 +137,8 @@ def household(active: SchemeKB, vault: Any, pid: str, *,
         money = totals(active, eligible, family_counted=counted_for_family)
         for key in family:
             family[key] += money[key]
-        upcoming = coming_up(active, vault.spec, profile)
+        opening = coming_up(active, profile, vault.spec)
+        ending = closing(active, profile, vault.spec)
         missing = 0
         if documents is not None and eligible:
             held = {d["doc_type"] for d in vault.documents(member["id"])
@@ -192,7 +152,8 @@ def household(active: SchemeKB, vault: Any, pid: str, *,
             "one_time_text": money["one_time_text"],
             "shared_with_family": [active[i].name for i in money["shared_with_family"]],
             "only_one_of": group_view(active, money["groups"]),
-            "next": upcoming[0] if upcoming else None,
+            "coming_up": [{**row, "name": active[row["id"]].name} for row in opening[:3]],
+            "closing": [{**row, "name": active[row["id"]].name} for row in ending[:3]],
             "n_documents_to_collect": missing,
         })
     return {

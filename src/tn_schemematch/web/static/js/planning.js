@@ -5,15 +5,12 @@
 
 import { api, el } from './api.js';
 import { guideView } from './cards.js';
+import { t } from './i18n.js';
 
-const STATUS_TEXT = {
-  planned: 'planning to apply', applied: 'applied', pending: 'waiting', approved: 'approved',
-  rejected: 'rejected', received: 'received', withdrawn: 'withdrawn',
-};
-const STATUS_CLASS = {
-  planned: 'det', applied: 'ai', pending: 'open', approved: 'ok', rejected: 'no',
-  received: 'ok', withdrawn: 'det',
-};
+// The tracker's four states (vault.APPLICATION_STATUSES), worded as on the application sheet.
+const STATUSES = ['planned', 'applied', 'sanctioned', 'rejected'];
+const STATUS_CLASS = { planned: 'det', applied: 'ai', sanctioned: 'ok', rejected: 'no' };
+const statusText = (status) => t(`status_${status}`);
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -64,7 +61,7 @@ function complaintBox(pid, application) {
   const box = el('div', { class: 'complaint' });
   const load = async (lang) => {
     box.replaceChildren(el('span', { class: 'spinner' }));
-    const letter = await api.complaint(pid, application.id, lang);
+    const letter = await api.complaint(pid, application.scheme_id, lang);
     const text = el('textarea', { rows: 14, class: 'letter', 'aria-label': 'Complaint letter' });
     text.value = letter.text;
     const where = [...letter.send_to.map((s) => s.name), ...letter.channels.map((c) =>
@@ -92,62 +89,58 @@ function complaintBox(pid, application) {
 }
 
 function statusEditor(pid, application, reasons, onChange) {
-  const status = el('select', { 'aria-label': 'New status' },
-    ...Object.entries(STATUS_TEXT).map(([value, text]) => el('option', { value }, text)));
+  const status = el('select', { 'aria-label': t('update_status') },
+    ...STATUSES.map((value) => el('option', { value }, statusText(value))));
   status.value = application.status;
-  const day = el('input', { type: 'date', value: today(), 'aria-label': 'When' });
-  const reason = el('select', { 'aria-label': 'Reason' },
+  const reference = el('input', { type: 'text', maxlength: 60, value: application.reference || '',
+    placeholder: t('application_number'), 'aria-label': t('application_number') });
+  const reason = el('select', { 'aria-label': t('why_rejected') },
     ...reasons.map((r) => el('option', { value: r.id }, r.label)));
+  if (application.reason) reason.value = application.reason;
   const reasonWrap = el('span', {}, reason);
-  const note = el('input', { type: 'text', placeholder: 'note (optional)', maxlength: 200 });
   const sync = () => { reasonWrap.hidden = status.value !== 'rejected'; };
   status.addEventListener('change', sync);
   sync();
   const message = el('span', { class: 'tiny' });
-  return el('div', { class: 'row status-editor' }, status, day, reasonWrap, note,
+  return el('div', { class: 'row status-editor' }, status, reference, reasonWrap,
     el('button', { class: 'btn small', type: 'button', onclick: async () => {
       try {
-        await api.setApplicationStatus(pid, application.id, {
-          status: status.value, on_date: day.value || undefined,
-          reason: status.value === 'rejected' ? reason.value : undefined, note: note.value,
+        await api.track(pid, {
+          scheme_id: application.scheme_id, status: status.value, reference: reference.value,
+          applied_on: application.applied_on || (status.value === 'applied' ? today() : null),
+          reason: status.value === 'rejected' ? reason.value : null,
         });
         onChange();
       } catch (error) { message.textContent = error.message; message.className = 'tiny err'; }
-    } }, 'Update'), message);
+    } }, t('save_short')), message);
 }
 
 export function applicationsView(pid, applications, reasons, onChange) {
   const root = el('div', { class: 'applications' });
   if (!applications.length) {
     root.append(el('p', { class: 'tiny muted' },
-      'Nothing tracked yet. Use “I applied” or “Plan to apply” beside a scheme above.'));
+      t('nothing_tracked')));
     return root;
   }
   applications.forEach((application) => {
-    const history = application.events.map((e) =>
-      `${STATUS_TEXT[e.status]}${e.on_date ? ` ${new Date(e.on_date).toLocaleDateString('en-IN')}` : ''}`).join(' → ');
+    const history = application.history.map((h) => statusText(h.status)).join(' → ');
     const complaintSlot = el('div');
     root.append(el('div', { class: 'application' },
       el('div', { class: 'row', style: 'justify-content:space-between' },
         el('div', {}, el('b', {}, application.scheme.name),
           application.scheme.value_text ? el('span', { class: 'tiny muted' }, ` · ${application.scheme.value_text}`) : null),
-        el('span', { class: `badge ${STATUS_CLASS[application.status]}` }, STATUS_TEXT[application.status])),
+        el('span', { class: `badge ${STATUS_CLASS[application.status]}` }, statusText(application.status))),
       el('div', { class: 'tiny muted' }, history,
-        application.reference ? ` · ref ${application.reference}` : '',
-        application.office ? ` · ${application.office}` : ''),
+        application.applied_on ? ` · ${new Date(application.applied_on).toLocaleDateString('en-IN')}` : '',
+        application.reference ? ` · ${application.reference}` : ''),
       application.follow_up ? el('div', { class: 'tiny notice' }, application.follow_up.text) : null,
       application.rejection ? rejectionView(application.rejection) : null,
-      el('details', { class: 'tiny' }, el('summary', {}, 'Update status'),
+      el('details', { class: 'tiny' }, el('summary', {}, t('update_status')),
         statusEditor(pid, application, reasons, onChange)),
-      el('div', { class: 'row' },
-        application.can_complain ? el('button', { class: 'btn small', type: 'button', onclick: () => {
+      application.can_complain ? el('div', { class: 'row' },
+        el('button', { class: 'btn small', type: 'button', onclick: () => {
           complaintSlot.replaceChildren(complaintBox(pid, application));
-        } }, 'Draft a complaint') : null,
-        el('button', { class: 'btn ghost danger tiny', type: 'button', onclick: async () => {
-          if (!window.confirm('Stop tracking this application?')) return;
-          await api.deleteApplication(pid, application.id);
-          onChange();
-        } }, 'Remove')),
+        } }, t('draft_complaint'))) : null,
       complaintSlot));
   });
   return root;
@@ -157,13 +150,13 @@ export function applicationsView(pid, applications, reasons, onChange) {
 export function trackButtons(pid, scheme, onChange) {
   const start = (status) => async (event) => {
     event.target.disabled = true;
-    await api.openApplication(pid, { scheme_id: scheme.id, status,
-      on_date: status === 'applied' ? today() : undefined });
+    await api.track(pid, { scheme_id: scheme.id, status,
+      applied_on: status === 'applied' ? today() : null });
     onChange();
   };
   return el('span', { class: 'track' },
-    el('button', { class: 'btn small', type: 'button', onclick: start('applied') }, 'I applied'),
-    el('button', { class: 'btn small', type: 'button', onclick: start('planned') }, 'Plan to apply'));
+    el('button', { class: 'btn small', type: 'button', onclick: start('applied') }, t('i_applied')),
+    el('button', { class: 'btn small', type: 'button', onclick: start('planned') }, t('plan_to_apply')));
 }
 
 /* ------------------------------------------------------------------ unlock */

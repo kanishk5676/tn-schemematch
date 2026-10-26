@@ -1,330 +1,230 @@
 # Product plan: from research project to a scheme assistant for rural citizens
 
 **Goal.** A person in a Tamil Nadu village who cannot read the form — or does not understand
-official Tamil or English — speaks to the app in their own words and comes away knowing which
-schemes they can get, what to bring, and where to go. A volunteer or e-Sevai operator can do
-this for many families.
+official Tamil or English — speaks to the app in their own words and comes away knowing
+which schemes they can get, what to bring, and where to go. A volunteer or e-Sevai operator
+can do this for many families.
 
 **What does not change.** The model listens, reads and talks; the rule engine decides who is
-eligible. Every verdict a citizen hears must come from `rules.py`, never from model text. This is
-the product's safety guarantee, and every phase below keeps it.
+eligible. Every verdict a citizen hears must come from `rules.py`, never from model text.
+This is the product's safety guarantee, and every phase below keeps it.
 
----
+**What the model is for, and what it is not.** The app must work fully with no API key and
+no credit: questions, answers, verdicts, documents and the spoken summary are all
+deterministic. The model is an upgrade that lets a person speak freely instead of answering
+one question at a time. When the key is missing, the credit is spent or the daily cap is
+reached, the assistant switches to guided mode and keeps going.
+
+## Status (October 2026)
+
+| Phase | State |
+|---|---|
+| 0 — remove research scaffolding | done |
+| A — works with no model; budget guard | done |
+| 1 — voice in and out | done (1b, offline speech, not started) |
+| 2 — plain-language content | 20 schemes written, none reviewed |
+| 3 — application sheet, coming up | done |
+| 4 — helper mode, PIN, photo privacy, tracker | done |
+| 5 — Tamil-first, installable, accessible | done; axe-core checks in CI |
+| 6 — verify rules | not started: 0 of 47 verified |
+| 7 — field test | not started: see `docs/field-test.md` |
+| 8 — benefit amounts, can't-combine rules | done |
+| 9 — paper guides, rejection reasons, outcome report, complaints, calendar | done; guides and reasons not reviewed |
+| 10 — family view, unlock more | done |
+| 11 — Kerala and Malayalam | started: 5 Kerala pensions, Malayalam answers |
+| 12 — camps, anonymous reports, partner API, consent and audit, source watcher, PDFs | done |
 
 ## How to run this plan
 
-Do **one phase per session**, in order, on its own branch (`product/phase-N-<name>`). Start each
-session with:
+Do one phase per session, in order. Start each session with:
 
-> Read `docs/product-plan.md`. Do Phase N only. Run `python -m pytest -q` before you start and
-> before you commit. Commit on branch `product/phase-N-<name>`; end commit messages with the
-> Co-Authored-By line. Do not push without asking me.
+> Read docs/product-plan.md. Do Phase N only. Run `python -m pytest -q` before you start and
+> before you commit.
 
 Finish a phase only when its **Done when** list holds and the test suite is green.
 
-### Facts the session needs
+## Facts a session needs
 
-- **Repo:** `github.com/kanishk5676/tn-schemematch`, default branch `master`. Python 3.11, Flask,
-  vanilla ES modules (no build step), SQLite vault in `data/vault/` (git-ignored).
-- **Tests:** about 299 cases, all offline. Model paths are tested with `ScriptedClient`
-  (`systems/base.py`): `responses` keyed by prompt substring, `turns` for agent steps.
-- **Model:** default `claude-opus-5-5` via `systems/clients.py`. The API no longer accepts
-  `temperature`/`top_p`/`top_k`; decoding uses `effort`. The user's last API key was rejected
-  (401), so **assume no working key**: every phase below except 2b works without one.
-- **Pages today:** `/` assistant, `/profile`, `/interview`, `/schemes`, `/dashboard`.
-- **Run the app:** `python scripts/serve.py --backend none` (rules only) or with a key,
-  `python scripts/serve.py`.
+- Repo: github.com/kanishk5676/tn-schemematch, default branch `master`. Python 3.11+,
+  Flask, vanilla ES modules (no build step), SQLite vault in `data/vault/` (git-ignored).
+- Tests are all offline. Model paths are tested with `ScriptedClient` (`systems/base.py`):
+  responses keyed by prompt substring, `turns` for agent steps. CI runs them on every push
+  (`.github/workflows/tests.yml`).
+- Model: default `claude-opus-5-5` via `systems/clients.py`; choose another with
+  `--model`. The API no longer accepts `temperature`/`top_p`/`top_k`; decoding uses
+  `effort`.
+- Budget: the project runs on a small prepaid credit ($5–15). Rough cost of one 8-message
+  assistant chat: Opus 5.5 ~$0.30–0.50, Sonnet 5.5 ~$0.15–0.25, Haiku 5.5 ~$0.01. Day to
+  day, run Haiku 5.5 with a daily cap (`--daily-budget`), and keep Opus for demos.
+- Run the app: `python scripts/serve.py --backend none` (no model) or, with a key,
+  `python scripts/serve.py --model claude-haiku-5-5`.
 
----
-
-## Phase 0 — Remove the research scaffolding (half a day)
+## Phase 0 — Remove the research scaffolding
 
 The benchmark, the code-mixing experiment and the baseline comparisons served a research
-question the project no longer asks. They make the product harder to read and the README
-harder to believe. Archive them, then remove them.
+question the project no longer asks. The research state is commit `b0e49cc` on
+`master` (tag it `research-benchmark-v1`); then remove them.
 
-**First:** tag the current state so nothing is lost: `git tag research-benchmark-v1`.
+| Item | Action |
+|---|---|
+| `systems/rag_baseline.py`, `retrieval.py`, `synthetic.py`, `grounding.py` | Delete |
+| `eval/`, `scripts/run_experiment.py`, `scripts/pilot.py`, `data/runs/` | Delete |
+| `tests/test_metrics.py`, `tests/test_systems.py` | Delete after moving product tests into `test_interview.py` |
+| "Compare with asking the model directly", `web/compare.py`, `/compare` | Delete |
+| `docs/proposal.md`, `docs/annotation-guide.md` | Move to `docs/archive/` |
+| `data/personas/` + `personas.py` | Keep, called "test profiles": regression tests for the rules |
+| `scripts/gold_diff.py`, `schemematch validate` | Keep — they guard rule changes |
+| `/interview` | Keep, out of the citizen nav; linked from helper mode as "Detailed check" |
+| `/dashboard` | Move to `/admin` |
 
-| Item | Action | Why |
-|---|---|---|
-| `systems/rag_baseline.py`, `systems/retrieval.py`, `systems/synthetic.py`, `systems/grounding.py` | **Delete** | Baselines and probes for the experiment |
-| `eval/` (runner, metrics, report) | **Delete** | Experiment scoring |
-| `scripts/run_experiment.py`, `scripts/pilot.py` | **Delete** | Experiment drivers |
-| `data/runs/`, `data/queries/` | **Delete** | Experiment output |
-| `tests/test_metrics.py`, `tests/test_systems.py` | **Delete**, after moving any test that still checks product behaviour (extraction normalization, "unparseable value is dropped") into `test_interview.py` | Test the deleted code |
-| "Compare with asking the model directly" button + `web/compare.py` + `/compare` route | **Delete** | A research demo, confusing for a citizen |
-| `docs/proposal.md`, `docs/annotation-guide.md` | **Move** to `docs/archive/` | Research history, still citable |
-| `data/personas/` (247) + `personas.py` | **Keep**, renamed in prose to "test profiles" | They are regression tests: the rule engine's answer for each is the gold set, so a rule change that breaks someone is caught |
-| `scripts/gold_diff.py`, `schemematch validate` | **Keep** | They guard rule changes — more important in a product |
-| `/interview` page | **Keep**, remove from the citizen nav; link it from helper mode as "Detailed check" | Useful for helpers, too dense for citizens |
-| `/dashboard` | **Move** to `/admin` (not in nav) | Curator view: coverage and verification status |
-| `docs/retrieval-log.md`, `verification-*.md`, `rule-language.md` | **Keep** | Provenance and rule-writing guides |
+**Done when:** tests green; `grep -rn "rag_baseline\|eval\.\|run_experiment\|RQ2" src tests
+scripts` finds nothing; the app runs in rules-only mode.
 
-**Required code moves before deleting** (otherwise imports break):
-- `EXTRACTION_SYSTEM_PROMPT` lives in `systems/grounding.py` and is imported by `interview.py`
-  and `scripts/demo.py` → move it into `interview.py`.
-- `systems/base.py` imports `Persona` for `SimulatedCitizen`/`MatchResult`/`MatchSystem` (benchmark
-  only). Keep `LLMClient`, `ScriptedClient`, `ScriptedBlock`, `ScriptedMessage`,
-  `parse_json_response`, `attribute_catalogue`; delete the benchmark classes.
-- `DEFAULT_QUESTION_BUDGET` in `__init__.py` stays (the assistant uses it).
-- `pyproject.toml`: drop the `retrieval` extra; update the description and keywords.
+## Phase A — The app must never stop working (no-model assistant, budget guard)
 
-**Done when:** `python -m pytest -q` is green; `grep -rn "rag_baseline\|eval\.\|run_experiment\|RQ2" src tests scripts` finds nothing;
-the app runs in rules-only mode with no import errors; the README no longer has "Research
-framing" or "RQ" sections (full rewrite is Phase 7).
+Without a model the assistant page used to refuse to start, and a spent credit turned the
+next message into a 503.
 
----
+- **Question wording as data.** Add `ask: {ta, en}` to every askable attribute in
+  `kb/spec/attributes.yaml`, in spoken Tamil and plain English. The elicitation policy picks
+  the question; this text says it.
+- **Guided mode.** The assistant runs with no model: the next question comes from
+  `next_best_question`, answers are big buttons (yes / no / don't know / skip), a number pad,
+  or a typed or spoken answer read by the deterministic parser (aliases, Tamil numbers and
+  units).
+- **Budget guard.** Log `response.usage` for every model call; a daily cap in US dollars
+  (`--daily-budget`). When the cap is reached, or the API says the credit is spent, the chat
+  continues in guided mode with a one-line notice instead of an error. Spend shows on
+  `/admin`.
 
-## Phase 1 — Voice first (1–2 days, no API key needed)
+**Done when:** with `--backend none` a person can finish a whole conversation on the
+assistant page and hear their result; a scripted credit error mid-chat switches to guided
+mode; tests cover both.
 
-Most users cannot read, so the assistant must work by speaking and listening.
+## Phase 1 — Voice first
 
-1. **Speak in.** A large microphone button (push to talk) on the assistant, using the browser's
-   `SpeechRecognition` (`webkitSpeechRecognition` in Chrome) with `lang = 'ta-IN'`, and a
-   தமிழ் / English toggle (`en-IN`). Show the words as they are heard; send when the person
-   stops. If the browser has no speech recognition, hide the button and keep typing.
-2. **Speak out.** Read every assistant reply aloud with `speechSynthesis`, choosing a Tamil voice
-   when the device has one (`voice.lang` starting `ta`), else English. A speaker button on each
-   reply; an "auto-read replies" switch, on by default.
-3. **The verdict is spoken by the server, not the model.** Add a `spoken` field to the chat
-   response, built deterministically from the rule engine's result (eligible schemes, the next
-   step, documents to bring) in Tamil and English templates. The page reads `reply`, then
-   `spoken`. This keeps the guarantee: what the person hears about eligibility comes from
-   `rules.py`. Unit-test the templates in a new `tests/test_spoken.py`.
-4. **Privacy notice, once.** Chrome sends audio to Google for recognition. Before the first
-   recording, show and speak a one-line Tamil notice; remember the choice in `localStorage`.
-5. **Phone-sized.** Mic button at least 72 px, reachable by thumb; test at 390 px wide.
-
-**Optional 1b — offline speech (only if time allows):** `POST /api/speech` taking a short audio
-clip and returning text from a local open model (Whisper via `faster-whisper`, or AI4Bharat's
-Indic ASR). Lets the app work without sending audio to Google. Put the dependency in a
-`speech` extra so the core stays light.
+- **Speak in.** A large push-to-talk mic button using the browser's `SpeechRecognition`
+  (`webkitSpeechRecognition`), `lang = 'ta-IN'`, with a தமிழ் / English toggle (`en-IN`).
+  Show words as they are heard; send when the person stops. No speech support → hide the
+  button, keep typing.
+- **Speak out.** Read replies aloud with `speechSynthesis`, choosing a Tamil voice when the
+  device has one. A speaker button on each reply; "auto-read replies" on by default.
+- **The verdict is spoken by the server, not the model.** A `spoken` field on every chat
+  response, built from the rule engine's result in Tamil and English templates
+  (`spoken.py`, tested in `tests/test_spoken.py`).
+- **Privacy notice, once.** Chrome sends audio to Google for recognition. Before the first
+  recording, show and speak a one-line Tamil notice; remember the choice.
+- **Phone-sized.** Mic button at least 72 px; works at 390 px wide.
 
 **Done when:** in Chrome you can hold the mic, say "naan vivasayi, rendu ekkar nilam irukku",
-see it transcribed, get a reply read aloud in Tamil, and hear the eligible schemes and documents;
-without speech support the page still works by typing; tests green.
+see it transcribed, get a reply read aloud in Tamil, and hear the eligible schemes and
+documents; without speech support the page still works.
 
----
+## Phase 2 — Plain-language scheme content
 
-## Phase 2 — Plain-language scheme content (1–2 days)
+"Kalaignar Magalir Urimai Thogai" means nothing to the person who needs it. "₹1,000 every
+month for the woman who heads the family" does.
 
-"Kalaignar Magalir Urimai Thogai" means nothing to the person who needs it. "₹1,000 every month
-for the woman who heads the family" does.
+```yaml
+plain:
+  ta: { what: "...", who: "...", where: "..." }   # spoken Tamil, one short sentence each
+  en: { what: "...", who: "...", where: "..." }
+  reviewed: false                                  # true only after a person checks it
+```
 
-1. Add optional fields to every scheme YAML and to `kb.py`'s loader:
-   ```yaml
-   plain:
-     ta: { what: "...", who: "...", where: "..." }   # spoken Tamil, one short sentence each
-     en: { what: "...", who: "...", where: "..." }
-     reviewed: false                                  # true only after a person checks it
-   ```
-   `where` names the office type (VAO, taluk office, e-Sevai centre, agriculture office, school,
-   online portal) — never an invented address.
-2. **2a, by hand:** write these for the 10–15 most common schemes first (old age, widow,
-   KMUT, PM-KISAN, CMCHIS, PM-JAY, MGNREGA, PMFBY, scholarships, maternity).
-   **2b, with a key:** draft the rest with the model from `benefit_prose`/`eligibility_prose`,
-   saved with `reviewed: false` for a person to check.
-3. Use `plain` everywhere a citizen sees or hears a scheme: chat cards, the profile page,
-   `explain_scheme`, and Phase 1's spoken summary. Keep the official name small underneath.
-4. `schemematch validate` reports how many schemes have reviewed plain text (a count, not an error).
+`where` names the office type (VAO, taluk office, e-Sevai centre, agriculture office,
+school, online portal) — never an invented address. Write these for the most common schemes
+first, drawn only from each scheme's own `benefit_prose` / `eligibility_prose`. Use `plain`
+everywhere a citizen sees or hears a scheme; keep the official name small underneath.
+`schemematch validate` reports coverage.
 
-**Done when:** the 15 common schemes show and speak plain Tamil; validation prints coverage;
-tests cover the loader and the fallback when `plain` is missing.
+## Phase 3 — Help them apply
 
----
+- **Application pack** per eligible scheme at `/profile/<pid>/pack/<scheme_id>`: plain
+  description, documents with have / missing marks, the office to visit, "what the officer
+  may ask" (the facts the rule checked, from the trace), the person's own facts, and the
+  scheme's sources. Prints on one A4 page.
+- Read it aloud; share with a `https://wa.me/?text=...` link (no WhatsApp API needed).
+- **Coming up for you:** re-run the rules with the person's age plus one to five years and
+  list schemes that open later (old-age pension at 60, a scheme at 18). No model needed.
 
-## Phase 3 — Help them apply (2 days)
+## Phase 4 — Helper mode and basic login
 
-Eligibility is half the job; the other half is walking into the right office with the right papers.
+- **Helper home** at `/helper`: every saved person with "who needs what" — missing
+  documents, schemes missed by one condition, open conflicts — most actionable first.
+- **Login:** a helper PIN from `HELPER_PIN`, stored hashed, checked on login, held in a
+  signed Flask session cookie. Every `/api/profiles` route and `/helper` require it when a
+  PIN is set; the citizen assistant only sees the profile it created in that browser.
+- **Photos:** delete the photo once it has been read by default; "keep the photo" per
+  document.
+- **Application tracker:** per person and scheme — applied (date, reference number),
+  sanctioned, rejected — so a helper can follow up.
 
-1. **Application pack** per eligible scheme at `/profile/<pid>/pack/<scheme_id>` (and an API
-   route): plain description, the documents with have / missing marks, the office type to visit,
-   "what the officer may ask" (the facts the rule checked, from the trace, in plain words), and the
-   person's own relevant facts. Print-friendly CSS (A4, large type).
-2. **Read it aloud** with the Phase 1 voice.
-3. **Share** with a WhatsApp share link (`https://wa.me/?text=...`) containing the plain summary
-   and checklist — no WhatsApp account or API needed.
-4. The assistant's `show` tool gains `application_pack`.
+## Phase 5 — Tamil-first, low-literacy interface
 
-**Done when:** for a saved person, each eligible scheme has a pack that prints on one page, reads
-aloud, and shares; tests cover the route and that only eligible schemes get a pack.
+- `static/js/i18n.js` with `ta` and `en` strings; Tamil by default; `<html lang>` matches.
+- Citizen screens hide attribute ids, raw JSON and the scheme grid; show "N schemes found
+  for you" with large cards and an icon per sector.
+- A web app manifest and a small service worker, so the app installs on Android and the
+  shell loads on slow connections.
 
----
+## Phase 6 — Make every "yes" trustworthy (ongoing, human work)
 
-## Phase 4 — Helper mode and basic login (2 days)
+Follow `docs/verification-protocol.md` for the most common schemes; record each check in
+`docs/verification-log.md` and set `status: verified`. Verified schemes say "you can apply";
+unverified ones say "you may be able to — confirm at the office". Settle the open item in
+`kb/schemes/central/apy.yaml` (the 2022 income-tax-payer bar). Run `scripts/gold_diff.py`
+for every rule change.
 
-In villages one person often helps many: an e-Sevai operator, an anganwadi or ASHA worker, a
-panchayat volunteer, an NSS student.
+## Phase 7 — Test with real people, then tell the story
 
-1. **Helper home** at `/helper`: all saved families and people, with "who needs what" — pending
-   documents, schemes missed by one condition, open conflicts — sorted by what is most actionable.
-2. **Quick add person** with voice, and "start assistant for this person".
-3. **Basic login.** Today there is none (a profile id is a bearer token). Add a helper PIN set by an
-   environment variable (`HELPER_PIN`), stored hashed, checked on login, held in a signed Flask
-   session cookie. Every `/api/profiles` route and `/helper` require it; the citizen assistant
-   works without it but only sees the profile it created in that browser.
-4. **Photos:** default to deleting the photo once it has been read (keep only the extracted facts),
-   with a per-document "keep the photo" option.
+Field test with 5–10 people using `docs/field-test.md`; fix the top three problems; rewrite
+the README and report around a real user's journey and the field-test results.
 
-**Done when:** without the PIN, profile APIs return 401; with it, the helper sees all families;
-tests cover login, logout and the 401s.
+## Phases 8–12 — built on top of Phases 3 and 4
 
----
+These extend what Phases 3 and 4 built rather than replacing it: the application sheet,
+"coming up", the tracker and the helper login are Phase 3/4's, and the pieces below hang
+off them.
 
-## Phase 5 — Tamil-first, low-literacy interface (2 days)
+- **Phase 8 — money and overlaps.** `value` / `cover` on each scheme, every figure checked
+  against the sourced `benefit_prose` by `schemematch validate`; `cannot_combine_with`
+  pairs quoting the source, and totals that keep the best compatible set (`benefits.py`).
+- **Phase 9 — after "eligible".** How to get each missing paper, per state
+  (`kb/spec/document_guides.yaml`), shown on the application sheet. The tracker keeps a
+  history of every change with the rules' verdict at that moment and, for a rejection, a
+  reason from `kb/spec/rejections.yaml`; the profile page explains a rejection against the
+  rule; `/admin` counts rejections the rules disagree with (`/api/outcomes`); complaint
+  letters in English, Tamil and Malayalam; a per-person calendar. "Coming up" also lists
+  what *closes* with age.
+- **Phase 10 — the family and what to do.** One family total with per-family schemes
+  counted once; actions that would unlock a scheme (open a bank account) and the
+  unanswered questions with the most money behind them (`outlook.py`).
+- **Phase 11 — Kerala and Malayalam.** State `KL`, its districts, ration-card colours read
+  by state, Malayalam and Manglish answers, five welfare pensions from local bodies' pages,
+  two Kerala test profiles. The page itself is still Tamil and English.
+- **Phase 12 — reaching many people.** `/camp` quick intake with consent read aloud,
+  `/reports` with counts under 5 suppressed, `POST /api/v1/check` for partners with keys
+  from `schemematch keys`, consent records, data download and an access log per profile,
+  `schemematch watch-sources`, PDF uploads.
 
-All interface text is English today (`<html lang="en">`).
+**Left:** review the guides, rejection reasons and grievance contacts (`reviewed: false`);
+add dated application windows (the mechanism needs a sourced notification); more Kerala
+schemes, the OEC category, and Malayalam on the page itself; schedule the source watcher.
 
-1. **Language:** a small `static/js/i18n.js` with `ta` and `en` strings for every label; Tamil by
-   default, a switch in the top bar; set `<html lang>` to match.
-2. **Simplify the citizen screens:** hide attribute names (`is_secc_deprived_household`), raw
-   JSON and the 47-cell grid; show "N schemes found for you" with large cards and an icon per
-   sector (health, pension, farming, education, housing, women).
-3. **Install on a phone:** a web app manifest and a small service worker so the app shell loads
-   on slow connections and can be added to the home screen. Rules-only mode already works offline
-   on the server side.
-4. Keep `/interview` and `/admin` as they are — they are for helpers and curators.
+## Ideas for later
 
-**Done when:** a first-time user sees only Tamil, large buttons and icons; Lighthouse
-accessibility score 90+; the app installs on Android Chrome.
-
----
-
-## Phase 6 — Make every "yes" trustworthy (ongoing, start early)
-
-For a product, a wrong "yes" costs a poor family a day's wages and a wasted trip. Today 0 of 47
-rules are human-verified.
-
-1. Follow `docs/verification-protocol.md` for the 10–15 schemes from Phase 2a: check each rule
-   against the official Government Order, record it in `docs/verification-log.md`, set
-   `status: verified`.
-2. In the UI and the spoken summary: verified schemes say "you can apply"; unverified ones say
-   "you may be able to — confirm at the office".
-3. Settle the open item in `kb/schemes/central/apy.yaml`: its own note says income-tax payers
-   may have been barred from enrolling since a 2022 notification, which the rule does not encode.
-   Find the notification; if confirmed, add the exclusion and cite it.
-4. Keep `scripts/gold_diff.py` in the workflow for every rule change.
-
-**Done when:** at least 10 schemes are `verified`, and the UI and speech treat verified and
-unverified schemes differently.
-
----
-
-## Phase 7 — Test with real people, then rewrite the story (1 week, mostly field work)
-
-1. **Field test** with 5–10 people (family, neighbours, a village or an e-Sevai centre). Use
-   `docs/field-test.md` (write it in this phase): five tasks — "find what you can get", "say what
-   documents you need", "save your details", "upload a document", "hear where to go" — and
-   record, for each person: language, could read? (y/n), task done? (y/n), time, help needed,
-   what confused them, and whether the schemes found were right (a helper checks).
-2. **Fix the top three problems** they hit.
-3. **Rewrite `README.md` and the project report as a product:** problem, who it is for, a typical
-   user's journey (with screenshots), how it works, how it stays safe (rules decide, verified
-   schemes, privacy), field-test results, and the roadmap below. Remove research framing.
-
----
-
-## Phase 8 — Money and correctness in the scheme data
-
-1. **Benefit amounts as data.** An optional `value` block on each scheme (`amount`, `per`
-   = month / year / once, optional `max`, `per_family`) and `cover` for insurance. Every
-   figure must appear in the scheme's sourced `benefit_prose` — `schemematch validate`
-   fails otherwise — so an amount is never typed in from memory.
-2. **Schemes that cannot be taken together.** `cannot_combine_with: [{id, reason}]`, kept
-   symmetric by validation. The reason quotes the source. Totals count only the better one
-   of a group, and the UI says "you can take only one of these".
-
-## Phase 9 — From "eligible" to "money received"
-
-1. **How to get each missing document** (`how_to_get` in `kb/spec/documents.yaml`, per
-   state with a national default): which office issues it, where to apply, what to bring.
-   Marked `reviewed: false` until a person checks it; the UI says so.
-2. **Application tracker** in the vault: planned → applied → approved / rejected →
-   received, as an append-only event log like facts. Follow-up reminders after 30 days.
-3. **Rejections explained.** A vocabulary of common reasons (`kb/spec/rejections.yaml`),
-   each tied to the attributes and documents it concerns, with what to do next.
-4. **Outcome feedback.** A rejection of someone the rules called eligible flags that
-   scheme for review on the admin page — the loop that finds wrong rules.
-5. **Complaint drafts** from a template (English, Tamil, Malayalam), grounded in the
-   clauses the person meets, addressed to the state's grievance channel.
-6. **Calendar**: follow-ups, birthdays that open or close a scheme, and dated
-   application windows where a source gives one.
-
-## Phase 10 — Families and what comes next
-
-1. **Household view**: every member's schemes, a yearly total that counts per-family
-   schemes once and respects can't-combine groups, and documents shared across the family.
-2. **Unlock view**: near misses a person can act on (open a bank account, register at the
-   employment exchange) and unanswered questions that gate the most money, ranked by value.
-3. **Coming up**: schemes that open or close with age, worked out by re-running the rules
-   with the person older, never guessed.
-
-## Phase 11 — Kerala and Malayalam
-
-1. Text normalizer keeps every Indic script (it used to break Malayalam words apart).
-2. `state` gains `KL`; districts are tied to their state in `jurisdictions.yaml`;
-   aliases that mean different things in different states ("white card") are scoped by
-   state; ration cards gain Kerala's NPS / NPNS classes.
-3. `name_ml` / `label_ml` beside the Tamil fields; Malayalam and Manglish aliases;
-   assistant, document reader and explanations accept Malayalam.
-4. Kerala schemes, sourced and logged like the Tamil Nadu ones, with Kerala test profiles.
-
-## Phase 12 — Helpers, partners and privacy
-
-1. **Camp mode** (`/camp`): screen many families in a day, quick intake, one printed sheet
-   per family (`/print/<pid>`).
-2. **Anonymous reports** for panchayats and NGOs, with counts under 5 suppressed.
-3. **Partner API**: `POST /api/v1/check` with a key (`schemematch keys create`), stateless
-   — nothing a partner sends is stored.
-4. **Consent and audit** (DPDP Act 2023): consent recorded per person, a notice in the
-   person's language, data export, and a log of who opened or changed a profile.
-5. **Source watcher** (`schemematch watch-sources`): re-fetch each scheme's sources, flag
-   changed or unreachable ones for re-verification.
-6. **PDF documents** read the same way as photos.
-
-**Still needs infrastructure, not code in this repo:** HTTPS hosting, Postgres instead of
-SQLite for many users, encrypted storage and backups, DigiLocker (needs partner approval).
-
-### Status of Phases 8–12 (2026-10-26)
-
-Built and tested (394 test cases, offline). What is left:
-
-- **Human review**: `document_guides.yaml`, `rejections.yaml` and `grievance.yaml` are all
-  `reviewed: false`. Check each against the department's page and add `source:`.
-- **Application windows**: the mechanism exists (a window must cite a source); no scheme
-  has one yet, because crop-insurance cut-offs are set by each state every season.
-- **Kerala**: more schemes (LIFE Mission housing, KASP, Snehapoorvam), the OEC category,
-  attributes for house area and vehicle engine size, more Kerala test profiles, and a
-  second look at the welfare-pension portal, which refused the connection.
-- **Source watcher**: run `schemematch watch-sources --update` once to record fingerprints,
-  then schedule it weekly.
-- **Login for saved profiles** is still Phase 4; the helper PIN covers only helper pages.
-
----
-
-## Later — not this semester
-
-- **WhatsApp bot** taking voice notes (needs a WhatsApp Business account and approval).
-- **Phone line (IVR)** for people without smartphones: call a number, speak, hear the answer.
-- **SMS reminders** for documents still missing and application deadlines.
-- **More languages** for migrant workers (Hindi, Telugu), and other states' schemes.
-
----
-
-## Order and effort at a glance
-
-| Phase | What | Needs an API key? | Effort |
-|---|---|---|---|
-| 0 | Remove research scaffolding | No | ½ day |
-| 1 | Voice in and out | No (1b optional) | 1–2 days |
-| 2 | Plain Tamil scheme content | Only for 2b | 1–2 days |
-| 3 | Application pack, read aloud, share | No | 2 days |
-| 4 | Helper mode, PIN login, photo privacy | No | 2 days |
-| 5 | Tamil-first simple UI, installable | No | 2 days |
-| 6 | Verify 10–15 rules | No (human work) | ongoing |
-| 7 | Field test, fixes, rewrite README and report | No | 1 week |
-| 8 | Benefit amounts, can't-combine rules | No | built |
-| 9 | Guides, tracker, rejections, outcomes, complaints, calendar | No | built; data needs review |
-| 10 | Family, unlock, coming up | No | built |
-| 11 | Kerala and Malayalam | No | started: 5 pensions |
-| 12 | Camp, reports, partner API, consent, audit, watcher, PDF | No | built |
+- **Fake-scheme checker:** paste a WhatsApp forward; the app says whether that scheme is in
+  the knowledge base, with a fixed line: "No government officer asks for money or an OTP."
+- **"Fix your papers first":** compare documents with each other (name or date-of-birth
+  mismatch between Aadhaar, ration card and passbook; bank account not seeded for DBT).
+- **Deadlines with dates:** the `windows:` field exists; it needs each season's
+  notification (PMFBY cut-offs, fishermen's ban-period relief, scholarship dates).
+- **Pre-recorded audio** for the fixed spoken text, for phones with no Tamil voice
+  (Bhashini or AI4Bharat text-to-speech).
+- **Kiosk mode** for e-Sevai centres: wipe everything after each family.
+- **Missing schemes rural users need:** PMAY-Gramin, NSAP's National Family Benefit Scheme,
+  the construction and unorganised workers' welfare boards, e-Shram, Kisan Credit Card,
+  PM-Kisan Maandhan, Sukanya Samriddhi; "you get this automatically" cards.
+- WhatsApp bot, phone line (IVR), SMS reminders, more languages and states (the page in
+  Malayalam; more Kerala schemes).

@@ -221,9 +221,13 @@ def scripted_app(kb, spec, tmp_path):
     return make
 
 
-def test_chat_needs_a_model_that_can_use_tools(kb, spec, tmp_path):
+def test_without_a_model_the_chat_starts_in_guided_mode(kb, spec, tmp_path):
     rules_only = create_app(kb=kb, spec=spec, client=None, vault_dir=tmp_path / "v")
-    assert rules_only.test_client().post("/api/chat", json={}).status_code == 503
+    response = rules_only.test_client().post("/api/chat", json={})
+    assert response.status_code == 201
+    body = response.get_json()
+    assert body["mode"] == "guided" and body["reason"] == "no_model"
+    assert body["turn"]["question"]["attr"]
 
 
 def test_chat_over_http_writes_through_to_a_saved_profile(scripted_app):
@@ -252,7 +256,8 @@ def test_chat_over_http_writes_through_to_a_saved_profile(scripted_app):
     assert facts["is_widow"]["value"] is True  # derived on read
 
     reloaded = http.get(f"/api/chat/{chat_id}").get_json()
-    assert [t["role"] for t in reloaded["transcript"]] == ["user", "assistant"]
+    # The greeting is fixed text, so it costs no model call.
+    assert [t["role"] for t in reloaded["transcript"]] == ["assistant", "user", "assistant"]
 
 
 def test_chat_errors(scripted_app):
@@ -263,7 +268,8 @@ def test_chat_errors(scripted_app):
     assert http.post(f"/api/chat/{chat_id}/message", json={"text": "  "}).status_code == 400
 
 
-def test_a_failing_model_is_a_503_not_a_500(kb, spec, tmp_path):
+def test_a_failing_model_switches_the_chat_to_guided_mode(kb, spec, tmp_path):
+    """A network error mid-chat is a mode switch the person barely notices, not an error."""
     class Broken(ScriptedClient):
         def converse(self, *args, **kwargs):
             raise RuntimeError("network down")
@@ -271,8 +277,11 @@ def test_a_failing_model_is_a_503_not_a_500(kb, spec, tmp_path):
                       vault_dir=tmp_path / "vault").test_client()
     chat_id = http.post("/api/chat", json={}).get_json()["chat_id"]
     response = http.post(f"/api/chat/{chat_id}/message", json={"text": "hi"})
-    assert response.status_code == 503
-    assert response.get_json()["error"]["code"] == "agent_failed"
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["switched"] is True and body["mode"] == "guided"
+    assert body["reason"] == "agent_failed"
+    assert body["question"]["attr"]
 
 
 def test_a_chat_can_be_saved_like_an_interview(scripted_app):

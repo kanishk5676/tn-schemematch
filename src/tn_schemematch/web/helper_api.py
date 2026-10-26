@@ -1,320 +1,201 @@
-"""Routes for helpers, partners and privacy.
+"""Helper mode: a PIN login, the helper's list, and who may see which saved person.
 
-**Helper sign-in.** When the server is started with a ``HELPER_PIN``, the camp, report
-and outcome routes need it; without one (a laptop on a desk) they are open, as the rest of
-the app is. The PIN is kept only as a hash and checked in constant time, and five wrong
-tries lock sign-in for a minute. Saved-profile routes are not locked yet — that is the
-product plan's Phase 4, and it changes what the citizen pages can do.
+Without a PIN (``HELPER_PIN`` unset) the server behaves as it always has: one machine in
+one room, everyone a helper. With a PIN set, saved profiles stop being open to anyone who
+knows an id:
 
-**Partners** call ``/api/v1/*`` with a key from ``schemematch keys create``.
+- a **helper** logs in with the PIN and sees everyone — the list of families, every
+  profile, every application sheet;
+- a **citizen** on the assistant sees only the profiles created in their own browser,
+  remembered in a signed session cookie; asking for anyone else's is a 401.
 
-**Privacy.** Consent is recorded per person against a dated notice; ``/export`` returns
-everything held about them; every change to a profile, and every time one is opened, is
-written to an audit log by the hook in :func:`register_audit`.
+The PIN is held only as a salted hash, compared in constant time, and five wrong tries
+from one address within ten minutes lock that address out for the rest of the window.
+The session cookie is signed with ``SECRET_KEY`` (or a random key per start, which logs
+everyone out on restart — safe, if inconvenient).
 """
 
 from __future__ import annotations
 
-import hashlib
-import hmac
 import re
 import threading
 import time
-from functools import wraps
+from collections import defaultdict, deque
 from typing import Any
 
-from flask import Flask, Response, jsonify, render_template, request, session
+from flask import Flask, jsonify, render_template, request, session
+from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..helpers import anonymous_report, check_facts, intake_form, person_summary, print_sheet
-from ..partners import RateLimiter, authenticate, check
-from ..privacy import GIVEN_BY, NOTICE_VERSION, export, notice
-from ..serialize import scheme_summary
+from ..applications import clean_reference, describe
+from ..caseload import caseload
 from ..vault import VaultError
 from .http import error
 from .state import AppContext
 
-MAX_PIN_FAILURES = 5
-LOCKOUT_SECONDS = 60
-_PROFILE_PATH = re.compile(r"^/api/profiles/([0-9a-f]{32})(/.*)?$")
-_ID = re.compile(r"[0-9a-f]{32}")
+MAX_TRIES = 5
+WINDOW_SECONDS = 600
+MAX_OWN = 50
+
+_PROFILE_PATH = re.compile(r"^/(?:api/profiles|profile)/([0-9a-f]{32})(?:/|$)")
+# Routes that may name a profile in their JSON body.
+_BODY_PROFILE_ROUTES = re.compile(r"^/api/(?:chat|session)(?:/[0-9a-f]{32}/save)?$")
 
 
-def pin_hash(pin: str) -> str:
-    return hashlib.sha256(("schemematch-helper:" + pin).encode("utf-8")).hexdigest()
+class HelperAuth:
+    """A single shared PIN, held as a salted hash."""
+
+    def __init__(self, pin: str | None) -> None:
+        pin = (pin or "").strip()
+        self._hash = generate_password_hash(pin) if pin else None
+        self._failures: dict[str, deque[float]] = defaultdict(deque)
+        self._lock = threading.Lock()
+
+    @property
+    def enabled(self) -> bool:
+        return self._hash is not None
+
+    def locked_out(self, address: str) -> bool:
+        with self._lock:
+            tries = self._failures[address]
+            while tries and time.time() - tries[0] > WINDOW_SECONDS:
+                tries.popleft()
+            return len(tries) >= MAX_TRIES
+
+    def check(self, pin: str, address: str) -> bool:
+        if not self.enabled:
+            return True
+        ok = check_password_hash(self._hash, str(pin or ""))
+        if not ok:
+            with self._lock:
+                self._failures[address].append(time.time())
+        return ok
 
 
-def actor() -> str:
-    return "helper" if session.get("helper") else "this device"
+# ------------------------------------------------------------------ who may see what
 
 
-def register_helper_api(app: Flask, ctx: AppContext) -> None:
-    failures = {"count": 0, "until": 0.0}
-    failures_lock = threading.Lock()
+def is_helper(ctx: AppContext) -> bool:
+    auth = ctx.auth
+    return auth is None or not auth.enabled or session.get("helper") is True
 
-    def pin_required() -> bool:
-        return bool(app.config.get("HELPER_PIN_HASH"))
 
-    def signed_in() -> bool:
-        return not pin_required() or bool(session.get("helper"))
+def own_profiles() -> list[str]:
+    return list(session.get("own") or [])
 
-    def helper_only(view):
-        @wraps(view)
-        def guarded(*args: Any, **kwargs: Any):
-            if not signed_in():
-                return error("login_required", "Sign in with the helper PIN first.", 401)
-            return view(*args, **kwargs)
-        return guarded
 
-    app.config["HELPER_ONLY"] = helper_only
+def claim(pid: str) -> None:
+    """Remember that this browser created ``pid``, so it can keep using it."""
+    own = [p for p in own_profiles() if p != pid] + [pid]
+    session["own"] = own[-MAX_OWN:]
 
-    def page(template: str, name: str, **extra: Any):
-        if not signed_in():
-            return render_template("login.html", model=ctx.model_name,
-                                   n_schemes=len(ctx.active), page=name)
-        return render_template(template, model=ctx.model_name, n_schemes=len(ctx.active),
-                               page=name, **extra)
 
-    # ------------------------------------------------------------------ sign-in
+def can_see(ctx: AppContext, pid: str) -> bool:
+    return is_helper(ctx) or pid in own_profiles()
 
-    @app.get("/api/helper")
-    def helper_status():
-        return jsonify({"pin_required": pin_required(), "signed_in": signed_in()})
+
+def visible_profiles(ctx: AppContext, profiles: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if is_helper(ctx):
+        return profiles
+    own = set(own_profiles())
+    return [p for p in profiles if p["id"] in own]
+
+
+# ----------------------------------------------------------------------- routes
+
+
+def register_helper(app: Flask, ctx: AppContext) -> None:
+    def login_required():
+        return error("login_required", "Log in with the helper PIN to see this.", 401)
+
+    @app.before_request
+    def guard():
+        if is_helper(ctx):
+            return None
+        match = _PROFILE_PATH.match(request.path)
+        if match and not can_see(ctx, match.group(1)):
+            return login_required()
+        if request.path.startswith("/api/helper/") and request.path not in {
+                "/api/helper/me", "/api/helper/login", "/api/helper/logout"}:
+            return login_required()
+        if request.method == "POST" and _BODY_PROFILE_ROUTES.match(request.path):
+            pid = (request.get_json(silent=True) or {}).get("profile_id")
+            if pid and not can_see(ctx, str(pid)):
+                return login_required()
+        return None
+
+    @app.get("/api/helper/me")
+    def helper_me():
+        return jsonify({"pin_required": bool(ctx.auth and ctx.auth.enabled),
+                        "helper": is_helper(ctx), "own": own_profiles()})
 
     @app.post("/api/helper/login")
     def helper_login():
-        if not pin_required():
-            return jsonify({"signed_in": True, "pin_required": False})
-        with failures_lock:
-            if time.time() < failures["until"]:
-                return error("locked", "Too many wrong PINs. Wait a minute and try again.", 429)
-        attempt = str((request.get_json(silent=True) or {}).get("pin") or "")
-        if hmac.compare_digest(pin_hash(attempt), app.config["HELPER_PIN_HASH"]):
-            session.clear()
-            session["helper"] = True
-            with failures_lock:
-                failures["count"] = 0
-            ctx.vault.log("helper", "sign in")
-            return jsonify({"signed_in": True, "pin_required": True})
-        with failures_lock:
-            failures["count"] += 1
-            if failures["count"] >= MAX_PIN_FAILURES:
-                failures.update(count=0, until=time.time() + LOCKOUT_SECONDS)
-        return error("bad_pin", "That PIN is not right.", 401)
+        address = request.remote_addr or "?"
+        if ctx.auth is None or not ctx.auth.enabled:
+            return jsonify({"helper": True})
+        if ctx.auth.locked_out(address):
+            return error("too_many_tries", "Too many wrong PINs. Wait ten minutes.", 429)
+        pin = (request.get_json(silent=True) or {}).get("pin")
+        if not ctx.auth.check(str(pin or ""), address):
+            return error("wrong_pin", "That PIN is not right.", 401)
+        session["helper"] = True
+        session.permanent = False
+        return jsonify({"helper": True})
 
     @app.post("/api/helper/logout")
     def helper_logout():
-        session.clear()
-        return jsonify({"signed_in": not pin_required()})
+        session.pop("helper", None)
+        return jsonify({"helper": is_helper(ctx)})
 
-    # -------------------------------------------------------------------- camps
+    @app.get("/api/helper/overview")
+    def helper_overview():
+        lang = "en" if request.args.get("lang") == "en" else "ta"
+        return jsonify(caseload(ctx.vault, ctx.active, ctx.spec, ctx.documents, lang))
 
-    @app.get("/camp")
-    def camp_page():
-        return page("camp.html", "camp")
+    def described(pid: str, row: dict[str, Any]) -> dict[str, Any]:
+        """A tracker row with its history, a follow-up nudge and, for a rejection, the
+        rule's clauses beside what the person said (:func:`..applications.describe`)."""
+        profile, _ = ctx.vault.profile(pid)
+        scheme_id = row["scheme_id"]
+        return describe(row, ctx.kb[scheme_id] if scheme_id in ctx.kb else None, ctx.spec,
+                        profile, ctx.rejections, documents=ctx.documents,
+                        history=ctx.vault.application_history(pid, scheme_id),
+                        lang=request.args.get("lang", "en"))
 
-    @app.get("/reports")
-    def reports_page():
-        return page("reports.html", "reports")
-
-    @app.get("/api/camps")
-    @helper_only
-    def list_camps():
-        return jsonify({"camps": ctx.vault.camps(), "intake": intake_form(ctx.spec)})
-
-    @app.post("/api/camps")
-    @helper_only
-    def create_camp():
-        body = request.get_json(silent=True) or {}
+    @app.get("/api/profiles/<pid>/applications")
+    def list_applications(pid: str):
         try:
-            camp = ctx.vault.create_camp(body.get("name") or "", place=body.get("place") or "",
-                                         held_on=body.get("held_on") or None)
+            return jsonify({"applications": [described(pid, row)
+                                             for row in ctx.vault.applications(pid)]})
+        except KeyError:
+            return error("no_such_profile", f"no saved profile {pid!r}", 404)
+
+    @app.post("/api/profiles/<pid>/applications")
+    def record_application(pid: str):
+        """Where an application stands: planned, applied (with date and reference),
+        sanctioned or rejected — a rejection with its reason, from
+        ``kb/spec/rejections.yaml``. The rule engine's verdict is stored with every change."""
+        body = request.get_json(silent=True) or {}
+        scheme_id = body.get("scheme_id")
+        if scheme_id not in ctx.kb:
+            return error("bad_scheme", f"no scheme {scheme_id!r}", 400)
+        reason = body.get("reason") or None
+        if reason is not None and reason not in ctx.rejections:
+            return error("bad_application", f"unknown rejection reason {reason!r}", 400)
+        try:
+            profile, _ = ctx.vault.profile(pid)
+            row = ctx.vault.set_application(
+                pid, scheme_id, status=str(body.get("status") or ""),
+                reference=clean_reference(str(body.get("reference") or "")),
+                note=str(body.get("note") or ""),
+                applied_on=body.get("applied_on") or None, reason=reason,
+                verdict=ctx.kb[scheme_id].decide(profile).verdict.value)
+        except KeyError:
+            return error("no_such_profile", f"no saved profile {pid!r}", 404)
         except VaultError as exc:
-            return error("bad_camp", str(exc), 400)
-        return jsonify(camp), 201
+            return error("bad_application", str(exc), 400)
+        return jsonify(described(pid, row))
 
-    @app.get("/api/camps/<cid>")
-    @helper_only
-    def get_camp(cid: str):
-        try:
-            camp = ctx.vault.camp(cid)
-            members = ctx.vault.camp_members(cid)
-        except KeyError:
-            return error("no_such_camp", "that camp does not exist", 404)
-        return jsonify({"camp": camp, "people": [
-            person_summary(ctx.active, ctx.vault, ctx.documents, pid) for pid in members]})
-
-    @app.post("/api/camps/<cid>/people")
-    @helper_only
-    def camp_intake(cid: str):
-        """Quick intake: a person, a few facts and consent, saved in one step.
-
-        Every fact is checked before anything is written, so a typo cannot leave half a
-        person behind.
-        """
-        body = request.get_json(silent=True) or {}
-        try:
-            ctx.vault.camp(cid)
-        except KeyError:
-            return error("no_such_camp", "that camp does not exist", 404)
-        if not body.get("consent"):
-            return error("consent_required", "Read the notice to the person and record "
-                         "their consent before saving.", 400)
-        values, errors = check_facts(ctx.spec, body.get("facts") or {})
-        if errors:
-            return jsonify({"error": {"code": "bad_facts", "message": "Some answers could "
-                                      "not be read.", "fields": errors}}), 400
-        try:
-            person = ctx.vault.create_profile(body.get("name") or "",
-                                              relation=body.get("relation") or "",
-                                              household=body.get("household_of") or None)
-        except KeyError:
-            return error("no_such_profile", "that family member does not exist", 404)
-        except VaultError as exc:
-            return error("bad_profile", str(exc), 400)
-        pid = person["id"]
-        ctx.vault.give_consent(pid, notice=NOTICE_VERSION, lang=body.get("lang") or "en",
-                               given_by="helper")
-        ctx.vault.record_many(pid, [(attr, value, "form", "") for attr, value in values.items()])
-        ctx.vault.add_to_camp(cid, pid)
-        ctx.vault.log(actor(), "camp intake", pid, f"camp {cid}")
-        return jsonify(person_summary(ctx.active, ctx.vault, ctx.documents, pid)), 201
-
-    @app.get("/print/<pid>")
-    def print_one(pid: str):
-        try:
-            sheets = [print_sheet(ctx.active, ctx.spec, ctx.vault, ctx.documents, pid)]
-        except KeyError:
-            return error("no_such_profile", f"no saved profile {pid!r}", 404)
-        ctx.vault.log(actor(), "print", pid)
-        return render_template("print.html", sheets=sheets)
-
-    @app.get("/print/camp/<cid>")
-    def print_camp(cid: str):
-        if not signed_in():
-            return error("login_required", "Sign in with the helper PIN first.", 401)
-        try:
-            members = ctx.vault.camp_members(cid)
-        except KeyError:
-            return error("no_such_camp", "that camp does not exist", 404)
-        for pid in members:
-            ctx.vault.log(actor(), "print", pid, f"camp {cid}")
-        return render_template("print.html", sheets=[
-            print_sheet(ctx.active, ctx.spec, ctx.vault, ctx.documents, pid) for pid in members])
-
-    # ------------------------------------------------------------------ reports
-
-    @app.get("/api/reports/summary")
-    @helper_only
-    def report_summary():
-        cid = request.args.get("camp")
-        try:
-            ids = ctx.vault.camp_members(cid) if cid else ctx.vault.profile_ids()
-        except KeyError:
-            return error("no_such_camp", "that camp does not exist", 404)
-        report = anonymous_report(ctx.active, ctx.vault, ctx.documents, ids)
-        report["scope"] = ctx.vault.camp(cid)["name"] if cid else "everyone saved here"
-        return jsonify(report)
-
-    # ----------------------------------------------------------------- partners
-
-    limiter = RateLimiter()
-
-    def partner(view):
-        @wraps(view)
-        def guarded(*args: Any, **kwargs: Any):
-            key = authenticate(ctx.vault, request.headers.get("Authorization"))
-            if key is None:
-                return error("bad_key", "Send a valid key as 'Authorization: Bearer sm_…'.", 401)
-            if not limiter.allow(key["id"]):
-                return error("rate_limited", "Too many requests; slow down.", 429)
-            ctx.vault.touch_api_key(key["id"])
-            response = view(*args, **kwargs)
-            response.headers["Cache-Control"] = "no-store"
-            return response
-        return guarded
-
-    @app.post("/api/v1/check")
-    @partner
-    def partner_check():
-        """Facts in, verdicts out. Nothing the partner sends is stored."""
-        facts = (request.get_json(silent=True) or {}).get("facts")
-        if not isinstance(facts, dict):
-            return error("bad_request", "send {\"facts\": {attribute: value, …}}", 400)
-        return jsonify(check(ctx.active, ctx.spec, ctx.documents, facts))
-
-    @app.get("/api/v1/schemes")
-    @partner
-    def partner_schemes():
-        return jsonify({"schemes": [scheme_summary(s) for s in ctx.active]})
-
-    @app.get("/api/v1/attributes")
-    @partner
-    def partner_attributes():
-        from ..serialize import attribute_form, label_for
-        return jsonify({"attributes": [attribute_form(ctx.spec, n) | {"label": label_for(ctx.spec, n)}
-                                       for n in ctx.spec.elicitable_names()]})
-
-    # ------------------------------------------------------------------ privacy
-
-    @app.get("/api/privacy/notice")
-    def privacy_notice():
-        return jsonify(notice(request.args.get("lang", "en")))
-
-    @app.post("/api/profiles/<pid>/consent")
-    def give_consent(pid: str):
-        body = request.get_json(silent=True) or {}
-        given_by = body.get("given_by") or "self"
-        if given_by not in GIVEN_BY:
-            return error("bad_request", "given_by must be 'self' or 'helper'", 400)
-        try:
-            consent = ctx.vault.give_consent(pid, notice=NOTICE_VERSION,
-                                             lang=body.get("lang") or "en", given_by=given_by)
-        except KeyError:
-            return error("no_such_profile", f"no saved profile {pid!r}", 404)
-        return jsonify({"consent": consent})
-
-    @app.get("/api/profiles/<pid>/export")
-    def export_profile(pid: str):
-        """A person's copy of everything held about them (DPDP Act, right to access)."""
-        try:
-            payload = export(ctx.vault, pid)
-        except KeyError:
-            return error("no_such_profile", f"no saved profile {pid!r}", 404)
-        response = jsonify(payload)
-        response.headers["Content-Disposition"] = f'attachment; filename="my-data-{pid[:8]}.json"'
-        response.headers["Cache-Control"] = "private, no-store"
-        return response
-
-    @app.get("/api/profiles/<pid>/audit")
-    def profile_audit(pid: str):
-        try:
-            ctx.vault.get_profile(pid)
-        except KeyError:
-            return error("no_such_profile", f"no saved profile {pid!r}", 404)
-        return jsonify({"log": ctx.vault.audit_log(pid)})
-
-
-def register_audit(app: Flask, ctx: AppContext) -> None:
-    """Write every change to a saved profile, and every time one is opened, to the log.
-
-    One hook rather than a line in every route, so a route added later cannot forget.
-    Only ids and the route are kept — "POST /facts", never the fact.
-    """
-    @app.after_request
-    def audit(response: Response) -> Response:
-        match = _PROFILE_PATH.match(request.path)
-        if match is None or response.status_code >= 400:
-            return response
-        pid, rest = match.group(1), _ID.sub(":id", match.group(2) or "/")
-        quiet_reads = request.method == "GET" and rest not in {"/", "/export", "/documents/:id/file"}
-        if quiet_reads or rest == "/audit":
-            return response
-        action = {"GET /": "opened profile", "DELETE /": "deleted profile",
-                  "GET /export": "downloaded data", "POST /consent": "recorded consent",
-                  "GET /documents/:id/file": "viewed a document"}.get(
-                      f"{request.method} {rest}", f"{request.method} {rest}")
-        detail = ""
-        if request.method == "POST" and rest == "/facts":
-            detail = str((request.get_json(silent=True) or {}).get("attr") or "")[:60]
-        ctx.vault.log(actor(), action, pid, detail)
-        return response
+    @app.get("/helper")
+    def helper_page():
+        return render_template("helper.html", page="helper", helper_link=True)

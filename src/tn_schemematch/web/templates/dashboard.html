@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Coverage and results — TN-SchemeMatch{% endblock %}
+{% block title %}Admin — knowledge base coverage{% endblock %}
 {% block body %}
 <div class="card">
   <h2 style="margin:0">Knowledge base coverage</h2>
@@ -7,6 +7,16 @@
     What the rule KB contains, and how much of it has been checked by a human.
   </p>
   <div class="stat-grid" id="kb-stats"></div>
+</div>
+
+<div class="card" style="margin-top:14px" id="usage-card" hidden>
+  <h2 style="margin:0">Model spending</h2>
+  <p class="muted tiny" style="margin:6px 0 14px">
+    Estimated from list prices for every model call this server made. The Anthropic console
+    is the record of what was actually charged. Past the daily cap the assistant switches to
+    guided mode, which costs nothing.
+  </p>
+  <div class="stat-grid" id="usage-stats"></div>
 </div>
 
 <div class="split" style="grid-template-columns:1fr 1fr;margin-top:14px">
@@ -31,16 +41,6 @@
     eligible: either the rule or the office is wrong, and a person has to find out which.
   </p>
   <div id="outcomes"></div>
-</div>
-
-<div class="card" style="margin-top:14px">
-  <h2 style="margin:0 0 4px">Scored experiment runs</h2>
-  <p class="muted tiny" style="margin:0 0 14px">
-    False-positive rate is reported beside F1, never folded into it. A false negative means
-    someone does not hear about a benefit; a false positive sends them to a district office
-    for nothing. Averaging those together hides the error that costs a day of work.
-  </p>
-  <div id="runs"></div>
 </div>
 {% endblock %}
 

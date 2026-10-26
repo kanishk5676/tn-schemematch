@@ -292,7 +292,7 @@ def test_upload_reads_merges_and_resolves(kb, spec, tmp_path):
     http.post(f"/api/profiles/{pid}/facts",
               json={"attr": "annual_family_income", "value": 36000})
 
-    response = upload(http, pid)
+    response = upload(http, pid, keep="1")
     assert response.status_code == 201
     body = response.get_json()
     assert body["document"]["status"] == "read"
@@ -351,8 +351,44 @@ def test_bad_uploads_are_refused(kb, spec, tmp_path):
 def test_deleting_a_document_reopens_the_checklist(kb, spec, tmp_path):
     http = make_http(kb, spec, tmp_path)
     pid = http.post("/api/profiles", json={"name": "Lakshmi"}).get_json()["id"]
-    doc = upload(http, pid, doc_type="aadhaar").get_json()["document"]
+    # Kept on purpose: a filed photo is otherwise deleted at once (photo privacy, below).
+    doc = upload(http, pid, doc_type="aadhaar", keep="1").get_json()["document"]
     assert http.get(doc["file_url"]).status_code == 200
     assert http.delete(f"/api/profiles/{pid}/documents/{doc['id']}").status_code == 200
     assert http.get(doc["file_url"]).status_code == 404
     assert http.get(f"/api/profiles/{pid}").get_json()["documents"] == []
+
+
+# ------------------------------------------------------------- photo privacy
+
+
+def test_a_photo_is_deleted_once_read_but_its_facts_stay(kb, spec, tmp_path):
+    http = make_http(kb, spec, tmp_path)
+    pid = http.post("/api/profiles", json={"name": "Lakshmi"}).get_json()["id"]
+    body = upload(http, pid, doc_type="bank_passbook").get_json()
+    assert body["document"]["has_photo"] is False
+    assert http.get(body["document"]["file_url"]).status_code == 410
+    assert any(f["attr"] == "has_bank_account" for f in body["facts"])
+    assert not [f for f in (tmp_path / "vault" / "files").rglob("*") if f.is_file()]
+
+
+def test_a_photo_can_be_kept_on_request(kb, spec, tmp_path):
+    http = make_http(kb, spec, tmp_path)
+    pid = http.post("/api/profiles", json={"name": "Lakshmi"}).get_json()["id"]
+    body = upload(http, pid, doc_type="bank_passbook", keep="1").get_json()
+    assert body["document"]["has_photo"] is True
+    assert http.get(body["document"]["file_url"]).status_code == 200
+
+
+def test_a_disputed_photo_is_kept_until_the_dispute_is_settled(kb, spec, tmp_path):
+    client = reader(doc_type="income_certificate", facts=[
+        {"attr": "annual_family_income", "value": "72000", "evidence": "Rs 72,000"}])
+    http = make_http(kb, spec, tmp_path, client)
+    pid = http.post("/api/profiles", json={"name": "Lakshmi"}).get_json()["id"]
+    http.post(f"/api/profiles/{pid}/facts", json={"attr": "annual_family_income", "value": 36000})
+    body = upload(http, pid).get_json()
+    assert body["document"]["has_photo"] is True  # someone may need to look at it
+    doc_id = body["document"]["id"]
+    http.post(f"/api/profiles/{pid}/documents/{doc_id}/resolve",
+              json={"attr": "annual_family_income", "keep": "mine"})
+    assert http.get(body["document"]["file_url"]).status_code == 410

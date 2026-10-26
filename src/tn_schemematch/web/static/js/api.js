@@ -50,12 +50,10 @@ export const api = {
 
   // applications
   applications: (pid) => call(`/api/profiles/${pid}/applications`),
-  openApplication: (pid, body) => post(`/api/profiles/${pid}/applications`, body),
-  setApplicationStatus: (pid, aid, body) =>
-    post(`/api/profiles/${pid}/applications/${aid}/status`, body),
-  deleteApplication: (pid, aid) => send('DELETE', `/api/profiles/${pid}/applications/${aid}`),
-  complaint: (pid, aid, lang) =>
-    call(`/api/profiles/${pid}/applications/${aid}/complaint?lang=${lang}`),
+  // One row per scheme: { scheme_id, status, applied_on?, reference?, reason? }.
+  track: (pid, body) => post(`/api/profiles/${pid}/applications`, body),
+  complaint: (pid, schemeId, lang) =>
+    call(`/api/profiles/${pid}/applications/${schemeId}/complaint?lang=${lang}`),
   rejectionReasons: () => call('/api/rejection-reasons'),
 
   // helpers and privacy
@@ -72,10 +70,11 @@ export const api = {
   // documents
   documentTypes: () => call('/api/documents/types'),
   attributes: () => call('/api/attributes'),
-  upload: (pid, file, docType) => {
+  upload: (pid, file, docType, keep = false) => {
     const form = new FormData();
     form.append('file', file);
     if (docType) form.append('doc_type', docType);
+    if (keep) form.append('keep', '1');
     return call(`/api/profiles/${pid}/documents`, { method: 'POST', body: form });
   },
   setDocumentType: (pid, docId, docType) =>
@@ -85,9 +84,12 @@ export const api = {
   deleteDocument: (pid, docId) => send('DELETE', `/api/profiles/${pid}/documents/${docId}`),
 
   // the assistant
-  startChat: (profileId) => post('/api/chat', { profile_id: profileId || undefined }),
-  chat: (chatId) => call(`/api/chat/${chatId}`),
-  say: (chatId, text) => post(`/api/chat/${chatId}/message`, { text }),
+  startChat: (profileId, lang, mode) =>
+    post('/api/chat', { profile_id: profileId || undefined, lang, mode: mode || undefined }),
+  chat: (chatId, lang) => call(`/api/chat/${chatId}${lang ? `?lang=${lang}` : ''}`),
+  say: (chatId, body) => post(`/api/chat/${chatId}/message`, body),
+  chatResult: (chatId, lang) => call(`/api/chat/${chatId}/result?lang=${lang}`),
+  chatMode: (chatId, mode, lang) => post(`/api/chat/${chatId}/mode`, { mode, lang }),
 
   replay: (persona) => post('/api/session', { persona }),
   personas: () => call('/api/personas'),
@@ -97,7 +99,6 @@ export const api = {
   result: (sid) => call(`/api/session/${sid}/result`),
   explain: (sid, schemeId, lang) =>
     call(`/api/session/${sid}/explain/${schemeId}?lang=${lang}`),
-  compare: (sid) => post(`/api/session/${sid}/compare`),
   schemes: (params) => call('/api/schemes' + (params ? `?${params}` : '')),
   scheme: (id, sid) => call(`/api/schemes/${id}` + (sid ? `?session=${sid}` : '')),
   stats: () => call('/api/stats'),

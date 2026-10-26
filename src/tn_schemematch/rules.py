@@ -407,10 +407,9 @@ def referenced_attributes(rule: Node) -> set[str]:
 def transform(node: Node, fn) -> Node:
     """Rebuild a rule tree, applying ``fn`` to every node bottom-up.
 
-    ``fn`` receives a node and returns a replacement (or the node unchanged). Used by the
-    ablation systems in :mod:`tn_schemematch.systems.synthetic` to construct deliberately
-    broken reasoners whose failure mode is known exactly — which is how we check that the
-    metrics detect what they claim to detect.
+    ``fn`` receives a node and returns a replacement (or the node unchanged). Used to build
+    test profiles that sit exactly one clause away from a scheme, and by tests that need a
+    rule with a known, deliberate defect.
     """
     if isinstance(node, All):
         node = All(tuple(transform(child, fn) for child in node.children))
