@@ -57,8 +57,16 @@ def no_sideways_scroll(page):
     return page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
 
 
+def settle(page):
+    """Wait until the page has finished answering: it marks <body> busy for the whole
+    request and redraws the next question before clearing it. ("networkidle" is a page
+    load state and is already reached, so it does not wait for a fetch.)"""
+    page.wait_for_function("!document.body.classList.contains('busy')")
+
+
 def answer_current_question(page):
     """Tap the first sensible answer for whatever the open question is."""
+    settle(page)
     if page.locator("#number-input").count():
         page.fill("#number-input", "1")
         page.locator(".number-row .btn.primary").click()
@@ -66,7 +74,7 @@ def answer_current_question(page):
         page.locator(".answer-btn").first.click()
     else:
         return False
-    page.wait_for_load_state("networkidle")
+    settle(page)
     return True
 
 
@@ -83,7 +91,7 @@ def test_a_guided_conversation_on_a_phone(page, base_url):
     # The first question is a number: age.
     page.fill("#number-input", "68")
     page.locator(".number-row .btn.primary").click()
-    page.wait_for_load_state("networkidle")
+    settle(page)
     page.screenshot(path=str(SHOTS / "2-second-question.png"), full_page=True)
 
     for _ in range(12):
