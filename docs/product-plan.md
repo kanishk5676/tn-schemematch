@@ -57,8 +57,8 @@ Finish a phase only when its **Done when** list holds and the test suite is gree
 ## Phase 0 — Remove the research scaffolding
 
 The benchmark, the code-mixing experiment and the baseline comparisons served a research
-question the project no longer asks. Tag the current state (`git tag
-research-benchmark-v1`), then remove them.
+question the project no longer asks. The research state is commit `b0e49cc` on
+`master` (tag it `research-benchmark-v1`); then remove them.
 
 | Item | Action |
 |---|---|

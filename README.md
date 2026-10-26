@@ -237,7 +237,7 @@ office before applying.
 
 The full plan is in [`docs/product-plan.md`](docs/product-plan.md). The earlier research
 version of this project (a benchmark of AI eligibility matching under code-mixed queries)
-is preserved at the tag `research-benchmark-v1`, with its proposal in
+is preserved at commit `b0e49cc` on `master`, with its proposal in
 [`docs/archive/`](docs/archive/).
 
 ## License
