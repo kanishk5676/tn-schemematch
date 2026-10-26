@@ -140,8 +140,10 @@ class AnthropicClient:
         Images go before the text: the instruction reads better after the model has seen
         what it is about.
         """
+        # A PDF goes as a document block, which the model reads page by page, text and
+        # images both; everything else is a photo.
         content: list[dict[str, Any]] = [
-            {"type": "image", "source": {
+            {"type": "document" if media_type == "application/pdf" else "image", "source": {
                 "type": "base64", "media_type": media_type,
                 "data": base64.standard_b64encode(data).decode("ascii")}}
             for media_type, data in images

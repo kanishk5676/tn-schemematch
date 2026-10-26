@@ -65,8 +65,8 @@ NORMALIZE_SYSTEM_PROMPT = """\
 You convert one citizen's answer into a single canonical value for one attribute.
 
 You are given the attribute's name, type, and permitted values. The answer may be in \
-English, Tamil script, or romanized Tamil, and may contain units the citizen chose \
-themselves ("rendu ekkar", "month-ku 8000").
+English, Tamil or Malayalam script, or romanized Tamil or Malayalam, and may contain units \
+the citizen chose themselves ("rendu ekkar", "month-ku 8000", "pathu sentu").
 
 Reply with JSON only: {"value": <value>} using the canonical type, or {"value": null} if \
 the answer does not actually state the attribute. Never guess a plausible value."""
@@ -158,7 +158,8 @@ def normalize_extraction(spec: AttributeSpec,
     """
     profile: dict[str, Any] = {}
     rejected: list[str] = []
-    for name, value in raw.items():
+    # The state first: a value like "white card" is read differently in each state.
+    for name, value in sorted(raw.items(), key=lambda kv: kv[0] != "state"):
         if name not in spec or value is None:
             rejected.append(f"{name}={value!r} (not in vocabulary)")
             continue
@@ -166,7 +167,7 @@ def normalize_extraction(spec: AttributeSpec,
             rejected.append(f"{name}={value!r} (derived; recomputed from its source)")
             continue
         try:
-            profile[name] = spec.canonicalize(name, value)
+            profile[name] = spec.canonicalize(name, value, context=profile)
         except SchemaError as exc:
             rejected.append(f"{name}={value!r} ({exc})")
     profile.update(spec.derive(profile))
@@ -174,7 +175,8 @@ def normalize_extraction(spec: AttributeSpec,
 
 
 def parse_answer(spec: AttributeSpec, attr_name: str, raw: str,
-                 client: LLMClient | None = None) -> tuple[Any, str]:
+                 client: LLMClient | None = None, *,
+                 context: Mapping[str, Any] | None = None) -> tuple[Any, str]:
     """Turn a free-text answer into a canonical value.
 
     Deterministic first: the vocabulary already carries Tamil and romanized aliases plus
@@ -183,7 +185,7 @@ def parse_answer(spec: AttributeSpec, attr_name: str, raw: str,
     and keeps the model off the decision path.
     """
     try:
-        return spec.canonicalize(attr_name, raw), "aliases"
+        return spec.canonicalize(attr_name, raw, context=context), "aliases"
     except SchemaError:
         pass
     if client is None:
@@ -204,7 +206,7 @@ def parse_answer(spec: AttributeSpec, attr_name: str, raw: str,
         value = payload.get("value") if isinstance(payload, dict) else None
         if value is None:
             return None, "model-said-unstated"
-        return spec.canonicalize(attr_name, value), "model"
+        return spec.canonicalize(attr_name, value, context=context), "model"
     except Exception as exc:  # noqa: BLE001 — an unreadable answer is a real outcome
         return None, f"unparsed ({type(exc).__name__})"
 
@@ -339,7 +341,7 @@ class Interview:
         if problem:
             return AnswerOutcome(attr=attr, source="rejected", message=problem)
         try:
-            canonical = self.spec.canonicalize(attr, value)
+            canonical = self.spec.canonicalize(attr, value, context=state.profile)
         except SchemaError as exc:
             return AnswerOutcome(attr=attr, source="rejected", message=str(exc))
         if canonical is None:
@@ -352,7 +354,7 @@ class Interview:
         if problem:
             return AnswerOutcome(attr=attr, source="rejected", message=problem)
 
-        value, source = parse_answer(self.spec, attr, raw, self.client)
+        value, source = parse_answer(self.spec, attr, raw, self.client, context=state.profile)
         if value is not None:
             state.retries.pop(attr, None)
             return self._commit(state, attr, value, source)

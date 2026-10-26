@@ -107,6 +107,16 @@ def test_image_request_puts_images_first_and_constrains_json():
     assert request["output_config"]["effort"] == "medium"
 
 
+def test_a_pdf_is_sent_as_a_document_block():
+    fake = FakeSDK(text='{"doc_type": "income_certificate"}')
+    client_with(fake).complete_with_images(
+        "read this", "what document is it?", [("application/pdf", b"%PDF-1.7 ... %%EOF")])
+    content = fake.requests[0]["messages"][0]["content"]
+    assert [block["type"] for block in content] == ["document", "text"]
+    assert content[0]["source"] == {"type": "base64", "media_type": "application/pdf",
+                                    "data": content[0]["source"]["data"]}
+
+
 def test_converse_sends_tools_and_full_history():
     fake = FakeSDK()
     history = [{"role": "user", "content": "vanakkam"}]

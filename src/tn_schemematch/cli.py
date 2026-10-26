@@ -7,6 +7,8 @@
     schemematch ask               show what an agent should ask next, and why
     schemematch verify-queue      list what still needs human verification
     schemematch serve             run the browser front end
+    schemematch watch-sources     re-fetch every cited source and flag the changed ones
+    schemematch keys              create, list or revoke partner API keys
 """
 
 from __future__ import annotations
@@ -201,6 +203,58 @@ def cmd_verify_queue(args) -> int:
     return 0
 
 
+def cmd_watch_sources(args) -> int:
+    """Exit 1 when a source changed, so a scheduled job can alert; unreachable is not a change."""
+    from .watch import fetch, load_baseline, save_baseline, watch
+
+    _, kb, _ = _load(args)
+    baseline = load_baseline(args.baseline)
+    rows = watch(kb, baseline, fetcher=lambda url: fetch(url, timeout=args.timeout))
+    marks = {"unchanged": " ", "new": "+", "changed": "!", "unreachable": "?"}
+    for row in rows:
+        print(f"{marks[row['status']]} {row['status']:<11} {row['url']}")
+        if row["status"] in {"changed", "unreachable"}:
+            print(f"    {', '.join(row['schemes'])}{'  — ' + row['error'] if 'error' in row else ''}")
+    counts = {status: sum(1 for r in rows if r["status"] == status) for status in marks}
+    print("\n" + ", ".join(f"{n} {status}" for status, n in counts.items()))
+    if args.update:
+        print(f"fingerprints saved to {save_baseline(rows, baseline, args.baseline)}")
+        return 0
+    if counts["changed"]:
+        print("Re-read each changed source against its scheme's rule, then run with --update.")
+        return 1
+    return 0
+
+
+def cmd_keys(args) -> int:
+    from .partners import create_key
+    from .vault import DEFAULT_VAULT_DIR, Vault
+
+    vault = Vault(args.vault_dir or DEFAULT_VAULT_DIR, default_spec())
+    try:
+        if args.action == "create":
+            record, key = create_key(vault, args.name or "")
+            print(f"Key for {record['name']} (id {record['id']}). It is shown once — store it now:")
+            print(f"\n    {key}\n")
+            print("Partners send it as:  Authorization: Bearer <key>  to POST /api/v1/check")
+        elif args.action == "revoke":
+            record = vault.revoke_api_key(args.name or "")
+            print(f"revoked {record['id']} ({record['name']})")
+        else:
+            for record in vault.api_keys():
+                state = "revoked" if record["revoked_at"] else "active"
+                print(f"{record['id']}  {state:<8} {record['n_calls']:>6} calls  {record['name']}")
+    except KeyError:
+        print(f"no key with id {args.name!r}", file=sys.stderr)
+        return 1
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    finally:
+        vault.close()
+    return 0
+
+
 # ----------------------------------------------------------------------- main
 
 
@@ -251,6 +305,18 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("verify-queue", help="list schemes awaiting human verification").set_defaults(
         func=cmd_verify_queue
     )
+
+    watch = sub.add_parser("watch-sources", help="re-fetch cited sources and flag changes")
+    watch.add_argument("--update", action="store_true", help="save the new fingerprints")
+    watch.add_argument("--baseline", default=None, help="default kb/source-hashes.json")
+    watch.add_argument("--timeout", type=float, default=20.0)
+    watch.set_defaults(func=cmd_watch_sources)
+
+    keys = sub.add_parser("keys", help="partner API keys")
+    keys.add_argument("action", choices=["create", "list", "revoke"])
+    keys.add_argument("name", nargs="?", help="who the key is for (create) or its id (revoke)")
+    keys.add_argument("--vault-dir", default=None)
+    keys.set_defaults(func=cmd_keys)
 
     args = parser.parse_args(argv)
     return args.func(args)

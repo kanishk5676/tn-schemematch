@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from .attributes import AttributeSpec, SchemaError
+from .benefits import group_view, totals
 from .kb import DEFAULT_KB_DIR, SchemeKB
 from .rules import Verdict
 from .serialize import board, format_value, label_for, near_misses, scheme_summary
@@ -74,6 +75,68 @@ CREATE TABLE IF NOT EXISTS documents (
     reading     TEXT,
     status      TEXT NOT NULL,
     uploaded_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS applications (
+    id          TEXT PRIMARY KEY,
+    profile_id  TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    scheme_id   TEXT NOT NULL,
+    reference   TEXT NOT NULL DEFAULT '',
+    office      TEXT NOT NULL DEFAULT '',
+    created_at  REAL NOT NULL,
+    updated_at  REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS application_events (
+    seq            INTEGER PRIMARY KEY AUTOINCREMENT,
+    application_id TEXT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    status         TEXT NOT NULL,
+    on_date        TEXT,
+    reason         TEXT,
+    note           TEXT NOT NULL DEFAULT '',
+    verdict        TEXT NOT NULL,
+    recorded_at    REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS events_by_application ON application_events (application_id, seq);
+CREATE TABLE IF NOT EXISTS camps (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    place       TEXT NOT NULL DEFAULT '',
+    held_on     TEXT,
+    created_at  REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS camp_members (
+    camp_id     TEXT NOT NULL REFERENCES camps(id) ON DELETE CASCADE,
+    profile_id  TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    added_at    REAL NOT NULL,
+    PRIMARY KEY (camp_id, profile_id)
+);
+CREATE TABLE IF NOT EXISTS consents (
+    seq          INTEGER PRIMARY KEY AUTOINCREMENT,
+    profile_id   TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    notice       TEXT NOT NULL,
+    lang         TEXT NOT NULL,
+    given_by     TEXT NOT NULL,
+    given_at     REAL NOT NULL,
+    withdrawn_at REAL
+);
+-- No foreign key: the record that a profile was deleted must outlive the profile. It
+-- holds ids and action names only, never a value about the person.
+CREATE TABLE IF NOT EXISTS audit (
+    seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+    at          REAL NOT NULL,
+    actor       TEXT NOT NULL,
+    action      TEXT NOT NULL,
+    profile_id  TEXT,
+    detail      TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS audit_by_profile ON audit (profile_id, seq);
+CREATE TABLE IF NOT EXISTS api_keys (
+    id           TEXT PRIMARY KEY,
+    name         TEXT NOT NULL,
+    key_hash     TEXT NOT NULL UNIQUE,
+    created_at   REAL NOT NULL,
+    last_used_at REAL,
+    n_calls      INTEGER NOT NULL DEFAULT 0,
+    revoked_at   REAL
 );
 """
 
@@ -158,7 +221,7 @@ class Vault:
                evidence: str = "", doc_id: str | None = None) -> Any:
         """Append one fact and return its canonical value. ``None`` retracts the fact."""
         self.get_profile(pid)
-        canonical = self._canonical(attr, value)
+        canonical = self._canonical(attr, value, context=self._context(pid))
         now = time.time()
         with self._lock, self._db:
             self._db.execute(
@@ -173,14 +236,26 @@ class Vault:
                     facts: Iterable[tuple[str, Any, str, str]]) -> dict[str, Any]:
         """Record (attr, value, source, evidence) tuples; all are validated before any is
         written, so a bad fact in the middle cannot leave a half-saved profile."""
-        rows = [(attr, self._canonical(attr, value), source, evidence)
-                for attr, value, source, evidence in facts]
+        facts = sorted(facts, key=lambda f: f[0] != "state")  # the state reads the rest
+        context = self._context(pid)
+        rows = []
+        for attr, value, source, evidence in facts:
+            canonical = self._canonical(attr, value, context=context)
+            if attr == "state":
+                context = {**context, "state": canonical}
+            rows.append((attr, canonical, source, evidence))
         written: dict[str, Any] = {}
         for attr, value, source, evidence in rows:
             written[attr] = self.record(pid, attr, value, source=source, evidence=evidence)
         return written
 
-    def _canonical(self, attr: str, value: Any) -> Any:
+    def _context(self, pid: str) -> dict[str, Any]:
+        """What is already known that changes how a value reads (today: the state)."""
+        latest = self._latest(pid).get("state")
+        return {"state": json.loads(latest["value"])} if latest is not None else {}
+
+    def _canonical(self, attr: str, value: Any, *,
+                   context: Mapping[str, Any] | None = None) -> Any:
         if attr not in self.spec:
             raise VaultError(f"unknown attribute {attr!r}")
         if self.spec[attr].is_derived:
@@ -190,7 +265,7 @@ class Vault:
         if value is None:
             return None
         try:
-            return self.spec.canonicalize(attr, value)
+            return self.spec.canonicalize(attr, value, context=context)
         except SchemaError as exc:
             raise VaultError(str(exc)) from None
 
@@ -307,6 +382,198 @@ class Vault:
             self._db.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
         Path(document["stored_path"]).unlink(missing_ok=True)
 
+    # -------------------------------------------------------------- applications
+
+    def open_application(self, pid: str, scheme_id: str, *, status: str, verdict: str,
+                         on_date: str | None = None, reference: str = "",
+                         office: str = "", note: str = "") -> dict[str, Any]:
+        """Start tracking an application. Its history is an event log, like facts:
+        every status change is a new row carrying what the rules said at that moment."""
+        self.get_profile(pid)
+        aid = uuid.uuid4().hex
+        now = time.time()
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT INTO applications (id, profile_id, scheme_id, reference, office,"
+                " created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (aid, pid, scheme_id, reference[:60], office[:120], now, now))
+        self.add_application_event(pid, aid, status=status, verdict=verdict,
+                                   on_date=on_date, note=note)
+        return self.application(pid, aid)
+
+    def add_application_event(self, pid: str, aid: str, *, status: str, verdict: str,
+                              on_date: str | None = None, reason: str | None = None,
+                              note: str = "") -> dict[str, Any]:
+        self._row("SELECT id FROM applications WHERE id = ? AND profile_id = ?", aid, pid)
+        now = time.time()
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT INTO application_events (application_id, status, on_date, reason,"
+                " note, verdict, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (aid, status, on_date, reason, (note or "")[:500], verdict, now))
+            self._db.execute("UPDATE applications SET updated_at = ? WHERE id = ?", (now, aid))
+        return self.application(pid, aid)
+
+    def application(self, pid: str, aid: str) -> dict[str, Any]:
+        row = self._row("SELECT * FROM applications WHERE id = ? AND profile_id = ?", aid, pid)
+        with self._lock:
+            events = self._db.execute(
+                "SELECT * FROM application_events WHERE application_id = ? ORDER BY seq",
+                (aid,)).fetchall()
+        return _application_dict(row, events)
+
+    def applications(self, pid: str) -> list[dict[str, Any]]:
+        self.get_profile(pid)
+        with self._lock:
+            ids = [r["id"] for r in self._db.execute(
+                "SELECT id FROM applications WHERE profile_id = ? ORDER BY updated_at DESC",
+                (pid,)).fetchall()]
+        return [self.application(pid, aid) for aid in ids]
+
+    def delete_application(self, pid: str, aid: str) -> None:
+        self._row("SELECT id FROM applications WHERE id = ? AND profile_id = ?", aid, pid)
+        with self._lock, self._db:
+            self._db.execute("DELETE FROM applications WHERE id = ?", (aid,))
+
+    def application_events(self) -> list[dict[str, Any]]:
+        """Every status change of every application, with its scheme — for the outcome
+        report, which counts them and never shows who they belong to."""
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT a.scheme_id, a.id AS application_id, e.status, e.reason, e.verdict,"
+                " e.recorded_at FROM application_events e JOIN applications a"
+                " ON a.id = e.application_id ORDER BY e.seq").fetchall()
+        return [dict(row) for row in rows]
+
+    # --------------------------------------------------------------------- camps
+
+    def create_camp(self, name: str, *, place: str = "", held_on: str | None = None) -> dict[str, Any]:
+        name = (name or "").strip()
+        if not name:
+            raise VaultError("a camp needs a name")
+        cid = uuid.uuid4().hex
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT INTO camps (id, name, place, held_on, created_at) VALUES (?, ?, ?, ?, ?)",
+                (cid, name[:MAX_NAME_LENGTH], (place or "").strip()[:MAX_NAME_LENGTH], held_on,
+                 time.time()))
+        return self.camp(cid)
+
+    def camp(self, cid: str) -> dict[str, Any]:
+        row = self._row("SELECT c.*, (SELECT COUNT(*) FROM camp_members m WHERE m.camp_id = c.id)"
+                        " AS n_people FROM camps c WHERE c.id = ?", cid)
+        return dict(row)
+
+    def camps(self) -> list[dict[str, Any]]:
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT c.*, (SELECT COUNT(*) FROM camp_members m WHERE m.camp_id = c.id)"
+                " AS n_people FROM camps c ORDER BY c.created_at DESC").fetchall()
+        return [dict(row) for row in rows]
+
+    def add_to_camp(self, cid: str, pid: str) -> None:
+        self.camp(cid)
+        self.get_profile(pid)
+        with self._lock, self._db:
+            self._db.execute("INSERT OR IGNORE INTO camp_members (camp_id, profile_id, added_at)"
+                             " VALUES (?, ?, ?)", (cid, pid, time.time()))
+
+    def camp_members(self, cid: str) -> list[str]:
+        self.camp(cid)
+        with self._lock:
+            rows = self._db.execute("SELECT profile_id FROM camp_members WHERE camp_id = ?"
+                                    " ORDER BY added_at", (cid,)).fetchall()
+        return [row["profile_id"] for row in rows]
+
+    def profile_ids(self) -> list[str]:
+        with self._lock:
+            return [r["id"] for r in self._db.execute(
+                "SELECT id FROM profiles ORDER BY created_at").fetchall()]
+
+    # ------------------------------------------------------------ consent and audit
+
+    def give_consent(self, pid: str, *, notice: str, lang: str, given_by: str) -> dict[str, Any]:
+        self.get_profile(pid)
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT INTO consents (profile_id, notice, lang, given_by, given_at)"
+                " VALUES (?, ?, ?, ?, ?)", (pid, notice, lang, given_by, time.time()))
+        return self.consent(pid)
+
+    def consent(self, pid: str) -> dict[str, Any] | None:
+        """The consent in force, or ``None`` if none was recorded or it was withdrawn."""
+        self.get_profile(pid)
+        with self._lock:
+            row = self._db.execute(
+                "SELECT * FROM consents WHERE profile_id = ? ORDER BY seq DESC LIMIT 1",
+                (pid,)).fetchone()
+        if row is None or row["withdrawn_at"] is not None:
+            return None
+        return {k: row[k] for k in ("notice", "lang", "given_by", "given_at")}
+
+    def consents(self, pid: str) -> list[dict[str, Any]]:
+        with self._lock:
+            rows = self._db.execute("SELECT * FROM consents WHERE profile_id = ? ORDER BY seq",
+                                    (pid,)).fetchall()
+        return [dict(row) for row in rows]
+
+    def log(self, actor: str, action: str, pid: str | None = None, detail: str = "") -> None:
+        """Append to the audit log. ``detail`` names what was touched (an attribute, a
+        document type), never a value."""
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT INTO audit (at, actor, action, profile_id, detail) VALUES (?, ?, ?, ?, ?)",
+                (time.time(), actor[:60], action[:60], pid, (detail or "")[:120]))
+
+    def audit_log(self, pid: str | None = None, *, limit: int = 200) -> list[dict[str, Any]]:
+        query, args = "SELECT * FROM audit", []
+        if pid is not None:
+            query += " WHERE profile_id = ?"
+            args.append(pid)
+        with self._lock:
+            rows = self._db.execute(query + " ORDER BY seq DESC LIMIT ?",
+                                    (*args, limit)).fetchall()
+        return [dict(row) for row in rows]
+
+    # ------------------------------------------------------------------ api keys
+
+    def add_api_key(self, name: str, key_hash: str) -> dict[str, Any]:
+        kid = uuid.uuid4().hex[:12]
+        with self._lock, self._db:
+            self._db.execute("INSERT INTO api_keys (id, name, key_hash, created_at)"
+                             " VALUES (?, ?, ?, ?)", (kid, name[:80], key_hash, time.time()))
+        return self.api_key(kid)
+
+    def api_key(self, kid: str) -> dict[str, Any]:
+        row = self._row("SELECT id, name, created_at, last_used_at, n_calls, revoked_at"
+                        " FROM api_keys WHERE id = ?", kid)
+        return dict(row)
+
+    def api_key_by_hash(self, key_hash: str) -> dict[str, Any] | None:
+        with self._lock:
+            row = self._db.execute(
+                "SELECT id, name, created_at, last_used_at, n_calls, revoked_at FROM api_keys"
+                " WHERE key_hash = ?", (key_hash,)).fetchone()
+        return dict(row) if row else None
+
+    def api_keys(self) -> list[dict[str, Any]]:
+        with self._lock:
+            rows = self._db.execute("SELECT id, name, created_at, last_used_at, n_calls,"
+                                    " revoked_at FROM api_keys ORDER BY created_at").fetchall()
+        return [dict(row) for row in rows]
+
+    def touch_api_key(self, kid: str) -> None:
+        with self._lock, self._db:
+            self._db.execute("UPDATE api_keys SET last_used_at = ?, n_calls = n_calls + 1"
+                             " WHERE id = ?", (time.time(), kid))
+
+    def revoke_api_key(self, kid: str) -> dict[str, Any]:
+        self.api_key(kid)
+        with self._lock, self._db:
+            self._db.execute("UPDATE api_keys SET revoked_at = ? WHERE id = ? AND revoked_at"
+                             " IS NULL", (time.time(), kid))
+        return self.api_key(kid)
+
     # ---------------------------------------------------------------- eligibility
 
     def last_eligible(self, pid: str) -> list[str] | None:
@@ -338,6 +605,24 @@ def _profile_dict(row: sqlite3.Row) -> dict[str, Any]:
         "updated_at": row["updated_at"],
         "n_facts": row["n_facts"],
         "n_documents": row["n_documents"],
+    }
+
+
+def _application_dict(row: sqlite3.Row, events: list[sqlite3.Row]) -> dict[str, Any]:
+    history = [{
+        "status": e["status"], "on_date": e["on_date"], "reason": e["reason"],
+        "note": e["note"], "verdict": e["verdict"], "recorded_at": e["recorded_at"],
+    } for e in events]
+    return {
+        "id": row["id"],
+        "profile_id": row["profile_id"],
+        "scheme_id": row["scheme_id"],
+        "reference": row["reference"],
+        "office": row["office"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "status": history[-1]["status"] if history else None,
+        "events": history,
     }
 
 
@@ -383,6 +668,7 @@ def eligibility(active: SchemeKB, vault: Vault, pid: str, *,
     }
     if remember:
         vault.set_last_eligible(pid, eligible_ids)
+    money = totals(active, eligible_ids)
     return {
         "profile_id": pid,
         "board": board(active, profile),
@@ -390,4 +676,8 @@ def eligibility(active: SchemeKB, vault: Vault, pid: str, *,
         "near_misses": near_misses(active, profile, vault.spec),
         "n_undetermined": len(buckets[Verdict.UNKNOWN]),
         "changes": changes,
+        "money": {key: money[key] for key in (
+            "yearly", "yearly_text", "one_time", "one_time_text", "in_kind",
+            "in_kind_text", "best_cover", "unpriced")},
+        "only_one_of": group_view(active, money["groups"]),
     }

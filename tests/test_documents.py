@@ -218,6 +218,51 @@ def test_holding_a_document_ticks_every_scheme_that_needs_it(vocab, kb, personas
     assert len(after["to_collect"]) < len(before["to_collect"])
 
 
+def test_an_either_or_paper_folds_into_one_already_on_the_list(vocab, kb):
+    """Kerala's pensions ask for an Aadhaar card and for proof of residence, which an
+    Aadhaar card or a family card satisfies. Collecting the Aadhaar covers both."""
+    result = checklist(vocab, kb.active(), ["kl-old-age-pension"], held_types=[], state="KL")
+    aadhaar = [e for e in result["to_collect"] if "aadhaar" in [t["id"] for t in e["types"]]]
+    assert len(aadhaar) == 1 and aadhaar[0]["label"] == "Aadhaar card"
+    assert "Proof of permanent residence in Kerala" in aadhaar[0]["requirements"]
+
+
+def test_every_uploadable_document_has_a_guide(vocab):
+    for doc_type in vocab.uploadable():
+        assert vocab.guide(doc_type.id) is not None or vocab.guide(doc_type.id, "TN"), doc_type.id
+
+
+def test_a_guide_is_for_the_person_s_state_with_a_national_fallback(vocab):
+    tn = vocab.guide("income_certificate", "TN")
+    kl = vocab.guide("income_certificate", "KL")
+    elsewhere = vocab.guide("income_certificate", "KA")
+    assert tn["state"] == "TN" and "Tahsildar" in tn["issued_by"]
+    assert kl["state"] == "KL" and "Village Officer" in kl["issued_by"]
+    assert elsewhere["state"] is None
+    assert tn["reviewed"] is False  # nobody has checked these against a source yet
+
+
+def test_a_guide_links_the_documents_to_bring(vocab):
+    bring = vocab.guide("income_certificate", "TN")["bring"]
+    assert {"text": "Aadhaar card", "type": "aadhaar"} in bring
+    assert any(item["type"] is None for item in bring)
+
+
+def test_guides_send_people_only_to_government_sites(tmp_path, spec):
+    bad = tmp_path / "guides.yaml"
+    bad.write_text("guides:\n  aadhaar:\n    default:\n      issued_by: UIDAI\n"
+                   "      online: https://aadhaar-help.example.com/\n")
+    with pytest.raises(SchemaError, match="government site"):
+        load_documents(spec, guides_path=bad)
+
+
+def test_the_checklist_says_how_to_get_what_is_missing(vocab, kb, personas):
+    eligible = personas["p001"].gold_eligible(kb)
+    result = checklist(vocab, kb.active(), eligible, held_types=[], state="TN")
+    assert all(entry["how_to_get"] for entry in result["to_collect"]
+               if any(t["kind"] == "document" for t in entry["types"]))
+
+
 def test_actions_are_listed_but_never_missing(vocab, kb):
     scheme = next(s for s in kb.active() if "Mobile number" in s.documents)
     result = checklist(vocab, kb.active(), [scheme.id], held_types=[])
@@ -297,7 +342,8 @@ def test_an_unreadable_photo_waits_for_its_type(kb, spec, tmp_path):
 def test_bad_uploads_are_refused(kb, spec, tmp_path):
     http = make_http(kb, spec, tmp_path)
     pid = http.post("/api/profiles", json={"name": "Lakshmi"}).get_json()["id"]
-    assert upload(http, pid, data=b"%PDF-1.7", doc_type="aadhaar").status_code == 415
+    assert upload(http, pid, data=b"GIF89a not a document", doc_type="aadhaar").status_code == 415
+    assert upload(http, pid, data=b"%PDF-1.7 cut off", doc_type="aadhaar").status_code == 415
     assert upload(http, pid, doc_type="passport").status_code == 400
     assert upload(http, "nobody", doc_type="aadhaar").status_code == 404
 

@@ -26,6 +26,7 @@ import re
 from typing import Any, Mapping
 
 from .attributes import Attribute, AttributeSpec
+from .benefits import value_text
 from .kb import Scheme, SchemeKB, jurisdiction_name
 from .rules import All, AnyOf, Const, Not, Predicate, Trace, Verdict
 
@@ -277,6 +278,11 @@ def scheme_summary(scheme: Scheme) -> dict[str, Any]:
         "status": scheme.status,
         "is_verified": scheme.is_verified,
         "n_attributes": len(scheme.attributes),
+        "name_ml": scheme.name_ml,
+        "value": scheme.value.to_dict() if scheme.value else None,
+        "value_text": value_text(scheme),
+        "cover": scheme.cover,
+        "cannot_combine_with": [other for other, _ in scheme.cannot_combine],
     }
 
 
@@ -320,6 +326,7 @@ def near_misses(active: SchemeKB, profile: Mapping[str, Any], spec: AttributeSpe
             "name": scheme.name,
             "name_ta": scheme.name_ta,
             "benefit_prose": scheme.benefit_prose,
+            "value_text": value_text(scheme),
             "apply_url": scheme.apply_url,
             "missing": {
                 "attr": pred.attr,
@@ -434,7 +441,7 @@ def _walk(trace: Trace):
         yield from _walk(child)
 
 
-def decisive_clauses(tree: Mapping[str, Any]) -> list[str]:
+def decisive_clauses(tree: Mapping[str, Any], *, said: str = "you said") -> list[str]:
     """The clauses that decided a verdict, as sentences, from a ``trace_to_dict`` tree.
 
     Only children that agree with their parent's verdict are followed: for an eligible
@@ -446,9 +453,9 @@ def decisive_clauses(tree: Mapping[str, Any]) -> list[str]:
     if tree["kind"] == "predicate":
         line = tree["human"]
         if tree.get("observed_text"):
-            line += f" — you said {tree['observed_text']}"
+            line += f" — {said} {tree['observed_text']}" if said else f" ({tree['observed_text']})"
         return [line]
     children = tree.get("children", [])
     if tree["kind"] != "not":
         children = [c for c in children if c["verdict"] == tree["verdict"]]
-    return [line for child in children for line in decisive_clauses(child)]
+    return [line for child in children for line in decisive_clauses(child, said=said)]

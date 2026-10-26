@@ -47,10 +47,20 @@ class Attribute:
     unit: str | None = None
     domain: tuple[Any, ...] | None = None  # (min, max) for number; values for enum
     aliases: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    # state code -> canonical value -> surface forms that mean it *in that state only*.
+    # "White card" is a rice card in Tamil Nadu and the most affluent card in Kerala.
+    aliases_by_state: Mapping[str, Mapping[str, tuple[str, ...]]] = field(default_factory=dict)
     aliases_text: tuple[str, ...] = ()
     derived_from: str | None = None
     elicitable: bool = True
     sensitivity: str = "low"
+    # Something a person can do to change this fact (open an account, get a card):
+    # {text, document?, online?, from?, only_if?}. The unlock view offers only these, and
+    # only to someone whose facts match ``only_if``.
+    action: Mapping[str, Any] | None = None
+    # Counts up by itself each year (age, years registered); the "coming up" view
+    # re-runs the rules with these advanced.
+    grows_with_time: bool = False
 
     @property
     def is_derived(self) -> bool:
@@ -126,12 +136,14 @@ class AttributeSpec:
 
     # -- normalization ------------------------------------------------------
 
-    def canonicalize(self, name: str, raw: Any) -> Any:
+    def canonicalize(self, name: str, raw: Any, *,
+                     context: Mapping[str, Any] | None = None) -> Any:
         """Map a raw surface value to the canonical value for ``name``.
 
-        Accepts values already canonical, alias strings (English, romanized Tamil,
-        or Tamil script), booleans in several surface forms, and numeric strings
-        with unit suffixes.
+        Accepts values already canonical, alias strings (English, romanized Tamil or
+        Malayalam, Tamil or Malayalam script), booleans in several surface forms, and
+        numeric strings with unit suffixes. ``context`` is what is already known about the
+        person; its ``state`` selects that state's own aliases, which are tried first.
         """
         attr = self[name]
         if raw is None:
@@ -156,27 +168,36 @@ class AttributeSpec:
             for canon in attr.domain or ():
                 if _fold(str(canon)) == key:
                     return canon
-            # alias match
-            for canon, forms in attr.aliases.items():
-                for form in forms:
-                    if _fold(form) == key:
-                        return canon
+            state = (context or {}).get("state")
+            tables = [attr.aliases_by_state[state]] if state in attr.aliases_by_state else []
+            tables.append(attr.aliases)
+            # alias match, the person's own state first
+            for table in tables:
+                for canon, forms in table.items():
+                    for form in forms:
+                        if _fold(form) == key:
+                            return canon
             # substring alias match, longest alias first so "sugar card" beats "card".
             # Abbreviations of one or two characters are excluded, for the same reason
             # _mentions disables prefix matching on them: an unanchored "m" matches inside
             # "pombala" and "amma", and "ma"/"be" match inside "male", so a free-text answer
             # in romanized Tamil silently canonicalizes to the wrong value instead of
             # failing. They still resolve through the exact-alias loop above.
-            candidates: list[tuple[int, Any]] = []
-            for canon, forms in attr.aliases.items():
-                for form in forms:
-                    folded = _fold(form)
-                    if len(folded) <= 2:
-                        continue
-                    if folded and folded in key:
-                        candidates.append((len(folded), canon))
-            if candidates:
-                return max(candidates)[1]
+            for table in tables:
+                candidates: list[tuple[int, Any]] = []
+                for canon, forms in table.items():
+                    for form in forms:
+                        folded = _fold(form)
+                        if len(folded) <= 2:
+                            continue
+                        if folded and folded in key:
+                            candidates.append((len(folded), canon))
+                if candidates:
+                    return max(candidates)[1]
+            if any(_fold(form) in key for scoped in attr.aliases_by_state.values()
+                   for forms in scoped.values() for form in forms if len(_fold(form)) > 2):
+                raise SchemaError(f"{name}: {raw!r} means different things in different "
+                                  f"states — the state must be known first")
             raise SchemaError(f"{name}: no canonical value for {raw!r}")
 
         raise SchemaError(f"{name}: unknown type {attr.type!r}")
@@ -184,12 +205,13 @@ class AttributeSpec:
     def normalize_profile(self, raw: Mapping[str, Any], *, derive: bool = True) -> dict[str, Any]:
         """Canonicalize every value in a raw profile, then fill derived attributes."""
         out: dict[str, Any] = {}
-        for name, value in raw.items():
+        # The state first: other values may be read differently depending on it.
+        for name, value in sorted(raw.items(), key=lambda kv: kv[0] != "state"):
             if name not in self.attributes:
                 raise SchemaError(f"unknown attribute {name!r} in profile")
             if value is None:
                 continue
-            out[name] = self.canonicalize(name, value)
+            out[name] = self.canonicalize(name, value, context=out)
         if derive:
             out.update(self.derive(out))
         return out
@@ -213,9 +235,11 @@ class AttributeSpec:
 
 _BOOL_TRUE = {
     "true", "yes", "y", "1", "irukku", "இருக்கு", "undu", "உண்டு", "aam", "ஆம்", "have", "has",
+    "ഉണ്ട്", "athe", "അതെ",
 }
 _BOOL_FALSE = {
     "false", "no", "n", "0", "illa", "இல்ல", "இல்லை", "illai", "none", "not", "dont have",
+    "ഇല്ല", "alla", "അല്ല",
 }
 
 
@@ -231,27 +255,41 @@ def _to_bool(raw: Any, name: str) -> bool:
 
 
 def _fold(text: str) -> str:
-    """Casefold, strip punctuation and collapse whitespace, preserving Tamil script."""
+    """Casefold, strip punctuation and collapse whitespace, preserving every Indic script.
+
+    ``\\w`` alone is not enough: vowel signs and the virama are combining marks (Unicode
+    categories Mn and Mc), which ``\\w`` does not match, so "ലക്ഷം" (lakh) would be cut into
+    "ലക ഷ". Keeping all marks keeps Tamil, Malayalam and every other Brahmic script whole.
+    """
     text = unicodedata.normalize("NFC", str(text)).casefold().strip()
-    text = re.sub(r"[^\w\s஀-௿]+", " ", text)
+    # Zero-width joiners are dropped, not spaced: older Malayalam text writes a chillu as
+    # consonant + virama + ZWJ, and a space there would split the word.
+    text = text.replace("\u200d", "").replace("\u200c", "")
+    text = "".join(ch if ch.isspace() or ch.isalnum() or ch == "_"
+                   or unicodedata.category(ch).startswith("M") else " " for ch in text)
     return re.sub(r"\s+", " ", text).strip()
 
 
 _MAGNITUDES: dict[str, float] = {
-    "thousand": 1e3, "k": 1e3, "ayiram": 1e3, "ஆயிரம்": 1e3,
+    "thousand": 1e3, "k": 1e3, "ayiram": 1e3, "ஆயிரம்": 1e3, "ആയിരം": 1e3,
     "lakh": 1e5, "lac": 1e5, "lakhs": 1e5, "laksham": 1e5, "லட்சம்": 1e5, "latcham": 1e5,
-    "crore": 1e7, "cr": 1e7, "கோடி": 1e7, "kodi": 1e7,
+    "ലക്ഷം": 1e5,
+    "crore": 1e7, "cr": 1e7, "கோடி": 1e7, "kodi": 1e7, "കോടി": 1e7,
 }
 
 _LAND_UNITS: dict[str, str] = {
     "acre": "acres", "acres": "acres", "ekkar": "acres", "ஏக்கர்": "acres", "ekar": "acres",
+    "ഏക്കർ": "acres",
     "hectare": "hectares", "hectares": "hectares", "ha": "hectares", "ஹெக்டேர்": "hectares",
-    "cent": "cents", "cents": "cents", "சென்ட்": "cents",
+    "ഹെക്ടർ": "hectares",
+    # Kerala measures most holdings in cents: "pathu sentu" is ten cents, not ten acres.
+    "cent": "cents", "cents": "cents", "சென்ட்": "cents", "sentu": "cents", "സെന്റ്": "cents",
     "ground": "grounds", "grounds": "grounds", "graund": "grounds",
     "sqft": "square_feet", "sq ft": "square_feet", "square feet": "square_feet",
 }
 
-_PER_MONTH = {"month", "monthly", "per month", "manthly", "maasam", "மாசம்", "மாதம்", "maatham", "pm"}
+_PER_MONTH = {"month", "monthly", "per month", "manthly", "maasam", "மாசம்", "மாதம்", "maatham", "pm",
+              "masam", "മാസം", "പ്രതിമാസം"}
 
 
 def _mentions(tokens: list[str], phrase: str) -> bool:
@@ -384,10 +422,26 @@ def load_spec(path: str | Path | None = None) -> AttributeSpec:
         else:
             domain = None
         aliases = {k: tuple(v) for k, v in (body.get("aliases") or {}).items()}
+        by_state = {state: {k: tuple(v) for k, v in (table or {}).items()}
+                    for state, table in (body.get("aliases_by_state") or {}).items()}
         if atype == "enum":
-            unknown = set(aliases) - set(domain or ())
+            unknown = set(aliases).union(*(set(t) for t in by_state.values())) - set(domain or ())
             if unknown:
                 raise SchemaError(f"{name}: aliases for values outside domain: {sorted(unknown)}")
+        elif by_state:
+            raise SchemaError(f"{name}: only a category can have state-specific aliases")
+        action = body.get("action")
+        if action is not None:
+            if not isinstance(action, Mapping) or not action.get("text"):
+                raise SchemaError(f"{name}: action needs a text")
+            if atype not in {"bool", "enum"}:
+                raise SchemaError(f"{name}: only yes/no and category facts can have an action")
+            outside = set(action.get("from") or ()) - set(domain or ())
+            if outside:
+                raise SchemaError(f"{name}: action.from values outside domain: {sorted(outside)}")
+            action = dict(action)
+        if body.get("grows_with_time") and atype != "number":
+            raise SchemaError(f"{name}: only a number can grow with time")
         attributes[name] = Attribute(
             name=name,
             type=atype,
@@ -395,10 +449,13 @@ def load_spec(path: str | Path | None = None) -> AttributeSpec:
             unit=body.get("unit"),
             domain=domain,
             aliases=aliases,
+            aliases_by_state=by_state,
             aliases_text=tuple(body.get("aliases_text") or ()),
             derived_from=body.get("derived_from"),
             elicitable=bool(body.get("elicitable", True)),
             sensitivity=body.get("sensitivity", "low"),
+            action=action,
+            grows_with_time=bool(body.get("grows_with_time", False)),
         )
 
     derivations = raw.get("derivations") or {}
@@ -409,6 +466,15 @@ def load_spec(path: str | Path | None = None) -> AttributeSpec:
             raise SchemaError(f"derivation for {target!r} reads unknown attribute {spec.get('from')!r}")
         if "bins" not in spec and "rule" not in spec:
             raise SchemaError(f"derivation for {target!r} needs either 'bins' or 'rule'")
+
+    states = set(attributes["state"].domain or ()) if "state" in attributes else set()
+    for name, attr in attributes.items():
+        if set(attr.aliases_by_state) - states:
+            raise SchemaError(f"{name}: aliases_by_state names states outside `state`: "
+                              f"{sorted(set(attr.aliases_by_state) - states)}")
+        for other, values in ((attr.action or {}).get("only_if") or {}).items():
+            if other not in attributes or not set(values) <= set(attributes[other].domain or ()):
+                raise SchemaError(f"{name}: action.only_if names {other!r} or values outside it")
 
     return AttributeSpec(
         version=str(raw.get("version", "0")),

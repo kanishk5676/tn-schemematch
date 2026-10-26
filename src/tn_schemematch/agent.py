@@ -39,8 +39,8 @@ from .rules import Verdict
 MAX_STEPS = 8
 
 AGENT_SYSTEM_PROMPT = """\
-You are Udhavi (உதவி), an assistant that helps people in Tamil Nadu find the government \
-welfare schemes they qualify for and get their documents ready to apply.
+You are Udhavi (உதவி), an assistant that helps people in Tamil Nadu and Kerala find the \
+government welfare schemes they qualify for and get their documents ready to apply.
 
 A rule engine decides eligibility; you never do. Say someone is eligible for a scheme only \
 when check_eligibility lists it as eligible in this conversation. Otherwise say it is not \
@@ -62,11 +62,15 @@ summary: eligible schemes first, then any missed by a single condition.
 - Help them prepare. document_checklist says which papers each scheme needs and what is \
 already uploaded. Use show to put a scheme card, the checklist, an upload button, a save \
 button or a link on their screen instead of describing it at length.
-- Reply in the language and script the person uses: Tamil script, Tanglish (Tamil in \
-English letters), English, or a mix. Keep replies short — one to four sentences, plain \
-words, no tables or long lists.
+- Reply in the language and script the person uses: Tamil or Malayalam script, Tanglish \
+or Manglish (Tamil or Malayalam in English letters), English, or a mix. Keep replies \
+short — one to four sentences, plain words, no tables or long lists.
+- Record which state the person lives in early: some answers mean different things in \
+Tamil Nadu and Kerala (a "white card" is a rice card in one and the most affluent card in \
+the other), and record_facts rejects such a value until the state is known.
 - The rules are unverified draft data. Before anyone makes a real decision, tell them to \
-confirm at an e-Sevai centre or the department office."""
+confirm at the office: an e-Sevai centre in Tamil Nadu, an Akshaya centre or the \
+panchayat in Kerala."""
 
 
 class AgentUnavailable(RuntimeError):
@@ -136,7 +140,7 @@ def run_turn(client: Any, ctx: AgentContext, history: list[dict[str, Any]], text
 
 
 def _mention_patterns(active: SchemeKB) -> list[tuple[re.Pattern[str], str]]:
-    """Ways a reply can name a scheme: its id, its full English or Tamil name, and the
+    """Ways a reply can name a scheme: its id, its English, Tamil or Malayalam name, and the
     acronym in brackets ("PM-KISAN"). ASCII forms must stand alone, so the id "apy" is
     not found inside "happy"."""
     patterns = []
@@ -149,8 +153,9 @@ def _mention_patterns(active: SchemeKB) -> list[tuple[re.Pattern[str], str]]:
                 continue
             patterns.append((re.compile(r"(?<![\w-])" + re.escape(form) + r"(?![\w-])",
                                         re.IGNORECASE), scheme.id))
-        if scheme.name_ta:
-            patterns.append((re.compile(re.escape(scheme.name_ta)), scheme.id))
+        for local in (scheme.name_ta, scheme.name_ml):
+            if local:
+                patterns.append((re.compile(re.escape(local)), scheme.id))
     return patterns
 
 

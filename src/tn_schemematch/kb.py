@@ -21,6 +21,7 @@ default; see :meth:`SchemeKB.verified`.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from functools import lru_cache
@@ -40,6 +41,7 @@ SCHEME_LEVELS = {"central", "state"}
 SCHEME_STATUSES = {"draft", "verified", "deprecated"}
 BENEFIT_TYPES = {"cash_transfer", "pension", "subsidy", "insurance", "loan",
                  "in_kind", "scholarship", "housing", "service", "training"}
+BENEFIT_PERIODS = {"month", "year", "once"}
 
 
 class KBError(ValueError):
@@ -52,6 +54,14 @@ def jurisdictions(path: str | None = None) -> dict[str, dict[str, str]]:
     source = Path(path) if path else DEFAULT_JURISDICTIONS_PATH
     raw = yaml.safe_load(source.read_text(encoding="utf-8")) or {}
     return dict(raw.get("jurisdictions") or {})
+
+
+@lru_cache(maxsize=2)
+def districts_by_state(path: str | None = None) -> dict[str, tuple[str, ...]]:
+    """State code -> the `district` values that belong to it."""
+    source = Path(path) if path else DEFAULT_JURISDICTIONS_PATH
+    raw = yaml.safe_load(source.read_text(encoding="utf-8")) or {}
+    return {code: tuple(names) for code, names in (raw.get("districts") or {}).items()}
 
 
 def jurisdiction_name(code: str) -> str:
@@ -79,6 +89,89 @@ class Source:
         if self.note:
             out["note"] = self.note
         return out
+
+
+# ---------------------------------------------------------------------- benefits
+
+
+@dataclass(frozen=True)
+class BenefitValue:
+    """What a scheme pays, as numbers rather than prose.
+
+    ``amount`` is the lowest figure the source states, so a total built from it is a
+    floor ("at least") rather than a promise. Every figure here must also appear in the
+    scheme's ``benefit_prose`` — :func:`validate_kb` checks it — so an amount is always
+    quoted from the dated source, never typed in from memory.
+    """
+
+    amount: float
+    per: str                        # month | year | once
+    max: float | None = None
+    per_family: bool = False        # paid once per family, however many members qualify
+    in_kind: bool = False           # the figure is the worth of goods, not cash
+    note: str = ""
+
+    @property
+    def yearly(self) -> float | None:
+        """Recurring cash per year, or ``None`` for a one-time payment."""
+        if self.per == "month":
+            return self.amount * 12
+        if self.per == "year":
+            return self.amount
+        return None
+
+    @property
+    def one_time(self) -> float | None:
+        return self.amount if self.per == "once" else None
+
+    def to_dict(self) -> dict[str, Any]:
+        out: dict[str, Any] = {"amount": self.amount, "per": self.per}
+        if self.max is not None:
+            out["max"] = self.max
+        if self.per_family:
+            out["per_family"] = True
+        if self.in_kind:
+            out["in_kind"] = True
+        if self.note:
+            out["note"] = self.note
+        return out
+
+
+@dataclass(frozen=True)
+class ApplicationWindow:
+    """A period when applications are accepted, as a dated source states it.
+
+    Windows are only ever copied from a notification — crop-insurance cut-offs, for one,
+    are set by each state every season and moved when the monsoon is late — so ``source``
+    is required. ``every_year`` repeats the same calendar dates annually.
+    """
+
+    opens: date
+    closes: date
+    source: str
+    every_year: bool = False
+    note: str = ""
+
+    def next_from(self, today: date) -> tuple[date, date] | None:
+        """The window that is open today or opens next, or ``None`` if it has passed."""
+        opens, closes = self.opens, self.closes
+        if self.every_year:
+            years = max(0, today.year - closes.year)
+            opens, closes = _shift_years(opens, years), _shift_years(closes, years)
+            if closes < today:
+                opens, closes = _shift_years(opens, 1), _shift_years(closes, 1)
+        return (opens, closes) if closes >= today else None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"opens": self.opens.isoformat(), "closes": self.closes.isoformat(),
+                "every_year": self.every_year, "source": self.source, "note": self.note}
+
+
+def _shift_years(day: date, years: int) -> date:
+    try:
+        return day.replace(year=day.year + years)
+    except ValueError:  # 29 February
+        return day.replace(year=day.year + years, day=28)
 
 
 # ----------------------------------------------------------------------- scheme
@@ -111,6 +204,12 @@ class Scheme:
     verified_by: str = ""
     sources: tuple[Source, ...] = ()
     notes: str = ""
+    name_ml: str = ""
+    value: BenefitValue | None = None
+    cover: float | None = None      # insurance: the sum insured per year, never summed as cash
+    # (other scheme id, reason quoting the source). Symmetric in SchemeKB.exclusions().
+    cannot_combine: tuple[tuple[str, str], ...] = ()
+    windows: tuple[ApplicationWindow, ...] = ()
     raw_rule: Any = None            # the un-parsed rule, for round-tripping
     source_file: Path | None = None
 
@@ -174,6 +273,12 @@ class Scheme:
             "verified_by": self.verified_by,
             "sources": [s.to_dict() for s in self.sources],
             "notes": self.notes,
+            "name_ml": self.name_ml,
+            "value": self.value.to_dict() if self.value else None,
+            "cover": self.cover,
+            "cannot_combine_with": [{"id": other, "reason": reason}
+                                    for other, reason in self.cannot_combine],
+            "windows": [w.to_dict() for w in self.windows],
         }
 
 
@@ -223,6 +328,21 @@ class SchemeKB:
 
     def deprecated_ids(self) -> list[str]:
         return sorted(k for k, v in self.schemes.items() if v.status == "deprecated")
+
+    def exclusions(self) -> dict[str, dict[str, str]]:
+        """scheme id -> {scheme it cannot be combined with: reason}, made symmetric.
+
+        A pair is written down once, on whichever scheme's source states it; a person
+        eligible for both must still hear about it from either side.
+        """
+        out: dict[str, dict[str, str]] = {}
+        for scheme in self:
+            for other, reason in scheme.cannot_combine:
+                if other not in self.schemes:
+                    continue
+                out.setdefault(scheme.id, {}).setdefault(other, reason)
+                out.setdefault(other, {}).setdefault(scheme.id, reason)
+        return out
 
     def filter(self, *, level: str | None = None, sector: str | None = None) -> "SchemeKB":
         out = {
@@ -370,6 +490,18 @@ def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
     if status == "verified" and not sources:
         raise KBError(f"{path.name}: a scheme marked 'verified' must cite at least one source")
 
+    cover = raw.get("cover")
+    if cover is not None and (isinstance(cover, bool) or not isinstance(cover, (int, float))
+                              or cover <= 0):
+        raise KBError(f"{path.name}: cover must be a positive number of rupees")
+    cannot_combine = []
+    for entry in raw.get("cannot_combine_with") or []:
+        if not isinstance(entry, Mapping) or not entry.get("id") or not entry.get("reason"):
+            raise KBError(f"{path.name}: each cannot_combine_with entry needs an id and a reason")
+        if entry["id"] == raw["id"]:
+            raise KBError(f"{path.name}: a scheme cannot exclude itself")
+        cannot_combine.append((str(entry["id"]), str(entry["reason"]).strip()))
+
     return Scheme(
         id=str(raw["id"]),
         name=str(raw["name"]),
@@ -390,9 +522,48 @@ def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
         verified_by=str(raw.get("verified_by") or ""),
         sources=sources,
         notes=str(raw.get("notes") or "").strip(),
+        name_ml=str(raw.get("name_ml") or ""),
+        value=_parse_value(raw.get("value"), path),
+        cover=float(cover) if cover is not None else None,
+        cannot_combine=tuple(cannot_combine),
+        windows=tuple(_parse_window(w, path) for w in raw.get("windows") or ()),
         raw_rule=raw["eligibility"],
         source_file=path,
     )
+
+
+def _parse_window(raw: Any, path: Path) -> ApplicationWindow:
+    if not isinstance(raw, Mapping) or not raw.get("source"):
+        raise KBError(f"{path.name}: every application window must cite a source")
+    opens = _parse_date(raw.get("opens"), path, "windows[].opens")
+    closes = _parse_date(raw.get("closes"), path, "windows[].closes")
+    if opens is None or closes is None or closes < opens:
+        raise KBError(f"{path.name}: a window needs opens <= closes")
+    every_year = bool(raw.get("every_year", False))
+    if every_year and (closes - opens).days >= 365:
+        raise KBError(f"{path.name}: a yearly window must be shorter than a year")
+    return ApplicationWindow(opens=opens, closes=closes, source=str(raw["source"]),
+                             every_year=every_year, note=str(raw.get("note") or "").strip())
+
+
+def _parse_value(raw: Any, path: Path) -> BenefitValue | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, Mapping):
+        raise KBError(f"{path.name}: value must be a mapping with amount and per")
+    amount, per, top = raw.get("amount"), raw.get("per"), raw.get("max")
+    if isinstance(amount, bool) or not isinstance(amount, (int, float)) or amount <= 0:
+        raise KBError(f"{path.name}: value.amount must be a positive number of rupees")
+    if per not in BENEFIT_PERIODS:
+        raise KBError(f"{path.name}: value.per must be one of {sorted(BENEFIT_PERIODS)}")
+    if top is not None and (isinstance(top, bool) or not isinstance(top, (int, float))
+                            or top < amount):
+        raise KBError(f"{path.name}: value.max must be a number no smaller than amount")
+    return BenefitValue(amount=float(amount), per=per,
+                        max=float(top) if top is not None else None,
+                        per_family=bool(raw.get("per_family", False)),
+                        in_kind=bool(raw.get("in_kind", False)),
+                        note=str(raw.get("note") or "").strip())
 
 
 def _parse_source(raw: Mapping[str, Any], path: Path) -> Source:
@@ -466,6 +637,19 @@ def validate_kb(kb: SchemeKB) -> list[str]:
         for attr in scheme.attributes:
             if attr not in spec:
                 problems.append(f"{scheme.id}: references undeclared attribute {attr!r}")
+        figures = []
+        if scheme.value:
+            figures += [scheme.value.amount] + ([scheme.value.max] if scheme.value.max else [])
+        if scheme.cover:
+            figures.append(scheme.cover)
+        for figure in figures:
+            if not figure_in_text(figure, scheme.benefit_prose):
+                problems.append(
+                    f"{scheme.id}: the figure {figure:,.0f} is not in benefit_prose — every "
+                    f"amount must be quoted from the sourced text")
+        for other, _ in scheme.cannot_combine:
+            if other not in kb:
+                problems.append(f"{scheme.id}: cannot_combine_with names unknown scheme {other!r}")
 
     # Total-knowledge check
     saturated = _saturated_profile(spec)
@@ -481,6 +665,31 @@ def validate_kb(kb: SchemeKB) -> list[str]:
 
     problems += _check_jurisdiction_scoping(kb, saturated)
     return problems
+
+
+def indian_grouping(amount: float) -> str:
+    """12345678 -> '1,23,45,678': the way Indian sources print rupees."""
+    digits = str(int(round(amount)))
+    if len(digits) <= 3:
+        return digits
+    head, tail = digits[:-3], digits[-3:]
+    groups = []
+    while len(head) > 2:
+        groups.insert(0, head[-2:])
+        head = head[:-2]
+    return ",".join(([head] if head else []) + groups + [tail])
+
+
+def figure_in_text(amount: float, text: str) -> bool:
+    """Does ``text`` state ``amount`` — as '1,000', '1000', '5 lakh' or '3.50 lakh'?"""
+    forms = {indian_grouping(amount), f"{amount:,.0f}", str(int(round(amount)))}
+    for unit, size in (("lakh", 1e5), ("crore", 1e7)):
+        if amount >= size:
+            scaled = amount / size
+            forms |= {f"{scaled:g} {unit}", f"{scaled:.2f} {unit}", f"{scaled:.1f} {unit}"}
+    # Not part of a longer number: "1,000" must not match inside "11,000" or "1,000,5".
+    return any(re.search(rf"(?<![\d.])(?<!\d,){re.escape(form)}(?!,?\d)", text)
+               for form in forms)
 
 
 # Income ceilings and benefit amounts move with every budget and by Government Order in
@@ -559,12 +768,23 @@ def _check_jurisdiction_scoping(kb: "SchemeKB", saturated: dict[str, Any]) -> li
                 f"another state?"
             )
 
-        if "district" in scheme.attributes and scheme.jurisdiction != "TN":
-            problems.append(
-                f"{scheme.id}: reads `district`, whose domain is the 38 Tamil Nadu "
-                f"districts; encode non-TN district scoping at state level with a "
-                f"MODELLING LIMITATION note"
-            )
+        if "district" in scheme.attributes:
+            own = set(districts_by_state().get(scheme.jurisdiction, ()))
+            named = {value for pred in scheme.eligibility.walk()
+                     if getattr(pred, "attr", None) == "district"
+                     for value in (pred.value if isinstance(pred.value, (list, tuple))
+                                   else [pred.value])}
+            if not own or named - own:
+                problems.append(
+                    f"{scheme.id}: names districts outside {scheme.jurisdiction}: "
+                    f"{sorted(named - own) or 'no district list for this state'}")
+
+    # The district vocabulary and the per-state lists must be the same set.
+    if "district" in spec:
+        listed = {d for names in districts_by_state().values() for d in names}
+        if listed != set(spec["district"].domain or ()):
+            problems.append("kb/spec/jurisdictions.yaml districts do not match the "
+                            "`district` attribute's domain")
     return problems
 
 

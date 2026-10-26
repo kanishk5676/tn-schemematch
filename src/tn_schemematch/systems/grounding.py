@@ -49,16 +49,16 @@ from .base import (
 
 EXTRACTION_SYSTEM_PROMPT = """\
 You extract structured facts from a citizen's question about Indian government welfare \
-schemes. The question may be written in code-mixed Tamil and English, in Tamil script, \
-in romanized Tamil, or in English.
+schemes. The question may be written in code-mixed Tamil or Malayalam and English, in \
+Tamil or Malayalam script, in romanized Tamil or Malayalam, or in English.
 
 You will be given a list of attributes. Return ONLY the attributes the question actually \
 states or unambiguously implies. Do not guess, do not infer from stereotypes, and do not \
 fill in what a typical person might answer. Leaving an attribute out is correct and \
 expected; inventing one is not.
 
-Keep quantities in the words the citizen used — write "2 ekkar" or "80 cent" or "month-ku \
-8000" rather than converting them. Conversion happens downstream.
+Keep quantities in the words the citizen used — write "2 ekkar" or "80 cent" or "pathu \
+sentu" or "month-ku 8000" rather than converting them. Conversion happens downstream.
 
 Reply with JSON only: {"attribute_name": value, ...}. Use an empty object {} if the \
 question states nothing."""

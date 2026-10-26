@@ -40,6 +40,9 @@ from .serialize import first_sentence, format_value, label_for
 from .systems.base import parse_json_response
 
 DEFAULT_DOCUMENTS_PATH = DEFAULT_SPEC_PATH.parent / "documents.yaml"
+DEFAULT_GUIDES_PATH = DEFAULT_SPEC_PATH.parent / "document_guides.yaml"
+GUIDE_FIELDS = {"issued_by", "where", "online", "bring", "steps", "fee", "time",
+                "reviewed", "source", "note"}
 
 # Uploads above this are refused before any decoding. Phone photos are 2–6 MB.
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
@@ -68,19 +71,23 @@ class DocumentType:
     evidences: tuple[str, ...]
     implies: Mapping[str, Any]
     matches: tuple[str, ...]
+    label_ml: str = ""
 
     @property
     def uploadable(self) -> bool:
         return self.kind == "document"
 
     def brief(self) -> dict[str, Any]:
-        return {"id": self.id, "kind": self.kind, "label": self.label, "label_ta": self.label_ta}
+        return {"id": self.id, "kind": self.kind, "label": self.label, "label_ta": self.label_ta,
+                "label_ml": self.label_ml}
 
 
 @dataclass
 class DocumentVocabulary:
     version: str
     types: dict[str, DocumentType]
+    # type id -> state code or "default" -> guide (see kb/spec/document_guides.yaml)
+    guides: dict[str, dict[str, dict[str, Any]]] = field(default_factory=dict)
     _by_requirement: dict[str, list[str]] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
@@ -104,8 +111,66 @@ class DocumentVocabulary:
     def readable_attributes(self) -> list[str]:
         return sorted({a for t in self.uploadable() for a in t.evidences})
 
+    def guide(self, type_id: str, state: str | None = None) -> dict[str, Any] | None:
+        """How to get a document in the person's state, falling back to the national
+        guide. ``bring`` items that name a document type become links to it."""
+        by_state = self.guides.get(type_id) or {}
+        key = state if state in by_state else "default"
+        if key not in by_state:
+            return None
+        guide = dict(by_state[key])
+        bring = []
+        for item in guide.get("bring") or []:
+            head, _, rest = str(item).partition(" ")
+            if head in self.types:
+                text = self.types[head].label + (f" {rest}" if rest else "")
+                bring.append({"text": text, "type": head})
+            else:
+                bring.append({"text": str(item), "type": None})
+        guide.update({"bring": bring, "steps": list(guide.get("steps") or []),
+                      "state": None if key == "default" else key,
+                      "reviewed": bool(guide.get("reviewed", False))})
+        return guide
 
-def load_documents(spec: AttributeSpec, path: str | Path | None = None) -> DocumentVocabulary:
+
+def load_guides(types: Mapping[str, "DocumentType"],
+                path: str | Path | None = None) -> dict[str, dict[str, dict[str, Any]]]:
+    """Load the how-to-get guides and check them against the document vocabulary.
+
+    A portal must be an official government site: a guide that sends a citizen to an
+    agent's website is worse than no guide.
+    """
+    from .kb import jurisdictions
+
+    source = Path(path or DEFAULT_GUIDES_PATH)
+    if not source.exists():
+        return {}
+    raw = yaml.safe_load(source.read_text(encoding="utf-8")) or {}
+    codes = set(jurisdictions()) | {"default"}
+    guides: dict[str, dict[str, dict[str, Any]]] = {}
+    for type_id, by_state in (raw.get("guides") or {}).items():
+        if type_id not in types:
+            raise SchemaError(f"guide for unknown document type {type_id!r}")
+        for state, guide in (by_state or {}).items():
+            where = f"guide {type_id}/{state}"
+            if state not in codes:
+                raise SchemaError(f"{where}: {state!r} is not a jurisdiction code or 'default'")
+            unknown = set(guide) - GUIDE_FIELDS
+            if unknown:
+                raise SchemaError(f"{where}: unknown field(s) {sorted(unknown)}")
+            if not guide.get("issued_by"):
+                raise SchemaError(f"{where}: issued_by is required")
+            online = str(guide.get("online") or "")
+            host = re.sub(r"^https://(www\.)?", "", online).split("/")[0]
+            if online and not (online.startswith("https://")
+                               and host.endswith((".gov.in", ".nic.in"))):
+                raise SchemaError(f"{where}: online must be an https government site, got {online!r}")
+        guides[type_id] = dict(by_state or {})
+    return guides
+
+
+def load_documents(spec: AttributeSpec, path: str | Path | None = None,
+                   guides_path: str | Path | None = None) -> DocumentVocabulary:
     """Load and validate the document vocabulary against the attribute spec."""
     raw = yaml.safe_load(Path(path or DEFAULT_DOCUMENTS_PATH).read_text(encoding="utf-8"))
     types: dict[str, DocumentType] = {}
@@ -126,8 +191,10 @@ def load_documents(spec: AttributeSpec, path: str | Path | None = None) -> Docum
             raise SchemaError(f"document type {type_id}: an action reads no facts")
         types[type_id] = DocumentType(
             id=type_id, kind=kind, label=body["label"], label_ta=body.get("label_ta", ""),
+            label_ml=body.get("label_ml", ""),
             evidences=evidences, implies=implies, matches=tuple(body.get("matches") or ()))
-    return DocumentVocabulary(version=str(raw.get("version", "0")), types=types)
+    return DocumentVocabulary(version=str(raw.get("version", "0")), types=types,
+                              guides=load_guides(types, guides_path))
 
 
 @lru_cache(maxsize=2)
@@ -161,6 +228,22 @@ def _sniff(data: bytes) -> tuple[str, str] | None:
     return None
 
 
+def prepare_upload(data: bytes) -> tuple[bytes, str, str]:
+    """Validate any upload: a photo (shrunk, as :func:`prepare_image`) or a PDF.
+
+    A PDF is kept byte for byte — re-encoding one is neither safe nor needed — and is only
+    checked to be whole: it must start with the PDF header and end with the end-of-file
+    marker, so a truncated download is refused rather than sent to the model.
+    """
+    if data[:5] == b"%PDF-":
+        if len(data) > MAX_UPLOAD_BYTES:
+            raise DocumentError("PDFs must be under 10 MB", status=413)
+        if b"%%EOF" not in data[-2048:]:
+            raise DocumentError("that PDF is incomplete or damaged", status=415)
+        return data, "application/pdf", "pdf"
+    return prepare_image(data)
+
+
 def prepare_image(data: bytes) -> tuple[bytes, str, str]:
     """Validate an upload and shrink it for the model. Returns (bytes, media type, ext).
 
@@ -173,7 +256,8 @@ def prepare_image(data: bytes) -> tuple[bytes, str, str]:
         raise DocumentError("images must be under 10 MB", status=413)
     sniffed = _sniff(data)
     if sniffed is None:
-        raise DocumentError("only JPEG, PNG or WebP photos can be read", status=415)
+        raise DocumentError("only JPEG, PNG or WebP photos, or PDF files, can be read",
+                            status=415)
     try:
         from PIL import Image, ImageOps
     except ImportError:
@@ -211,8 +295,8 @@ def mask_ids(text: str) -> str:
 # ------------------------------------------------------------------------ reading
 
 READ_SYSTEM_PROMPT = """\
-You read photographs of Indian government documents for a welfare-eligibility assistant \
-in Tamil Nadu. Documents may be in Tamil, English, or both.
+You read photographs and PDF scans of Indian government documents for a welfare-eligibility assistant \
+in Tamil Nadu and Kerala. Documents may be in Tamil, Malayalam, English, or a mix.
 
 Your job is to identify the document and copy out facts it actually prints. Rules:
 - Choose doc_type from the list given. Use "unknown" if the photo is unreadable or is not \
@@ -319,7 +403,8 @@ def manual_reading(vocab: DocumentVocabulary, spec: AttributeSpec, doc_type: str
 def read_document(client: Any, spec: AttributeSpec, vocab: DocumentVocabulary,
                   image: bytes, media_type: str, *, holder: str = "",
                   expected_type: str | None = None,
-                  today: date | None = None) -> dict[str, Any]:
+                  today: date | None = None,
+                  context: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Ask a vision model what a document says, then keep only what may be believed."""
     if expected_type is not None and (expected_type not in vocab
                                       or not vocab[expected_type].uploadable):
@@ -360,7 +445,7 @@ def read_document(client: Any, spec: AttributeSpec, vocab: DocumentVocabulary,
                       if doc_type in vocab else "document type not recognised")
         if reason is None:
             try:
-                value = spec.canonicalize(attr, raw_value)
+                value = spec.canonicalize(attr, raw_value, context=context)
             except SchemaError as exc:
                 reason = str(exc)
         if reason is not None:
@@ -410,11 +495,12 @@ def apply_reading(vault: Any, pid: str, doc_id: str,
 
 
 def checklist(vocab: DocumentVocabulary, active: SchemeKB, scheme_ids: Iterable[str],
-              held_types: Iterable[str]) -> dict[str, Any]:
+              held_types: Iterable[str], *, state: str | None = None) -> dict[str, Any]:
     """What each scheme needs, what is already on file, and one ranked list to collect.
 
     The combined list is the useful part: "Income certificate — needed for 3 of your
     schemes" is a single trip to the VAO, where three separate checklists hide that.
+    Each document to collect carries the guide to getting it in the person's ``state``.
     """
     held = set(held_types)
     schemes, wanted = [], {}
@@ -445,8 +531,21 @@ def checklist(vocab: DocumentVocabulary, active: SchemeKB, scheme_ids: Iterable[
         schemes.append({"id": scheme.id, "name": scheme.name, "name_ta": scheme.name_ta,
                         "apply_url": scheme.apply_url, "items": items,
                         "n_missing": n_missing, "ready": n_missing == 0})
+    # "Aadhaar card or family card" is already satisfied by an Aadhaar card that is on the
+    # list in its own right, so the either-or entry folds into that one.
+    singles = {key[0]: entry for key, entry in wanted.items() if len(key) == 1}
+    for key in [k for k in wanted if len(k) > 1]:
+        covering = next((singles[t] for t in key if t in singles), None)
+        if covering is None:
+            continue
+        for field in ("requirements", "schemes"):
+            covering[field] += [x for x in wanted[key][field] if x not in covering[field]]
+        del wanted[key]
     to_collect = sorted(wanted.values(), key=lambda e: (-len(e["schemes"]), e["label"]))
     for entry in to_collect:
         entry["n_schemes"] = len(entry["schemes"])
+        entry["how_to_get"] = [
+            {"type": t["id"], "label": t["label"], **guide}
+            for t in entry["types"] if (guide := vocab.guide(t["id"], state)) is not None]
     return {"schemes": schemes, "to_collect": to_collect,
             "n_ready": sum(1 for s in schemes if s["ready"])}
