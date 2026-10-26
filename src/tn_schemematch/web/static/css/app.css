@@ -11,8 +11,9 @@
   --panel: #ffffff;
   --panel-2: #f5f3f0;
   --ink: #1c1917;
-  --muted: #78716c;
-  --faint: #a8a29e;
+  /* Both greys clear 4.5:1 on --panel and --panel-2, so small print stays readable. */
+  --muted: #6b645e;
+  --faint: #736d68;
   --line: #e7e5e4;
 
   --ok: #15803d;
@@ -33,7 +34,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #16130f; --panel: #201c18; --panel-2: #2a251f;
-    --ink: #f5f1ea; --muted: #a8a096; --faint: #6f675e; --line: #35302a;
+    --ink: #f5f1ea; --muted: #b3aba1; --faint: #9a9188; --line: #35302a;
     --ok: #4ade80; --ok-bg: #14351f; --no: #f87171; --no-bg: #3d1a1a;
     --open: #fbbf24; --open-bg: #3a2c10; --ai: #c4b5fd; --ai-bg: #2e2547;
     --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
@@ -720,3 +721,6 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
 .app-row a { font-weight: 600; }
 .app-fields { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .app-fields select, .app-fields input { width: auto; flex: 1 1 140px; padding: 7px 9px; font-size: 14px; }
+
+.thumb.gone { display: grid; place-items: center; gap: 4px; font-size: 26px; color: var(--muted); background: var(--panel-2); text-align: center; padding: 8px; }
+.thumb.gone .tiny { font-size: 11px; }

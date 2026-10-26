@@ -37,3 +37,4 @@ data/runs/**/raw/
 data/vault/
 # Browser test screenshots (tests/test_ui.py)
 ui-screenshots/
+node_modules/

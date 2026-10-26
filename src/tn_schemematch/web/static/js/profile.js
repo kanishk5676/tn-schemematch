@@ -7,6 +7,7 @@
 import { api, el, $ } from './api.js';
 import { checklistView, sourceBadge } from './cards.js';
 import { currentProfile, rememberProfile } from './picker.js';
+import { lang, sectorIcon, t } from './i18n.js';
 
 let pid = null;
 let people = [];
@@ -92,10 +93,18 @@ function renderSchemes(result) {
     el('span', { class: 'badge open' }, `${counts.undetermined} need more answers`)));
 
   if (result.eligible.length) {
-    box.append(el('div', { class: 'scheme-rows' }, ...result.eligible.map((s) => el('div', { class: 'scheme-row' },
-      el('div', {}, el('b', {}, s.name), s.name_ta ? el('div', { class: 'ta tiny' }, s.name_ta) : null,
-        el('div', { class: 'tiny muted' }, (s.benefit_prose || '').split('\n')[0])),
-      s.apply_url ? el('a', { class: 'btn small', href: s.apply_url, target: '_blank', rel: 'noopener' }, 'Apply →') : null))));
+    // Plain words first, in the reader's language; the official name small underneath.
+    box.append(el('div', { class: 'scheme-rows' }, ...result.eligible.map((s) => {
+      const plain = (s.plain && s.plain[lang()]) || {};
+      return el('div', { class: 'scheme-row' },
+        el('div', {},
+          el('b', {}, `${sectorIcon(s.sectors)} ${plain.name || s.name}`),
+          plain.what ? el('div', { class: 'tiny' }, plain.what) : null,
+          el('div', { class: 'tiny muted' }, `${t('official_name')}: ${s.name}`)),
+        el('div', { class: 'row' },
+          el('a', { class: 'btn small primary', href: `/profile/${pid}/pack/${s.id}?lang=${lang()}` }, `📋 ${t('pack')}`),
+          s.apply_url ? el('a', { class: 'btn small', href: s.apply_url, target: '_blank', rel: 'noopener' }, t('apply_online')) : null));
+    })));
   } else {
     box.append(el('p', { class: 'muted tiny' }, 'Nothing is confirmed yet. Answer more questions in the assistant or the interview.'));
   }
@@ -137,9 +146,13 @@ function docTile(doc) {
   const type = docTypes[doc.doc_type];
   const status = { read: ['ai', 'read by model'], manual: ['det', 'filed by you'], unread: ['open', 'needs a type'] }[doc.status]
     || ['det', doc.status];
+  // A photo is deleted once read unless kept; what was read from it stays.
+  const thumb = doc.has_photo
+    ? el('a', { href: doc.file_url, target: '_blank', rel: 'noopener', class: 'thumb' },
+      el('img', { src: doc.file_url, alt: type ? type.label : 'uploaded document', loading: 'lazy' }))
+    : el('div', { class: 'thumb gone', title: t('photo_deleted') }, '🗑️', el('span', { class: 'tiny' }, t('photo_deleted')));
   const tile = el('div', { class: 'doc' },
-    el('a', { href: doc.file_url, target: '_blank', rel: 'noopener', class: 'thumb' },
-      el('img', { src: doc.file_url, alt: type ? type.label : 'uploaded document', loading: 'lazy' })),
+    thumb,
     el('div', { class: 'doc-body' },
       el('b', {}, type ? type.label : 'Unidentified document'),
       type ? el('div', { class: 'ta tiny' }, type.label_ta) : null,
@@ -209,7 +222,7 @@ async function upload(event) {
   $('upload-go').disabled = true;
   note.replaceChildren(el('span', { class: 'spinner' }), window.CAN_READ ? ' reading the photo…' : ' filing…');
   try {
-    const result = await api.upload(pid, file, chosen);
+    const result = await api.upload(pid, file, chosen, $('upload-keep').checked);
     const added = result.applied.length + result.confirmed.length;
     flash(note, `${result.type_label || 'Document'} saved. ${added} fact(s) added or confirmed`
       + `${result.conflicts.length ? `, ${result.conflicts.length} to check below` : ''}.`);
@@ -293,7 +306,7 @@ function renderFacts(facts) {
         } }, '×'));
     }
     body.append(el('tr', { class: fact.derived ? 'derived' : '' },
-      el('td', {}, fact.label, el('div', { class: 'mono tiny muted' }, fact.attr)),
+      el('td', { title: fact.attr }, fact.label),
       valueCell,
       el('td', {}, sourceBadge(fact.source), el('div', { class: 'tiny muted' }, ago(fact.recorded_at))),
       el('td', { class: 'evidence' }, fact.evidence ? `“${fact.evidence}”` : ''),

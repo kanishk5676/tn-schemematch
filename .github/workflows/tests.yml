@@ -37,6 +37,7 @@ jobs:
         run: |
           pip install -e ".[dev]" playwright
           python -m playwright install --with-deps chromium
+          npm install --no-save --no-package-lock axe-core@4.10.2
       - name: Drive the page
         run: python -m pytest -q tests/test_ui.py
       - name: Keep the screenshots

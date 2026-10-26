@@ -47,10 +47,11 @@ export const api = {
   // documents
   documentTypes: () => call('/api/documents/types'),
   attributes: () => call('/api/attributes'),
-  upload: (pid, file, docType) => {
+  upload: (pid, file, docType, keep = false) => {
     const form = new FormData();
     form.append('file', file);
     if (docType) form.append('doc_type', docType);
+    if (keep) form.append('keep', '1');
     return call(`/api/profiles/${pid}/documents`, { method: 'POST', body: form });
   },
   setDocumentType: (pid, docId, docType) =>

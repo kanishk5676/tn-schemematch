@@ -1,22 +1,22 @@
 {% extends "base.html" %}
-{% block title %}My profile — TN-SchemeMatch{% endblock %}
+{% block title %}என் விவரங்கள் · My details{% endblock %}
 {% block body %}
 <div class="split profile-page">
 
   <aside class="rail">
     <div class="card">
-      <div class="eyebrow">Saved people</div>
+      <div class="eyebrow" data-i18n="saved_people">சேமித்தவர்கள்</div>
       <div class="people" id="people"></div>
       <form class="new-person" id="new-person">
-        <input type="text" id="new-name" placeholder="Name" maxlength="80" required aria-label="Name">
-        <input type="text" id="new-relation" placeholder="Relation, e.g. mother (optional)"
+        <input type="text" id="new-name" data-i18n-placeholder="your_name" maxlength="80" required aria-label="Name">
+        <input type="text" id="new-relation" data-i18n-placeholder="relation"
                maxlength="40" aria-label="Relation">
         <label class="switch tiny" id="same-household-label">
-          <input type="checkbox" id="same-household" checked> same family as the selected person
+          <input type="checkbox" id="same-household" checked> <span data-i18n="same_family">same family as the selected person</span>
         </label>
-        <button class="btn small">Add person</button>
+        <button class="btn small" data-i18n="add_person">Add person</button>
       </form>
-      <p class="tiny muted" style="margin:10px 0 0">
+      <p class="tiny muted" style="margin:10px 0 0" data-i18n="stored_here">
         Profiles and documents are stored only on the computer running this app. Deleting a
         person deletes every fact and photo saved for them.
       </p>
@@ -39,26 +39,27 @@
           <div class="tiny muted" id="p-meta"></div>
         </div>
         <div class="row">
-          <a class="btn primary" id="p-chat" href="/">Talk to the assistant</a>
-          <a class="btn" href="/interview">Interview</a>
-          <button class="btn ghost danger" id="p-delete" type="button">Delete</button>
+          <a class="btn primary" id="p-chat" href="/">🎤 <span data-i18n="nav_assistant">Talk</span></a>
+          <a class="btn" href="/interview" data-i18n="detailed_check">Detailed check</a>
+          <button class="btn ghost danger" id="p-delete" type="button" data-i18n="delete">Delete</button>
         </div>
       </section>
 
       <div id="changes"></div>
 
       <section class="card" id="schemes-card">
-        <h2>Schemes for this person</h2>
+        <h2 data-i18n="found_title">Schemes for this person</h2>
         <div id="schemes"></div>
       </section>
 
       <section class="card" id="docs-card">
-        <h2>Documents</h2>
+        <h2 data-i18n="documents">Documents</h2>
         <form class="upload-row" id="upload-form">
           <select id="upload-type" aria-label="Document type"></select>
           <input type="file" id="upload-file" accept="image/jpeg,image/png,image/webp"
                  aria-label="Photo of the document">
-          <button class="btn primary" id="upload-go">Upload</button>
+          <label class="toggle small"><input type="checkbox" id="upload-keep"> <span data-i18n="keep_photo">Keep the photo after reading</span></label>
+          <button class="btn primary" id="upload-go" data-i18n="upload_go">Upload</button>
         </form>
         <p class="tiny muted" id="upload-note" style="margin:6px 0 0">
           {% if can_read %}
@@ -73,12 +74,12 @@
       </section>
 
       <section class="card" id="checklist-card">
-        <h2>Get ready to apply</h2>
+        <h2 data-i18n="bring_title">Get ready to apply</h2>
         <div id="checklist"></div>
       </section>
 
       <section class="card" id="facts-card">
-        <h2>What is saved <span class="muted tiny" id="facts-count"></span></h2>
+        <h2><span data-i18n="what_you_told">What is saved</span> <span class="muted tiny" id="facts-count"></span></h2>
         <p class="tiny muted" style="margin:-6px 0 10px">
           Every value shows where it came from. Change one to see what it does to the
           schemes above — a birthday, a new job or a marriage are all just a new fact.

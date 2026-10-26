@@ -124,3 +124,25 @@ def test_the_app_is_installable(page, base_url):
     assert response.ok and response.json()["start_url"] == "/"
     worker = page.request.get(base_url + "/sw.js")
     assert worker.ok and "javascript" in worker.headers["content-type"]
+
+
+# ---------------------------------------------------------------- accessibility
+
+AXE = Path(__file__).resolve().parent.parent / "node_modules" / "axe-core" / "axe.min.js"
+
+
+@pytest.mark.parametrize("path", ["/", "/helper", "/schemes", "/profile"])
+def test_no_serious_accessibility_problems(page, base_url, path):
+    """axe-core, the engine behind Lighthouse's accessibility score, finds nothing serious
+    or critical against WCAG 2 A/AA. Installed only in the CI ui job."""
+    if not AXE.exists():
+        pytest.skip("axe-core not installed (npm install axe-core)")
+    page.goto(base_url + path)
+    page.wait_for_load_state("networkidle")
+    page.add_script_tag(path=str(AXE))
+    result = page.evaluate(
+        "async () => await axe.run(document, {runOnly: ['wcag2a', 'wcag2aa']})")
+    serious = [
+        f"{v['id']} ({v['impact']}): {v['help']} — {v['nodes'][0]['target']}"
+        for v in result["violations"] if v["impact"] in {"serious", "critical"}]
+    assert serious == [], "\n".join(serious)
