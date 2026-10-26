@@ -19,6 +19,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
+# The web app (`schemematch serve`). Optional for the same reason as the models: the rule
+# engine, `schemematch validate` and the non-web tests run without it.
+web = ["flask>=2.2"]
 # Model backends are optional so the KB + rule engine stay dependency-light.
 # anthropic 1.x: messages take `effort`, not `temperature`; Pillow shrinks document photos.
 models = ["openai>=1.0", "anthropic>=1.0", "pillow>=10.0"]

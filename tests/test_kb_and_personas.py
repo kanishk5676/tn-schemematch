@@ -5,13 +5,15 @@ is good; they check that the ground truth is well-formed, so that when a model d
 with it, the model is the thing that was wrong.
 """
 
-from datetime import date
+from dataclasses import replace
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
 
 from tn_schemematch import validate_kb
 from tn_schemematch.elicitation import assert_monotone, necessary_questions
+from tn_schemematch.kb import STALE_AFTER_DAYS, SchemeKB, stale_schemes
 from tn_schemematch.personas import validate_personas
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -408,3 +410,45 @@ def test_no_source_is_dated_in_the_future(kb):
             assert source.retrieved <= today, (
                 f"{scheme.id} cites {source.url} as retrieved on {source.retrieved}"
             )
+
+
+# ------------------------------------------------------------------- staleness
+
+
+STALE_TODAY = date(2027, 6, 1)
+
+
+def _last_read(kb, scheme, retrieved, **changes):
+    """A one-scheme KB whose only source was read on ``retrieved``."""
+    source = replace(scheme.sources[0], retrieved=retrieved)
+    return SchemeKB({scheme.id: replace(scheme, sources=(source,), **changes)}, kb.spec)
+
+
+def test_a_scheme_goes_stale_the_day_after_its_source_ages_out(kb):
+    scheme = next(iter(kb.active()))
+    edge = STALE_TODAY - timedelta(days=STALE_AFTER_DAYS)
+    assert stale_schemes(_last_read(kb, scheme, edge), today=STALE_TODAY) == []
+    [warning] = stale_schemes(_last_read(kb, scheme, edge - timedelta(days=1)),
+                              today=STALE_TODAY)
+    assert warning.startswith(f"{scheme.id}: last checked")
+
+
+def test_a_recent_verification_resets_the_age(kb):
+    scheme = next(iter(kb.active()))
+    verified = _last_read(kb, scheme, date(2026, 1, 1), status="verified",
+                          verified_on=STALE_TODAY - timedelta(days=10))
+    assert stale_schemes(verified, today=STALE_TODAY) == []
+
+
+def test_deprecated_schemes_are_never_stale(kb):
+    scheme = kb[kb.deprecated_ids()[0]]
+    assert stale_schemes(_last_read(kb, scheme, date(2020, 1, 1)), today=STALE_TODAY) == []
+
+
+def test_stale_sources_warn_without_failing_validate(capsys):
+    """CI runs `schemematch validate`; an ageing source must not turn it red."""
+    from tn_schemematch.cli import main
+    assert main(["validate", "--max-age-days", "0"]) == 0
+    out = capsys.readouterr().out
+    assert "warning(s), no source checked in 0 days" in out
+    assert "All checks passed." in out

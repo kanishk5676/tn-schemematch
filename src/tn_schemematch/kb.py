@@ -483,6 +483,36 @@ def validate_kb(kb: SchemeKB) -> list[str]:
     return problems
 
 
+# Income ceilings and benefit amounts move with every budget and by Government Order in
+# between, so a rule last read more than about six months ago may no longer say what the
+# scheme does.
+STALE_AFTER_DAYS = 180
+
+
+def stale_schemes(kb: SchemeKB, *, today: date | None = None,
+                  max_age_days: int = STALE_AFTER_DAYS) -> list[str]:
+    """Warnings for active schemes whose rule has not been checked recently.
+
+    A scheme's age runs from the newer of its latest source retrieval and its human
+    verification. These are warnings, not problems: an old source is not a broken rule,
+    but it is the first place to look when a scheme may have changed under the KB.
+    """
+    today = today or date.today()
+    warnings: list[str] = []
+    for scheme in kb.active():
+        checked = [source.retrieved for source in scheme.sources]
+        if scheme.verified_on:
+            checked.append(scheme.verified_on)
+        if not checked:
+            warnings.append(f"{scheme.id}: no dated source to age from")
+            continue
+        last = max(checked)
+        age = (today - last).days
+        if age > max_age_days:
+            warnings.append(f"{scheme.id}: last checked {last.isoformat()}, {age} days ago")
+    return warnings
+
+
 def _check_jurisdiction_scoping(kb: "SchemeKB", saturated: dict[str, Any]) -> list[str]:
     """Prove each state scheme is refuted for a resident of every other state.
 

@@ -24,7 +24,7 @@ from .elicitation import (
     resolving_power,
 )
 from .documents import load_documents, validate_documents
-from .kb import load_kb, validate_kb
+from .kb import STALE_AFTER_DAYS, load_kb, stale_schemes, validate_kb
 from .personas import load_personas, validate_personas
 from .rules import Verdict
 
@@ -56,6 +56,14 @@ def cmd_validate(args) -> int:
           f"Documents: {len(documents.uploadable())} document types")
     if personas is not None:
         print(f"Personas: {len(personas)}")
+
+    # Stale sources are reported but never fail validation: the rule still parses and
+    # still means what it meant, it just needs a person to re-read its source.
+    stale = stale_schemes(kb, max_age_days=args.max_age_days)
+    if stale:
+        print(f"\n{len(stale)} warning(s), no source checked in {args.max_age_days} days:")
+        for warning in stale:
+            print(f"  - {warning}")
     if not problems:
         print("\nAll checks passed.")
         return 0
@@ -166,7 +174,7 @@ def cmd_serve(args) -> int:
     try:
         from .web import create_app
     except ImportError:
-        print("Flask is not installed — pip install flask", file=sys.stderr)
+        print("Flask is not installed — pip install -e \".[web]\"", file=sys.stderr)
         return 1
 
     app = create_app(client=client, max_questions=args.max_questions, debug=args.debug,
@@ -203,7 +211,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--personas", default=None, help="persona directory")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("validate", help="check the KB and persona set").set_defaults(func=cmd_validate)
+    validate = sub.add_parser("validate", help="check the KB and persona set")
+    validate.add_argument("--max-age-days", type=int, default=STALE_AFTER_DAYS,
+                          help="warn about schemes whose newest source is older than this "
+                               f"(default {STALE_AFTER_DAYS})")
+    validate.set_defaults(func=cmd_validate)
     sub.add_parser("stats", help="coverage and benchmark statistics").set_defaults(func=cmd_stats)
 
     build = sub.add_parser("build", help="export released artifacts")

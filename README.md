@@ -31,15 +31,15 @@ built so that the model never decides who is eligible — see [the agent layer](
 | **Document vocabulary** | 28 document types; all 75 document requirements in the KB mapped |
 | **Assistant** | 9 tools over the rule engine, elicitation policy, profile vault and checklist |
 | **Benchmark personas** | 247, each with paired code-mixed and English queries |
-| **Tests** | 299, all passing, no API key required |
+| **Tests** | 303, all passing, no API key required |
 | **Interfaces** | Assistant, profile page, interview, REST API (32 endpoints), CLI, Python library |
 | **Code** | ~13,600 lines Python, ~2,600 lines frontend, 299 YAML data files |
 
 ```bash
-pip install -e ".[dev,models]"
+pip install -e ".[dev,models,web]"
 schemematch validate          # check KB, document mapping and benchmark integrity
 schemematch serve             # launch the web application (claude-opus-5-5 by default)
-pytest -q                     # 299 tests, no network needed
+pytest -q                     # 303 tests, no network needed
 ```
 
 ---
@@ -454,8 +454,8 @@ under `/api/profiles`.
 ## Testing and verification
 
 ```
-231 test functions -> 299 cases (parametrised) — all offline, no API key
-├── test_kb_and_personas.py   31  KB integrity, jurisdiction scoping, provenance
+235 test functions -> 303 cases (parametrised) — all offline, no API key
+├── test_kb_and_personas.py   35  KB integrity, jurisdiction scoping, provenance, staleness
 ├── test_web_api.py           25  every endpoint, error envelopes, full HTTP interview
 ├── test_systems.py           24  RAG baseline, grounding pipeline, metrics wiring
 ├── test_documents.py         23  reader guard rails, masking, conflicts, checklist, uploads

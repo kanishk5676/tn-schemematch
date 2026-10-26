@@ -4,8 +4,8 @@
 
 ```bash
 export ANTHROPIC_API_KEY='...'          # put it in ~/.zshrc so a new terminal keeps it
-pip install -e ".[dev,models]"
-python -m pytest -q                      # 299 tests, no key needed
+pip install -e ".[dev,models,web]"
+python -m pytest -q                      # 303 tests, no key needed
 python scripts/make_sample_documents.py  # four SPECIMEN photos in data/sample_documents/
 ```
 
