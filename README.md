@@ -19,21 +19,28 @@ the way: it holds the interview as a conversation, remembers what they said, rea
 of their certificates, and tells them which papers to collect for which scheme. It is
 built so that the model never decides who is eligible — see [the agent layer](#the-agent-layer).
 
+Around both sits the product: what each scheme is worth, which ones cannot be taken
+together, how to get each missing paper, an application tracker that explains rejections
+and drafts complaints, a view of the whole family, camp mode for helpers, anonymous
+reports, a partner API, consent and an audit log — and **Kerala, in Malayalam**, beside
+Tamil Nadu. See [from "eligible" to "money received"](#from-eligible-to-money-received).
+
 ---
 
 ## At a glance
 
 | | |
 |---|---|
-| **Schemes encoded** | 49 (47 active, 2 deliberately retained as discontinued) |
-| **Jurisdictions** | Union Government (21) + Tamil Nadu (28) |
+| **Schemes encoded** | 54 (52 active, 2 deliberately retained as discontinued) |
+| **Jurisdictions** | Union Government (21) + Tamil Nadu (28) + Kerala (5) |
+| **Languages** | English, Tamil, Malayalam — script, romanized (Tanglish, Manglish) or mixed |
 | **Attribute vocabulary** | 69 typed attributes (64 elicitable, 5 derived) |
-| **Document vocabulary** | 28 document types; all 75 document requirements in the KB mapped |
+| **Document vocabulary** | 29 document types, every requirement mapped, each with a how-to-get guide |
 | **Assistant** | 9 tools over the rule engine, elicitation policy, profile vault and checklist |
-| **Benchmark personas** | 247, each with paired code-mixed and English queries |
-| **Tests** | 303, all passing, no API key required |
-| **Interfaces** | Assistant, profile page, interview, REST API (32 endpoints), CLI, Python library |
-| **Code** | ~13,600 lines Python, ~2,600 lines frontend, 299 YAML data files |
+| **Test profiles** | 249 (247 Tamil Nadu, 2 Kerala), each with paired code-mixed and English queries |
+| **Tests** | 310 test functions → 394 cases, all passing, no API key required |
+| **Interfaces** | Assistant, profile, camp, reports, interview, REST API (59 endpoints), partner API, CLI |
+| **Code** | ~13,300 lines Python and ~3,800 in tests, ~3,500 lines frontend, 309 YAML data files |
 
 ```bash
 pip install -e ".[dev,models,web]"
@@ -130,6 +137,34 @@ next tool. **After every reply, a guard finds each scheme the text names and att
 rule engine's real verdict as a chip beside it**, so "you can get the women's scheme" next
 to a red *not eligible* is a visible contradiction rather than a silent one. The page also
 shows every step the agent took.
+
+---
+
+## From "eligible" to "money received"
+
+Each of these is built on the same rule: nothing here decides eligibility. Every number is
+the rule engine run on a profile, sometimes a changed one.
+
+| Feature | What it does | Where |
+|---|---|---|
+| **What it is worth** | Each scheme's amount as data (`value`, `cover`), checked against its sourced `benefit_prose` by `schemematch validate` — an amount cannot be typed in from memory. Totals split yearly cash, one-time and cover | `benefits.py`, scheme YAML |
+| **Only one of these** | `cannot_combine_with` pairs quoting the source ("widows aged 60 and above should instead apply under the Old Age Pension"); totals keep the best compatible set | `benefits.py` |
+| **How to get each paper** | Issuing office, where to apply, official portal, what to bring — per state, `reviewed: false` until checked | `kb/spec/document_guides.yaml` |
+| **Application tracker** | planned → applied → approved / rejected → received, an event log that stores the rules' verdict at each step; follow-up after 30 days | `applications.py`, vault |
+| **Rejections explained** | A reason vocabulary tied to the facts and papers it concerns; the page shows the rule's clause beside what the person said | `kb/spec/rejections.yaml` |
+| **Outcome feedback** | A rejection on eligibility grounds of someone the rules called eligible is a *disagreement*, counted per scheme on the dashboard — the loop that finds wrong rules | `/api/outcomes` |
+| **Complaint drafts** | English, Tamil, Malayalam templates; the "I meet these conditions" paragraph appears only when the rules agree, and quotes only the deciding clauses | `applications.complaint` |
+| **Calendar** | Follow-ups, sourced application windows, and birthdays that open or close a scheme | `/api/profiles/<id>/calendar` |
+| **Family** | Every member's schemes and one family total, a per-family scheme counted once | `outlook.household` |
+| **Unlock more** | Actions a person can take (open a bank account) that would make them eligible, and unanswered questions ranked by the money behind them | `outlook.unlock` |
+| **Coming up** | The rules re-run with age (and other time-bound facts) advanced year by year | `outlook.coming_up` |
+| **Kerala and Malayalam** | Five Kerala welfare pensions from the local bodies' own pages; districts tied to states; "white card" read by state | `kb/schemes/kl/` |
+| **Camp mode** | Quick intake of the 18 facts that settle 78% of eligibilities, consent read aloud in three languages, one printed sheet per family | `/camp`, `/print/<id>` |
+| **Anonymous reports** | Who qualifies and has not applied, by scheme; counts from 1 to 4 shown as "<5" | `/reports` |
+| **Partner API** | `POST /api/v1/check` with a key from `schemematch keys create`; stateless, rate-limited, keys stored hashed | `partners.py` |
+| **Consent, export, audit** | Consent against a dated notice (DPDP Act 2023), a download of everything held, and a log of who opened or changed a profile | `privacy.py` |
+| **Source watcher** | `schemematch watch-sources` re-fetches every cited page and flags the changed ones for re-verification | `watch.py` |
+| **PDF documents** | Read like photos, sent to the model as document blocks | `documents.prepare_upload` |
 
 ---
 
@@ -519,9 +554,19 @@ behind it, and the assistant's conversations have no rubric or study. The guaran
 state what its type cannot prove, a named scheme always carries its real verdict — not
 claims about how well it talks.
 
-**No authentication.** A profile id is a bearer token, like a session id. That is
-acceptable for a server bound to 127.0.0.1 on one machine, and not for anything wider.
-Documents are images only (JPEG, PNG, WebP); PDFs are not read.
+**Authentication is partial.** Starting the server with `HELPER_PIN` locks camps, reports
+and outcomes behind a helper sign-in. Saved-profile routes are still open — a profile id is
+a bearer token — which is acceptable for a server bound to 127.0.0.1 and not for anything
+wider (product plan, Phase 4).
+
+**Unreviewed guidance.** The how-to-get guides, rejection reasons and grievance channels
+are written from general knowledge and carry `reviewed: false`; the pages say so. Benefit
+amounts, by contrast, are checked against each scheme's sourced text.
+
+**Kerala is a start.** Five welfare pensions, encoded from three local bodies' pages (the
+state's own pension portal refused the connection). The house-size, vehicle, air
+conditioner and residence-period tests have no attribute and are not checked; Kerala's
+OEC category is not modelled; there are two Kerala test profiles.
 
 **Known modelling limitations** are recorded in the scheme files rather than left silent —
 family-scoped conditions approximated by applicant-level tests, block-level geography that
