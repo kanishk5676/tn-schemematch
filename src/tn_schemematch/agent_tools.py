@@ -129,11 +129,12 @@ def build_tools(ctx: AgentContext) -> list[dict[str, Any]]:
         tool("show",
              "Put something on the person's screen under your reply: a scheme card "
              "(scheme_id), the document checklist, an upload button (doc_type, or \"\"), "
-             "a button to save their profile, a link to their profile page, or the "
-             "scheme browser filtered by query.",
+             "a button to save their profile, a link to their profile page, the "
+             "printable application sheet for an eligible scheme (scheme_id; needs a "
+             "saved profile), or the scheme browser filtered by query.",
              {"component": {"type": "string", "enum": [
                  "scheme_card", "checklist", "upload_document", "save_profile",
-                 "profile_page", "schemes_page"]},
+                 "profile_page", "application_pack", "schemes_page"]},
               "scheme_id": {"type": "string", "enum": scheme_ids + [""]},
               "doc_type": {"type": "string", "enum": doc_types + [""]},
               "query": {"type": "string"}}),
@@ -241,8 +242,12 @@ def explain_scheme(ctx: AgentContext, scheme_id: str) -> dict[str, Any]:
         "id": scheme.id, "name": scheme.name, "name_ta": scheme.name_ta,
         "verdict": tree["verdict"], heading: decisive_clauses(tree),
         "benefit": (scheme.benefit_prose or scheme.summary).strip(),
+        # Plain words to say it in, where they have been written; prefer these to the
+        # official name when talking to the person.
+        "plain": {lang: dict(text) for lang, text in scheme.plain.items()},
         "documents": list(scheme.documents), "apply_url": scheme.apply_url,
-        "rule_status": "draft, not yet verified against the Government Order",
+        "rule_status": ("verified against the Government Order" if scheme.is_verified
+                        else "draft, not yet verified against the Government Order"),
     }
 
 
@@ -299,6 +304,18 @@ def show(ctx: AgentContext, component: str, scheme_id: str, doc_type: str,
     elif component == "profile_page":
         href = f"/profile?id={ctx.profile_id}" if ctx.profile_id else "/profile"
         ctx.ui.append({"type": "link", "href": href, "label": "Open my profile"})
+    elif component == "application_pack":
+        if scheme_id not in ctx.active:
+            raise ToolError("application_pack needs a scheme_id")
+        if ctx.active[scheme_id].verdict(ctx.state.profile) is not Verdict.TRUE:
+            raise ToolError("the rules do not say this person is eligible for "
+                            f"{scheme_id}; a sheet is only made for an eligible scheme")
+        if not ctx.profile_id:
+            ctx.ui.append({"type": "save_profile", "saved": False})
+            return {"shown": "save_profile",
+                    "note": "save the profile first; then show the sheet again"}
+        ctx.ui.append({"type": "link", "label": "Application sheet",
+                       "href": f"/profile/{ctx.profile_id}/pack/{scheme_id}"})
     elif component == "schemes_page":
         ctx.ui.append({"type": "link", "label": "Browse schemes",
                        "href": "/schemes" + (f"?q={query}" if query else "")})

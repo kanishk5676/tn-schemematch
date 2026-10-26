@@ -2,11 +2,10 @@
 """Live eligibility interview: type a code-mixed question, get an audited answer.
 
     python scripts/demo.py                        # live, you answer the questions
-    python scripts/demo.py --persona p001         # auto-answer from a persona (hands-free)
+    python scripts/demo.py --persona p001         # auto-answer from a test profile (hands-free)
     python scripts/demo.py --backend none         # no model: skip extraction, ask everything
 
-The demo is the pipeline in `systems/grounding.py` with the simulated citizen replaced by
-a real one at a keyboard. The division of labour is unchanged and is the point worth
+The demo is the interview engine at a keyboard. The division of labour is unchanged and is the point worth
 showing: the model reads one messy sentence and fills attribute slots, and every decision
 after that is a rule evaluation that prints its own reasoning. The model is never asked
 whether someone qualifies.
@@ -26,8 +25,8 @@ from tn_schemematch.attributes import SchemaError, default_spec      # noqa: E40
 from tn_schemematch.elicitation import question_priority             # noqa: E402
 from tn_schemematch.kb import load_kb                                # noqa: E402
 from tn_schemematch.rules import Verdict                             # noqa: E402
+from tn_schemematch.interview import EXTRACTION_SYSTEM_PROMPT       # noqa: E402
 from tn_schemematch.systems.base import attribute_catalogue, parse_json_response  # noqa: E402
-from tn_schemematch.systems.grounding import EXTRACTION_SYSTEM_PROMPT  # noqa: E402
 
 # ------------------------------------------------------------------ presentation
 
@@ -221,7 +220,7 @@ def main() -> int:
     parser.add_argument("--model", default=None)
     parser.add_argument("--query", default=None, help="skip the prompt and use this query")
     parser.add_argument("--persona", default=None,
-                        help="auto-answer from a persona instead of a keyboard")
+                        help="auto-answer from a test profile instead of a keyboard")
     parser.add_argument("--max-questions", type=int, default=40)
     args = parser.parse_args()
 
@@ -255,15 +254,12 @@ def main() -> int:
     print()
 
     # -- the citizen, real or simulated -------------------------------------
-    citizen = None
+    persona = None
     if args.persona:
         from tn_schemematch.personas import load_personas
-        from tn_schemematch.systems.base import SimulatedCitizen
-        personas = load_personas(None, spec)
-        persona = personas[args.persona]
-        citizen = SimulatedCitizen(persona, spec, max_questions=args.max_questions)
+        persona = load_personas(None, spec)[args.persona]
         query = args.query or persona.queries["code_mixed"]
-        print(dim(f"  auto-answering as persona {persona.id}"))
+        print(dim(f"  auto-answering as test profile {persona.id}"))
     else:
         query = args.query
 
@@ -347,10 +343,10 @@ def main() -> int:
         print(f"  {bold(f'Q{len(asked)}.')} {question_text(attr)}")
         print(dim(f"      {attr_name} · {describe_attr(attr)}"))
 
-        if citizen is not None:
-            reply, value = citizen.answer(attr_name)
-            print(f"      {cyan(reply)}")
-            source = "persona"
+        if persona is not None:
+            value = persona.profile.get(attr_name)
+            print(f"      {cyan(str(value).replace('_', ' ') if value is not None else 'I do not know.')}")
+            source = "test profile"
             if value is None:
                 skipped.add(attr_name)
         else:

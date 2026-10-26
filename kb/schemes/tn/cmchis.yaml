@@ -37,6 +37,21 @@ eligibility:
         - {attr: is_inter_state_migrant, op: eq, value: true}
         - {attr: state, op: eq, value: TN, note: "resident in Tamil Nadu; the six-month duration is not encodable"}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "முதலமைச்சர் மருத்துவக் காப்பீடு"
+    what: "குடும்பத்துக்கு வருடம் 5 லட்சம் ரூபாய் வரை இலவச மருத்துவமனைச் சிகிச்சை."
+    who: "வருட வருமானம் 1,20,000 ரூபாய்க்குக் குறைவான, ரேஷன் கார்டில் பெயர் உள்ள தமிழ்நாட்டுக் குடும்பங்கள்."
+    where: "மாவட்ட ஆட்சியர் அலுவலகம் அல்லது அரசு மருத்துவமனையில் உள்ள காப்பீட்டு அட்டை மையம்."
+  en:
+    name: "Chief Minister's health insurance"
+    what: "Free hospital treatment worth up to ₹5 lakh a year for the family."
+    who: "Tamil Nadu families on a ration card with income under ₹1,20,000 a year."
+    where: "The insurance card counter at the district collectorate or a government hospital."
+
 documents:
   - Family card (ration card)
   - Income certificate from the Village Administrative Officer

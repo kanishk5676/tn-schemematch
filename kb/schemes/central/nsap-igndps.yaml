@@ -27,6 +27,21 @@ eligibility:
     - {attr: disability_percent, op: gte, value: 80,
        note: "'severe and multiple disability' is read as the 80 percent certification threshold"}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "மாற்றுத்திறனாளி ஓய்வூதியம் (மத்திய அரசு)"
+    what: "மத்திய அரசின் பங்கு மாதம் 300 ரூபாய். மாநில அரசு மேலும் சேர்க்கும்."
+    who: "80 சதவீதம் அல்லது அதற்கு மேல் மாற்றுத்திறன் உள்ள, வறுமைக் கோட்டுக்குக் கீழ் உள்ள குடும்பங்களைச் சேர்ந்த 18 முதல் 59 வயது வரையிலானவர்கள்."
+    where: "தாலுகா அலுவலகம் அல்லது இ-சேவை மையம்."
+  en:
+    name: "Disability pension (central)"
+    what: "The central share is ₹300 a month. The state adds more."
+    who: "People aged 18 to 59 with 80% or more disability, from families below the poverty line."
+    where: "Taluk office or e-Sevai centre."
+
 documents:
   - Disability certificate
   - BPL card

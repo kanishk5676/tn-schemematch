@@ -21,8 +21,9 @@ Three decisions shape it:
 
 Storage is a single SQLite file under ``data/vault/`` (git-ignored) plus uploaded files
 beside it. It is local by design: nothing here leaves the machine the server runs on.
-There is no authentication — a profile id is a bearer token, like a session id — which is
-acceptable for a server bound to 127.0.0.1 and stated, not hidden, in the README.
+Who may read which profile is decided in the web layer (:mod:`.web.helper_api`): with a
+helper PIN set, a browser sees only the profiles it created unless a helper logs in.
+Photos are deleted once read unless kept on purpose (:meth:`Vault.discard_file`).
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ import sqlite3
 import threading
 import time
 import uuid
+from datetime import date
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -73,9 +75,25 @@ CREATE TABLE IF NOT EXISTS documents (
     media_type  TEXT NOT NULL,
     reading     TEXT,
     status      TEXT NOT NULL,
-    uploaded_at REAL NOT NULL
+    uploaded_at REAL NOT NULL,
+    keep_photo  INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS applications (
+    profile_id  TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    scheme_id   TEXT NOT NULL,
+    status      TEXT NOT NULL,
+    reference   TEXT NOT NULL DEFAULT '',
+    note        TEXT NOT NULL DEFAULT '',
+    applied_on  TEXT,
+    updated_at  REAL NOT NULL,
+    PRIMARY KEY (profile_id, scheme_id)
 );
 """
+
+# Where an application has got to. "planned" is a helper's note to go; the others are what
+# the office said. A rejection is recorded, not deleted: it is the most useful thing to
+# follow up on, and a pattern of them is how a wrong rule is found.
+APPLICATION_STATUSES = ("planned", "applied", "sanctioned", "rejected")
 
 MAX_NAME_LENGTH = 80
 
@@ -98,6 +116,12 @@ class Vault:
         self._db.row_factory = sqlite3.Row
         self._db.execute("PRAGMA foreign_keys = ON")
         self._db.executescript(_SCHEMA)
+        # Vaults written before photos could be discarded lack the column.
+        columns = {row["name"] for row in self._db.execute("PRAGMA table_info(documents)")}
+        if "keep_photo" not in columns:
+            self._db.execute("ALTER TABLE documents ADD COLUMN keep_photo INTEGER NOT NULL "
+                             "DEFAULT 0")
+            self._db.commit()
         self._lock = threading.Lock()
 
     def close(self) -> None:
@@ -256,7 +280,7 @@ class Vault:
 
     def add_document(self, pid: str, *, doc_type: str, filename: str, data: bytes,
                      media_type: str, extension: str, reading: Mapping[str, Any] | None = None,
-                     status: str = "stored") -> dict[str, Any]:
+                     status: str = "stored", keep_photo: bool = False) -> dict[str, Any]:
         self.get_profile(pid)
         doc_id = uuid.uuid4().hex
         directory = self.files_dir / pid
@@ -266,10 +290,24 @@ class Vault:
         with self._lock, self._db:
             self._db.execute(
                 "INSERT INTO documents (id, profile_id, doc_type, filename, stored_path,"
-                " media_type, reading, status, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " media_type, reading, status, uploaded_at, keep_photo)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (doc_id, pid, doc_type, (filename or "upload")[:120], str(path), media_type,
                  json.dumps(reading, ensure_ascii=False) if reading is not None else None,
-                 status, time.time()))
+                 status, time.time(), int(keep_photo)))
+        return self.document(pid, doc_id)
+
+    def discard_file(self, pid: str, doc_id: str) -> dict[str, Any]:
+        """Delete a document's photo but keep its record and what was read from it.
+
+        The default once a photo has been read: the facts are what the checklist and the
+        rules need, and a photo of an Aadhaar card on a shared computer is a liability.
+        """
+        document = self.document(pid, doc_id)
+        if document["stored_path"]:
+            Path(document["stored_path"]).unlink(missing_ok=True)
+            with self._lock, self._db:
+                self._db.execute("UPDATE documents SET stored_path = '' WHERE id = ?", (doc_id,))
         return self.document(pid, doc_id)
 
     def update_document(self, pid: str, doc_id: str, *, doc_type: str | None = None,
@@ -305,7 +343,45 @@ class Vault:
         document = self.document(pid, doc_id)
         with self._lock, self._db:
             self._db.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
-        Path(document["stored_path"]).unlink(missing_ok=True)
+        if document["stored_path"]:
+            Path(document["stored_path"]).unlink(missing_ok=True)
+
+    # --------------------------------------------------------------- applications
+
+    def set_application(self, pid: str, scheme_id: str, *, status: str,
+                        reference: str = "", note: str = "",
+                        applied_on: str | None = None) -> dict[str, Any]:
+        """Record where an application to one scheme has got to (one row per scheme)."""
+        self.get_profile(pid)
+        if status not in APPLICATION_STATUSES:
+            raise VaultError(f"status must be one of {list(APPLICATION_STATUSES)}")
+        if applied_on is not None and applied_on != "":
+            try:
+                date.fromisoformat(applied_on)
+            except ValueError:
+                raise VaultError("applied_on must be a date like 2026-10-26") from None
+        now = time.time()
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT INTO applications (profile_id, scheme_id, status, reference, note,"
+                " applied_on, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                " ON CONFLICT(profile_id, scheme_id) DO UPDATE SET status = excluded.status,"
+                " reference = excluded.reference, note = excluded.note,"
+                " applied_on = COALESCE(excluded.applied_on, applications.applied_on),"
+                " updated_at = excluded.updated_at",
+                (pid, scheme_id, status, (reference or "").strip()[:60],
+                 (note or "").strip()[:300], applied_on or None, now))
+            self._db.execute("UPDATE profiles SET updated_at = ? WHERE id = ?", (now, pid))
+        return next(a for a in self.applications(pid) if a["scheme_id"] == scheme_id)
+
+    def applications(self, pid: str | None = None) -> list[dict[str, Any]]:
+        query, args = "SELECT * FROM applications", ()
+        if pid is not None:
+            self.get_profile(pid)
+            query, args = query + " WHERE profile_id = ?", (pid,)
+        with self._lock:
+            rows = self._db.execute(query + " ORDER BY updated_at DESC", args).fetchall()
+        return [dict(row) for row in rows]
 
     # ---------------------------------------------------------------- eligibility
 
@@ -352,6 +428,8 @@ def _document_dict(row: sqlite3.Row) -> dict[str, Any]:
         "reading": json.loads(row["reading"]) if row["reading"] else None,
         "status": row["status"],
         "uploaded_at": row["uploaded_at"],
+        "keep_photo": bool(row["keep_photo"]),
+        "has_photo": bool(row["stored_path"]),
     }
 
 

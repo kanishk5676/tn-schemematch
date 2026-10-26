@@ -2,20 +2,17 @@
 
 Every scheme carries two representations of the same eligibility conditions:
 
-* ``eligibility_prose`` — the wording as published by the issuing department. This
-  is what the RAG baseline retrieves over, and it is also the audit trail: a
-  reviewer can read the prose beside the encoded rule and check they agree.
-* ``eligibility`` — a machine-readable rule (see :mod:`tn_schemematch.rules`) that
-  the grounding pipeline evaluates deterministically.
-
-Keeping both, from the same dated source, is what lets us attribute a system's
-errors to *reasoning* rather than to the two systems having seen different facts.
+* ``eligibility_prose`` — the wording as published by the issuing department. This is
+  the audit trail: a reviewer can read the prose beside the encoded rule and check
+  they agree.
+* ``eligibility`` — a machine-readable rule (see :mod:`tn_schemematch.rules`) that the
+  rule engine evaluates deterministically. Every verdict a citizen sees comes from it.
 
 Provenance is mandatory, not decorative. Welfare rules change — income ceilings get
 revised, schemes get renamed or merged — so every scheme records the URL it was read
 from, the date it was read, and whether a human has verified the encoded rule against
-that source. ``verified: false`` schemes are excluded from benchmark releases by
-default; see :meth:`SchemeKB.verified`.
+that source. Only ``status: verified`` schemes may be told to a citizen as "you can
+apply"; see :meth:`SchemeKB.verified`.
 """
 
 from __future__ import annotations
@@ -94,7 +91,7 @@ class Scheme:
     # Which government runs it. Required iff level == state, empty for central schemes.
     # Kept as an explicit field rather than inferred from the rule: a rule may reach
     # `state` through a disjunction or an `in` list, so reading the jurisdiction back off
-    # it is guesswork, and this value is what the retrieval corpus and the UI display.
+    # it is guesswork, and this value is what the UI displays.
     eligibility: Node               # parsed rule AST
     eligibility_prose: str          # verbatim eligibility wording from the source
     jurisdiction: str = ""
@@ -111,6 +108,10 @@ class Scheme:
     verified_by: str = ""
     sources: tuple[Source, ...] = ()
     notes: str = ""
+    # Plain words for a citizen: {"ta": {"name", "what", "who", "where"}, "en": {...}}.
+    # Optional; ``plain_text`` falls back to the official wording when a field is missing.
+    plain: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
+    plain_reviewed: bool = False    # true only after a person has checked the plain text
     raw_rule: Any = None            # the un-parsed rule, for round-tripping
     source_file: Path | None = None
 
@@ -132,25 +133,26 @@ class Scheme:
     def is_verified(self) -> bool:
         return self.status == "verified"
 
-    def retrieval_text(self) -> str:
-        """The prose blob the RAG baseline indexes.
+    def plain_text(self, lang: str, part: str) -> str:
+        """One plain-language field, in ``lang`` if written, else the nearest fallback.
 
-        Deliberately contains everything a well-built retrieval system would have:
-        withholding text here would make the baseline a straw man.
+        ``name`` falls back to the Tamil or official name and ``what`` to the summary, so
+        every scheme can be listed and spoken before its plain text exists. ``who`` and
+        ``where`` have no honest fallback and come back empty.
         """
-        parts = [
-            f"Scheme: {self.name}",
-            f"Tamil name: {self.name_ta}" if self.name_ta else "",
-            f"Implemented by: {self.authority}" if self.authority else "",
-            f"Level: {'Central Government' if self.level == 'central' else 'Government of ' + jurisdiction_name(self.jurisdiction)}",
-            f"State: {jurisdiction_name(self.jurisdiction)}" if self.jurisdiction else "",
-            f"Sectors: {', '.join(self.sectors)}" if self.sectors else "",
-            f"Summary: {self.summary}" if self.summary else "",
-            f"Benefit: {self.benefit_prose}" if self.benefit_prose else "",
-            f"Eligibility: {self.eligibility_prose}",
-            f"Documents required: {', '.join(self.documents)}" if self.documents else "",
-        ]
-        return "\n".join(p for p in parts if p)
+        for language in (lang, "en"):
+            text = (self.plain.get(language) or {}).get(part)
+            if text:
+                return text
+        if part == "name":
+            return (self.name_ta if lang == "ta" and self.name_ta else self.name)
+        if part == "what":
+            return self.summary or self.benefit_prose
+        return ""
+
+    @property
+    def has_plain(self) -> bool:
+        return bool(self.plain)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -174,6 +176,8 @@ class Scheme:
             "verified_by": self.verified_by,
             "sources": [s.to_dict() for s in self.sources],
             "notes": self.notes,
+            "plain": {lang: dict(text) for lang, text in self.plain.items()},
+            "plain_reviewed": self.plain_reviewed,
         }
 
 
@@ -212,10 +216,10 @@ class SchemeKB:
     def active(self) -> "SchemeKB":
         """Schemes that are still open for application.
 
-        Ground truth is computed over this view. Deprecated schemes stay in the KB and
-        in the retrieval corpus on purpose — recommending a discontinued scheme sends a
-        citizen to a district office for nothing, so it must be counted as a false
-        positive rather than quietly dropped from the evaluation.
+        Everything a citizen is told is computed over this view. Deprecated schemes stay in
+        the KB so the assistant can recognise one when a person names it and say that it
+        has closed — sending someone to an office for a discontinued scheme costs them a
+        day's wages.
         """
         return SchemeKB(
             {k: v for k, v in self.schemes.items() if v.status != "deprecated"}, self.spec
@@ -236,7 +240,7 @@ class SchemeKB:
     def match(self, profile: Mapping[str, Any]) -> dict[Verdict, list[str]]:
         """Partition all schemes by verdict against ``profile``.
 
-        With a fully-specified profile this is the benchmark's ground truth. With a
+        With a fully-specified profile this is the final answer for that person. With a
         partial profile it is the state of knowledge mid-conversation, and the
         UNDETERMINED bucket is what elicitation has to shrink.
         """
@@ -260,7 +264,7 @@ class SchemeKB:
         return {k: sorted(v) for k, v in sorted(usage.items())}
 
     def coverage_report(self) -> dict[str, Any]:
-        """Summary statistics for the KB — reported in the paper's resource section."""
+        """Summary statistics for the KB, shown on /admin and by ``schemematch stats``."""
         usage = self.attribute_usage()
         by_level: dict[str, int] = {}
         by_sector: dict[str, int] = {}
@@ -288,6 +292,11 @@ class SchemeKB:
             "unused_attributes": sorted(set(self.spec.names()) - set(usage)),
             "mean_rule_nodes": round(sum(clause_counts) / max(len(clause_counts), 1), 2),
             "max_rule_nodes": max(clause_counts),
+            "plain": {
+                "written": sum(1 for scheme in self if scheme.has_plain),
+                "reviewed": sum(1 for scheme in self if scheme.has_plain and scheme.plain_reviewed),
+                "active": sum(1 for scheme in self if scheme.status != "deprecated"),
+            },
         }
 
     # -- serialization ------------------------------------------------------
@@ -310,6 +319,11 @@ class SchemeKB:
 
 
 _REQUIRED_FIELDS = ("id", "name", "level", "eligibility", "eligibility_prose")
+
+# The plain-language block a citizen hears. Every field is one short spoken sentence, and
+# ``where`` names a kind of office — never an address, which would go stale or be invented.
+PLAIN_LANGUAGES = ("ta", "en")
+PLAIN_FIELDS = ("name", "what", "who", "where")
 
 
 def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
@@ -367,6 +381,7 @@ def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
         raise KBError(f"{path.name}: {exc}") from None
 
     sources = tuple(_parse_source(s, path) for s in (raw.get("sources") or []))
+    plain, plain_reviewed = _parse_plain(raw.get("plain"), path)
     if status == "verified" and not sources:
         raise KBError(f"{path.name}: a scheme marked 'verified' must cite at least one source")
 
@@ -390,9 +405,39 @@ def load_scheme(path: str | Path, spec: AttributeSpec | None = None) -> Scheme:
         verified_by=str(raw.get("verified_by") or ""),
         sources=sources,
         notes=str(raw.get("notes") or "").strip(),
+        plain=plain,
+        plain_reviewed=plain_reviewed,
         raw_rule=raw["eligibility"],
         source_file=path,
     )
+
+
+def _parse_plain(raw: Any, path: Path) -> tuple[dict[str, dict[str, str]], bool]:
+    """Validate a scheme's ``plain:`` block. Unknown languages or fields are errors: a typo
+    ("wher:") would otherwise leave a citizen hearing nothing about where to go."""
+    if raw is None:
+        return {}, False
+    if not isinstance(raw, Mapping):
+        raise KBError(f"{path.name}: plain must be a mapping of language -> fields")
+    reviewed = raw.get("reviewed", False)
+    if not isinstance(reviewed, bool):
+        raise KBError(f"{path.name}: plain.reviewed must be true or false")
+    plain: dict[str, dict[str, str]] = {}
+    for lang, fields in raw.items():
+        if lang == "reviewed":
+            continue
+        if lang not in PLAIN_LANGUAGES:
+            raise KBError(f"{path.name}: plain has unknown language {lang!r}; "
+                          f"use {list(PLAIN_LANGUAGES)}")
+        if not isinstance(fields, Mapping):
+            raise KBError(f"{path.name}: plain.{lang} must be a mapping")
+        unknown = set(fields) - set(PLAIN_FIELDS)
+        if unknown:
+            raise KBError(f"{path.name}: plain.{lang} has unknown field(s) {sorted(unknown)}; "
+                          f"use {list(PLAIN_FIELDS)}")
+        plain[lang] = {key: str(value).strip() for key, value in fields.items()
+                       if value is not None and str(value).strip()}
+    return plain, reviewed
 
 
 def _parse_source(raw: Mapping[str, Any], path: Path) -> Source:
@@ -455,7 +500,7 @@ def validate_kb(kb: SchemeKB) -> list[str]:
 
     for scheme in kb:
         if not scheme.summary:
-            problems.append(f"{scheme.id}: empty summary (weakens the RAG baseline unfairly)")
+            problems.append(f"{scheme.id}: empty summary (the scheme card would be blank)")
         if scheme.status == "verified" and not scheme.verified_on:
             problems.append(f"{scheme.id}: marked verified but has no verified_on date")
         if scheme.level == "state" and "state" not in scheme.attributes:
@@ -486,14 +531,14 @@ def validate_kb(kb: SchemeKB) -> list[str]:
 def _check_jurisdiction_scoping(kb: "SchemeKB", saturated: dict[str, Any]) -> list[str]:
     """Prove each state scheme is refuted for a resident of every other state.
 
-    This is the check that stands in for personas we have not written. The benchmark's
-    personas are all Tamil Nadu residents, so a Karnataka scheme copied from a Tamil Nadu
+    This is the check that stands in for test profiles we have not written. They are all
+    Tamil Nadu residents, so a Karnataka scheme copied from a Tamil Nadu
     one that still says ``value: TN`` passes everything else in this file: its rule *does*
-    constrain ``state``, no persona lives in Karnataka so no gold label moves, and the
+    constrain ``state``, no test profile lives in Karnataka so no gold label moves, and the
     gold-set diff is clean. The scheme is simply unreachable, forever, and nothing says so.
 
     Being a property of the rules rather than of any persona, this holds for every state
-    in the vocabulary whether or not anybody in the benchmark lives there.
+    in the vocabulary whether or not any test profile lives there.
     """
     problems: list[str] = []
     spec = kb.spec

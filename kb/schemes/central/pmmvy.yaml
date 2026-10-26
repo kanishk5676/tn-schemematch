@@ -42,6 +42,21 @@ eligibility:
         - {attr: annual_family_income, op: lt, value: 800000}
         - {attr: ration_card_type, op: in, value: [aay, phh_rice], note: "NFSA ration card holder"}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "பிரதமர் மகப்பேறு உதவி"
+    what: "முதல் குழந்தைக்கு 5,000 ரூபாய் இரண்டு தவணைகளில்; இரண்டாவது குழந்தை பெண் என்றால் 6,000 ரூபாய்."
+    who: "18 முதல் 55 வயது வரையிலான தாய்மார்கள் — SC/ST, BPL அல்லது உணவுப் பாதுகாப்பு ரேஷன் கார்டு, 100 நாள் வேலை அட்டை போன்ற ஏதாவது ஒரு பிரிவில் இருந்தால்."
+    where: "அங்கன்வாடி மையம் அல்லது கிராம சுகாதார செவிலியர்."
+  en:
+    name: "PM maternity benefit (PMMVY)"
+    what: "₹5,000 in two parts for the first child, and ₹6,000 if the second child is a girl."
+    who: "Mothers aged 18 to 55 in a group such as SC/ST, a BPL or food-security ration card, or an MGNREGA job card."
+    where: "The anganwadi centre or the village health nurse."
+
 documents:
   - MCP card / RCH registration
   - Aadhaar card

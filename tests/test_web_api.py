@@ -196,7 +196,6 @@ def test_unparseable_free_text_does_not_consume_the_question(client):
 def test_model_only_routes_refuse_without_a_model(client):
     sid = client.post("/api/session", json={"persona": "p001"}).get_json()["session_id"]
     assert client.get(f"/api/session/{sid}/explain/pm-kisan").status_code == 503
-    assert client.post(f"/api/session/{sid}/compare").status_code == 503
 
 
 def test_unknown_persona_is_404(client):
@@ -229,17 +228,36 @@ def test_stats_endpoint_returns_coverage(client):
     body = client.get("/api/stats").get_json()
     assert body["kb"]["n_schemes"] > 0
     assert body["spec"]["n_elicitable"] > 0
-    assert isinstance(body["runs"], list)
+    assert "runs" not in body
 
 
 def test_pages_render(client):
-    for path in ("/", "/interview", "/profile", "/schemes", "/dashboard"):
+    for path in ("/", "/interview", "/profile", "/schemes", "/admin"):
         assert client.get(path).status_code == 200
 
 
-def test_rules_only_assistant_points_to_the_interview(client):
+def test_dashboard_moved_to_admin(client):
+    response = client.get("/dashboard")
+    assert response.status_code == 301
+    assert response.headers["Location"].endswith("/admin")
+
+
+def test_compare_route_is_gone(client):
+    sid = client.post("/api/session", json={"query": "", "use_ai": False}).get_json()["session_id"]
+    assert client.post(f"/api/session/{sid}/compare").status_code in (404, 405)
+
+
+def test_the_assistant_page_works_without_a_model(client):
+    """No model is not a dead end: the page carries the mic, the answer area and Tamil."""
     page = client.get("/").get_data(as_text=True)
-    assert "running rules-only" in page and 'href="/interview"' in page
+    assert 'id="mic"' in page and 'id="answer"' in page
+    assert '<html lang="ta">' in page
+
+
+def test_the_service_worker_is_served_from_the_root(client):
+    response = client.get("/sw.js")
+    assert response.status_code == 200
+    assert "javascript" in response.headers["Content-Type"]
 
 
 def test_old_replay_links_still_land_on_the_interview(client):
@@ -279,15 +297,3 @@ def test_explain_is_cached_per_scheme_and_language(kb, spec):
     http.get(f"/api/session/{sid}/explain/pm-kisan")
     http.get(f"/api/session/{sid}/explain/pm-kisan")
     assert len(scripted.calls) == 1
-
-
-def test_compare_separates_false_positives_from_hallucinations(kb, spec):
-    scripted = ScriptedClient(default=json.dumps(
-        {"eligible_schemes": ["pm-kisan", "kmut", "free-money-yojana"]}))
-    http = create_app(kb=kb, spec=spec, client=scripted).test_client()
-    sid = http.post("/api/session", json={"persona": "p001"}).get_json()["session_id"]
-
-    body = http.post(f"/api/session/{sid}/compare").get_json()
-    assert "free-money-yojana" in body["hallucinated"]
-    # p001 is male; the women-only scheme is a false positive the rules catch.
-    assert any(c["id"] == "kmut" for c in body["false_positives"])

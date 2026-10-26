@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% set ta = lang == 'ta' %}
+{% block body %}
+<div class="card" style="max-width:560px;margin:20px auto">
+  <h1 style="font-size:20px">{{ 'இந்தத் திட்டத்துக்கான விண்ணப்பத் தாள் இல்லை' if ta else 'No application sheet for this scheme' }}</h1>
+  <p>{{ 'நீங்கள் சொன்னவற்றின்படி, இந்தத் திட்டம் உங்களுக்கு இன்னும் உறுதியாகவில்லை. இன்னும் சில கேள்விகளுக்குப் பதில் சொல்லுங்கள்.' if ta else 'From what you have told us, this scheme is not confirmed for you yet. Answer a few more questions first.' }}</p>
+  <a class="btn primary" href="/">{{ 'பேசத் தொடங்கு' if ta else 'Start talking' }}</a>
+</div>
+{% endblock %}

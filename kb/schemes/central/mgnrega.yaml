@@ -27,6 +27,21 @@ eligibility:
        note: "the guarantee is rural by statute; the urban equivalents are state schemes"}
     - {attr: age, op: gte, value: 18, note: "'adult members' of the household"}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "நூறு நாள் வேலைத் திட்டம்"
+    what: "கிராமக் குடும்பத்துக்கு வருடத்துக்குக் குறைந்தது 100 நாள் கூலி வேலை, வீட்டிலிருந்து 5 கிலோமீட்டருக்குள்."
+    who: "உடல் உழைப்பு வேலை செய்யத் தயாராக உள்ள எந்தக் கிராமக் குடும்பமும்."
+    where: "கிராம ஊராட்சி அலுவலகம் — வேலை அட்டை பெற."
+  en:
+    name: "100-day work scheme (MGNREGA)"
+    what: "At least 100 days of paid work a year for a village household, within 5 km of home."
+    who: "Any village household whose adults are willing to do manual work."
+    where: "The village panchayat office, for a job card."
+
 documents:
   - Job card application with photograph
   - Aadhaar card

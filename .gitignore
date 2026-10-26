@@ -35,3 +35,6 @@ data/runs/**/raw/
 .claude/launch.json
 # Saved citizen profiles and their uploaded documents — personal data, never committed.
 data/vault/
+# Browser test screenshots (tests/test_ui.py)
+ui-screenshots/
+node_modules/

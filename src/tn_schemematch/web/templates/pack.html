@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% set ta = lang == 'ta' %}
+{% block title %}{{ pack.name }} · {{ 'விண்ணப்பத் தாள்' if ta else 'Application sheet' }}{% endblock %}
+{% block body_class %}pack-page{% endblock %}
+{% block body %}
+<div class="pack-tools no-print row">
+  <a class="btn" href="/">← {{ 'திரும்ப' if ta else 'Back' }}</a>
+  <button type="button" class="btn primary" id="pack-read">🔊 {{ 'சத்தமாகப் படி' if ta else 'Read aloud' }}</button>
+  <button type="button" class="btn" onclick="window.print()">🖨️ {{ 'அச்சிடு' if ta else 'Print' }}</button>
+  <a class="btn" href="{{ pack.share_url }}" target="_blank" rel="noopener">💬 {{ 'வாட்ஸ்அப்பில் பகிர' if ta else 'Share on WhatsApp' }}</a>
+</div>
+
+<article class="pack" lang="{{ lang }}" data-spoken="{{ pack.spoken }}" data-lang="{{ lang }}">
+  <header class="pack-head">
+    <p class="pack-kicker">{{ 'விண்ணப்பத் தாள்' if ta else 'Application sheet' }}{% if pack.person %} · {{ pack.person }}{% endif %}</p>
+    <h1>{{ pack.name }}</h1>
+    {% if pack.what %}<p class="pack-what">{{ pack.what }}</p>{% endif %}
+    <p class="pack-official">{{ 'அரசுப் பெயர்' if ta else 'Official name' }}: {{ pack.official_name }}{% if ta and pack.official_name_ta and pack.official_name_ta != pack.name %} · {{ pack.official_name_ta }}{% endif %}</p>
+    {% if pack.verified %}
+      <span class="badge ok">{{ 'சரிபார்க்கப்பட்டது' if ta else 'Checked' }}</span>
+    {% else %}
+      <p class="pack-caveat">⚠️ {{ pack.caveat }}</p>
+    {% endif %}
+  </header>
+
+  <section>
+    <h2>🗂️ {{ 'கொண்டு செல்ல வேண்டியவை' if ta else 'What to bring' }}</h2>
+    <ul class="pack-docs">
+      {% for item in pack.documents %}
+      <li class="doc-{{ item.status }}">
+        <span class="box" aria-hidden="true">{{ '✓' if item.status == 'have' else ('→' if item.status == 'action' else '') }}</span>
+        <span class="doc-label">{{ item.label }}</span>
+        <span class="doc-status">{{ item.status_text }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {% if pack.where %}
+  <section>
+    <h2>📍 {{ 'எங்கே போக வேண்டும்' if ta else 'Where to go' }}</h2>
+    <p class="pack-big">{{ pack.where }}</p>
+  </section>
+  {% endif %}
+
+  {% if pack.facts %}
+  <section>
+    <h2>🗣️ {{ 'அலுவலர் கேட்கக்கூடியவை — உங்கள் பதில்கள்' if ta else 'What the officer may ask — your answers' }}</h2>
+    <dl class="pack-facts">
+      {% for fact in pack.facts %}<dt>{{ fact.label }}</dt><dd>{{ fact.answer }}</dd>{% endfor %}
+    </dl>
+  </section>
+  {% endif %}
+
+  {% if pack.who %}
+  <section>
+    <h2>👥 {{ 'யாருக்கு' if ta else 'Who it is for' }}</h2>
+    <p>{{ pack.who }}</p>
+  </section>
+  {% endif %}
+
+  {% if helper_link %}
+  <section class="no-print pack-track" data-pid="{{ pid }}" data-scheme="{{ pack.id }}">
+    <h2>📌 {{ 'விண்ணப்ப நிலை' if ta else 'Application status' }}</h2>
+    <form class="app-fields" id="track-form">
+      <select name="status" aria-label="status">
+        {% for value, ta_label, en_label in [('planned', 'போகத் திட்டம்', 'Planning to go'), ('applied', 'விண்ணப்பித்தாகிவிட்டது', 'Applied'), ('sanctioned', 'அனுமதி கிடைத்தது', 'Sanctioned'), ('rejected', 'நிராகரிக்கப்பட்டது', 'Rejected')] %}
+        <option value="{{ value }}" {% if application and application.status == value %}selected{% endif %}>{{ ta_label if ta else en_label }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="reference" maxlength="60" placeholder="{{ 'விண்ணப்ப எண்' if ta else 'Application number' }}" value="{{ application.reference if application else '' }}">
+      <input type="date" name="applied_on" value="{{ application.applied_on if application and application.applied_on else '' }}">
+      <button class="btn primary">{{ 'சேமி' if ta else 'Save' }}</button>
+      <span class="tiny muted" id="track-note" aria-live="polite"></span>
+    </form>
+  </section>
+  {% endif %}
+
+  <footer class="pack-foot">
+    {% if pack.apply_url %}<p>{{ 'இணையதளம்' if ta else 'Website' }}: {{ pack.apply_url }}</p>{% endif %}
+    {% if pack.authority %}<p>{{ pack.authority }}</p>{% endif %}
+    {% if pack.sources %}
+    <p>{{ 'ஆதாரம்' if ta else 'Source' }}:
+      {% for s in pack.sources %}{{ s.title }} ({{ s.retrieved }}){% if not loop.last %}; {% endif %}{% endfor %}</p>
+    {% endif %}
+    <p>{{ 'உதவி மூலம் தயாரிக்கப்பட்டது. தகுதியை விதிகள் முடிவு செய்கின்றன; இறுதி முடிவு அலுவலகத்தினுடையது.' if ta else 'Prepared with Udhavi. The rules decide eligibility; the final decision is the office\'s.' }}</p>
+  </footer>
+</article>
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/pack.js') }}"></script>
+{% endblock %}

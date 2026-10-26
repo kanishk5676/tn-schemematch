@@ -29,6 +29,21 @@ eligibility:
     - {attr: is_secc_deprived_household, op: eq, value: true}
     - {attr: age, op: gte, value: 70, note: "the 2024 extension, which is explicitly income-blind"}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "ஆயுஷ்மான் பாரத் மருத்துவக் காப்பீடு"
+    what: "குடும்பத்துக்கு வருடம் 5 லட்சம் ரூபாய் வரை இலவச மருத்துவமனைச் சிகிச்சை. 70 வயதுக்கு மேற்பட்டவர்களுக்குத் தனியாக மேலும் 5 லட்சம்."
+    who: "2011 கணக்கெடுப்பில் ஏழைக் குடும்பங்களாகப் பதிவானவர்கள், மற்றும் 70 வயதுக்கு மேற்பட்ட அனைவரும்."
+    where: "பொது சேவை மையம், இ-சேவை மையம் அல்லது திட்டத்தில் உள்ள மருத்துவமனை — ஆயுஷ்மான் அட்டை பெற."
+  en:
+    name: "Ayushman Bharat health insurance"
+    what: "Free hospital treatment worth up to ₹5 lakh a year for the family. People over 70 get another ₹5 lakh of their own."
+    who: "Families recorded as poor in the 2011 census, and everyone aged 70 or more."
+    where: "A common service centre, e-Sevai centre or empanelled hospital, to get the Ayushman card."
+
 documents:
   - Aadhaar card
   - Ration card or family identification

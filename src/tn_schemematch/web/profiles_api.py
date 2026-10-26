@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from flask import Flask, jsonify, request, send_file
+from urllib.parse import quote
+
+from flask import Flask, jsonify, render_template, request, send_file
 
 from ..documents import (
     DocumentError,
@@ -21,8 +23,10 @@ from ..documents import (
     unread_reading,
 )
 from ..interview import parse_answer
+from ..pack import NotEligible, application_pack, share_text
 from ..serialize import attribute_form, format_value, label_for
 from ..vault import VaultError, eligibility
+from .helper_api import can_see, claim, is_helper, visible_profiles
 from .http import error
 from .state import AppContext
 
@@ -60,11 +64,14 @@ def register_profile_api(app: Flask, ctx: AppContext) -> None:
 
     @app.get("/api/profiles")
     def list_profiles():
-        return jsonify({"profiles": ctx.vault.profiles()})
+        # With a helper PIN set, a citizen's browser lists only the people it created.
+        return jsonify({"profiles": visible_profiles(ctx, ctx.vault.profiles())})
 
     @app.post("/api/profiles")
     def create_profile():
         body = request.get_json(silent=True) or {}
+        if body.get("household_of") and not can_see(ctx, str(body["household_of"])):
+            return error("login_required", "Log in with the helper PIN to see this.", 401)
         try:
             profile = ctx.vault.create_profile(
                 body.get("name") or "", relation=body.get("relation") or "",
@@ -73,6 +80,7 @@ def register_profile_api(app: Flask, ctx: AppContext) -> None:
             return missing(body.get("household_of"))
         except VaultError as exc:
             return error("bad_profile", str(exc), 400)
+        claim(profile["id"])
         return jsonify(profile), 201
 
     @app.get("/api/profiles/<pid>")
@@ -163,6 +171,52 @@ def profile_checklist(ctx: AppContext, pid: str,
     return checklist(ctx.documents, ctx.active, scheme_ids, held_types(ctx, pid))
 
 
+def build_pack(ctx: AppContext, pid: str, scheme_id: str, lang: str) -> dict[str, Any]:
+    """The application sheet for one saved person and one scheme.
+
+    Raises ``KeyError`` for an unknown person or scheme and :class:`NotEligible` when the
+    rules do not say this person is eligible.
+    """
+    if scheme_id not in ctx.active:
+        raise KeyError(scheme_id)
+    profile, _ = ctx.vault.profile(pid)
+    person = ctx.vault.get_profile(pid)["name"]
+    pack = application_pack(ctx.active[scheme_id], profile, ctx.spec, ctx.documents,
+                            ctx.questions, lang, active=ctx.active,
+                            held=held_types(ctx, pid), person=person)
+    pack["share_url"] = "https://wa.me/?text=" + quote(share_text(pack))
+    return pack
+
+
+def register_pack_routes(app: Flask, ctx: AppContext) -> None:
+    def language() -> str:
+        return "en" if request.args.get("lang") == "en" else "ta"
+
+    @app.get("/api/profiles/<pid>/pack/<scheme_id>")
+    def pack_api(pid: str, scheme_id: str):
+        try:
+            return jsonify(build_pack(ctx, pid, scheme_id, language()))
+        except KeyError:
+            return error("not_found", "no such person or scheme", 404)
+        except NotEligible as exc:
+            return error("not_eligible", str(exc), 404)
+
+    @app.get("/profile/<pid>/pack/<scheme_id>")
+    def pack_page(pid: str, scheme_id: str):
+        """One printable page: print it, read it aloud, or send it on WhatsApp."""
+        lang = language()
+        try:
+            pack = build_pack(ctx, pid, scheme_id, lang)
+        except (KeyError, NotEligible):
+            return render_template("pack_missing.html", page="profile", lang=lang,
+                                   pid=pid), 404
+        helper = is_helper(ctx)
+        application = next((a for a in ctx.vault.applications(pid)
+                            if a["scheme_id"] == scheme_id), None) if helper else None
+        return render_template("pack.html", page="profile", pack=pack, pid=pid, lang=lang,
+                               helper_link=helper, application=application)
+
+
 def register_document_api(app: Flask, ctx: AppContext) -> None:
     def missing(pid: str):
         return error("no_such_profile", f"no saved profile {pid!r}", 404)
@@ -173,12 +227,22 @@ def register_document_api(app: Flask, ctx: AppContext) -> None:
         client = ctx.interview.client
         return client if client is not None and hasattr(client, "complete_with_images") else None
 
+    def discard_if_done(pid: str, document: dict[str, Any]) -> dict[str, Any]:
+        """Delete the photo once it has been read and nothing about it is in dispute,
+        unless the person asked to keep it. Its facts stay."""
+        reading = document["reading"] or {}
+        if (document["status"] != "unread" and not document["keep_photo"]
+                and not reading.get("conflicts")):
+            return ctx.vault.discard_file(pid, document["id"])
+        return document
+
     def outcome(pid: str, document: dict[str, Any], reading: dict[str, Any]):
         merged = (apply_reading(ctx.vault, pid, document["id"], reading)
                   if reading["doc_type"] in ctx.documents else
                   {"applied": [], "confirmed": [], "conflicts": []})
         reading["conflicts"] = merged["conflicts"]
         document = ctx.vault.update_document(pid, document["id"], reading=reading)
+        document = discard_if_done(pid, document)
         doc_type = document["doc_type"]
         return {
             "document": public_document(document),
@@ -242,7 +306,7 @@ def register_document_api(app: Flask, ctx: AppContext) -> None:
         document = ctx.vault.add_document(
             pid, doc_type=reading["doc_type"], filename=upload.filename or "photo",
             data=image, media_type=media_type, extension=extension, reading=reading,
-            status=status)
+            status=status, keep_photo=request.form.get("keep") == "1")
         return jsonify(outcome(pid, document, reading)), 201
 
     @app.post("/api/profiles/<pid>/documents/<doc_id>/type")
@@ -282,7 +346,7 @@ def register_document_api(app: Flask, ctx: AppContext) -> None:
             ctx.vault.record(pid, attr, conflict["current"], source="confirmed",
                              evidence="kept over a document that disagreed")
         reading["conflicts"] = [c for c in reading["conflicts"] if c["attr"] != attr]
-        ctx.vault.update_document(pid, doc_id, reading=reading)
+        discard_if_done(pid, ctx.vault.update_document(pid, doc_id, reading=reading))
         return jsonify({"resolved": attr, "kept": keep, "facts": ctx.vault.fact_rows(pid),
                         "eligibility": eligibility(ctx.active, ctx.vault, pid)})
 
@@ -292,6 +356,9 @@ def register_document_api(app: Flask, ctx: AppContext) -> None:
             document = ctx.vault.document(pid, doc_id)
         except KeyError:
             return error("no_such_document", "that document does not exist", 404)
+        if not document["stored_path"]:
+            return error("photo_deleted", "The photo was deleted after it was read; what "
+                         "it said is kept.", 410)
         response = send_file(document["stored_path"], mimetype=document["media_type"])
         response.headers["Cache-Control"] = "private, no-store"
         return response

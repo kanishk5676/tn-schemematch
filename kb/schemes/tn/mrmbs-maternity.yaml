@@ -32,6 +32,21 @@ eligibility:
     - {attr: pregnancy_order, op: lte, value: 2,
        note: "'assistance is limited to the first two pregnancies' — encodable since v0.2 added pregnancy_order"}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "முத்துலட்சுமி ரெட்டி மகப்பேறு உதவி"
+    what: "ஒவ்வொரு பிரசவத்துக்கும் 18,000 ரூபாய்: 14,000 ரூபாய் பணம், இரண்டு ஊட்டச்சத்துப் பெட்டகங்கள்."
+    who: "கர்ப்பத்தைப் பதிவு செய்த தமிழ்நாட்டு கர்ப்பிணிப் பெண்கள் அனைவரும், முதல் இரண்டு பிரசவங்களுக்கு. வருமான வரம்பு இல்லை."
+    where: "கிராம சுகாதார செவிலியர் அல்லது ஆரம்ப சுகாதார நிலையம் — பிக்மி எண் பெற."
+  en:
+    name: "Muthulakshmi Reddy maternity benefit"
+    what: "₹18,000 for each pregnancy: ₹14,000 in cash and two nutrition kits."
+    who: "Every pregnant woman in Tamil Nadu who registers her pregnancy, for the first two. No income limit."
+    where: "The village health nurse or primary health centre, for a PICME number."
+
 documents:
   - PICME registration number
   - Antenatal care card

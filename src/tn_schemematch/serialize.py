@@ -277,6 +277,10 @@ def scheme_summary(scheme: Scheme) -> dict[str, Any]:
         "status": scheme.status,
         "is_verified": scheme.is_verified,
         "n_attributes": len(scheme.attributes),
+        "plain": {lang: {part: scheme.plain_text(lang, part)
+                         for part in ("name", "what", "who", "where")}
+                  for lang in ("ta", "en")},
+        "plain_written": scheme.has_plain,
     }
 
 

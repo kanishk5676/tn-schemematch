@@ -31,6 +31,21 @@ eligibility:
     - {attr: enrolled_in_higher_education, op: eq, value: true}
     - {attr: course_mode, op: eq, value: regular}
 
+plain:
+  # Spoken words for a citizen, drawn from benefit_prose and eligibility_prose
+  # above. reviewed: true only after a person has checked them against the source.
+  reviewed: false
+  ta:
+    name: "தமிழ்ப் புதல்வன் திட்டம்"
+    what: "கல்லூரியில் படிக்கும் மாணவனுக்குப் படிப்பு முடியும் வரை மாதம் 1,000 ரூபாய்."
+    who: "6 முதல் 12ஆம் வகுப்பு வரை அரசுப் பள்ளியில் படித்து, இப்போது கல்லூரி, டிப்ளமோ அல்லது ஐ.டி.ஐ.யில் நேரடி வகுப்பில் படிக்கும் மாணவர்கள்."
+    where: "நீங்கள் படிக்கும் கல்லூரி மூலம் விண்ணப்பிக்கலாம்."
+  en:
+    name: "Tamil Pudhalvan, for boy students"
+    what: "₹1,000 a month to a boy student until he finishes his course."
+    who: "Boys who studied 6th to 12th in a government school and now study a degree, diploma or ITI course in regular classes."
+    where: "Apply through your college."
+
 documents:
   - Class 12 mark sheet
   - Bonafide certificate from the higher education institution

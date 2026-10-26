@@ -1,9 +1,9 @@
 """Command line entry point.
 
-    schemematch validate          check the KB and persona set
-    schemematch stats             coverage and benchmark statistics
-    schemematch build             export the KB and benchmark as released artifacts
-    schemematch explain           print the rule trace for a persona against a scheme
+    schemematch validate          check the KB and the test profiles
+    schemematch stats             coverage statistics
+    schemematch build             export the KB and the test profiles as JSON
+    schemematch explain           print the rule trace for a test profile against a scheme
     schemematch ask               show what an agent should ask next, and why
     schemematch verify-queue      list what still needs human verification
     schemematch serve             run the browser front end
@@ -43,14 +43,23 @@ def _load(args) -> tuple:
 
 
 def cmd_validate(args) -> int:
+    from .guided import default_questions, validate_questions
+
     spec, kb, personas = _load(args)
     documents = load_documents(spec)
-    problems = validate_kb(kb) + validate_documents(documents, kb)
+    questions = default_questions()
+    problems = (validate_kb(kb) + validate_documents(documents, kb)
+                + validate_questions(questions, spec))
     if personas is not None:
         problems += validate_personas(personas, kb)
 
     print(f"KB:       {len(kb)} schemes ({len(kb.active())} active, "
           f"{len(kb.verified())} human-verified)")
+    plain = kb.coverage_report()["plain"]
+    print(f"Plain:    {plain['written']} of {plain['active']} active schemes have plain "
+          f"Tamil/English text, {plain['reviewed']} reviewed by a person")
+    print(f"Questions: {len(questions.questions)} written in Tamil and English"
+          f"{'' if questions.reviewed else ' (not yet reviewed by a native speaker)'}")
     print(f"Documents: {len(documents.uploadable())} document types, every scheme "
           "requirement mapped" if not validate_documents(documents, kb) else
           f"Documents: {len(documents.uploadable())} document types")
@@ -154,14 +163,17 @@ def cmd_serve(args) -> int:
     """
     client = None
     if args.backend != "none":
+        from .systems.budget import UsageMeter
         from .systems.clients import has_credentials, make_client
-        if not has_credentials(args.backend):
-            # Fail before binding a port rather than seven seconds into a live extraction.
+        from .vault import DEFAULT_VAULT_DIR
+        if has_credentials(args.backend):
+            meter = UsageMeter(path=DEFAULT_VAULT_DIR / "usage.json",
+                               daily_budget_usd=getattr(args, "daily_budget", None))
+            client = make_client(args.backend, args.model, max_retries=1, meter=meter)
+        else:
+            # Never refuse to start: without a key the assistant runs in guided mode.
             env_var = "ANTHROPIC_API_KEY" if args.backend == "anthropic" else "OPENAI_API_KEY"
-            print(f"No credentials for {args.backend}. Set {env_var}, or run with "
-                  "--backend none.", file=sys.stderr)
-            return 2
-        client = make_client(args.backend, args.model, max_retries=1)
+            print(f"No {env_var} found — starting in guided mode (no model).", file=sys.stderr)
 
     try:
         from .web import create_app
@@ -170,9 +182,9 @@ def cmd_serve(args) -> int:
         return 1
 
     app = create_app(client=client, max_questions=args.max_questions, debug=args.debug,
-                     vault_dir=args.vault_dir)
-    print(f"\n  TN-SchemeMatch \u2192 http://{args.host}:{args.port}")
-    print(f"  model: {getattr(client, 'name', 'none (rules only)')}\n")
+                     vault_dir=args.vault_dir, helper_pin=os.environ.get("HELPER_PIN") or None)
+    print(f"\n  Udhavi \u2192 http://{args.host}:{args.port}")
+    print(f"  model: {getattr(client, 'name', 'none — guided mode only')}\n")
     app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)
     return 0
 
@@ -204,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("validate", help="check the KB and persona set").set_defaults(func=cmd_validate)
-    sub.add_parser("stats", help="coverage and benchmark statistics").set_defaults(func=cmd_stats)
+    sub.add_parser("stats", help="coverage statistics").set_defaults(func=cmd_stats)
 
     build = sub.add_parser("build", help="export released artifacts")
     build.add_argument("--out", default=None)
@@ -220,6 +232,8 @@ def main(argv: list[str] | None = None) -> int:
     serve.add_argument("--port", type=int,
                        default=int(os.environ.get("PORT", 5001)))
     serve.add_argument("--max-questions", type=int, default=15)
+    serve.add_argument("--daily-budget", type=float, default=None,
+                       help="US dollars the model may spend per day; then guided mode")
     serve.add_argument("--debug", action="store_true")
     serve.add_argument("--vault-dir", default=None,
                        help="where saved profiles and documents live (default data/vault)")

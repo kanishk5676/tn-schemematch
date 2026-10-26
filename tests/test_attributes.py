@@ -81,7 +81,9 @@ def test_income_normalizes_to_annual_rupees(spec, surface, expected):
     "surface,expected",
     [
         ("2 acres", 2.0),
-        ("rendu ekkar", None),      # word-number, not digits — must not silently parse
+        ("rendu ekkar", 2.0),       # spoken: a number word, not digits
+        ("arai ekkar", 0.5),
+        ("ஒன்றரை ஏக்கர்", 1.5),
         ("2 ekkar", 2.0),
         ("2 ஏக்கர்", 2.0),
         ("1 hectare", 2.4710538),
@@ -95,6 +97,44 @@ def test_land_normalizes_to_acres(spec, surface, expected):
             spec.canonicalize("land_owned_acres", surface)
     else:
         assert spec.canonicalize("land_owned_acres", surface) == pytest.approx(expected, rel=1e-6)
+
+
+@pytest.mark.parametrize(
+    "attr,surface,expected",
+    [
+        ("age", "அறுபது வயசு", 60),
+        ("age", "அறுபத்தைந்து", 65),
+        ("age", "எழுபத்திரண்டு வயது", 72),
+        ("age", "iruvathi anju", 25),
+        ("age", "irupathanju", 25),
+        ("age", "sixty two", 62),
+        ("annual_family_income", "rendu lakh", 200000),
+        ("annual_family_income", "oru lakh aimbathu aayiram", 150000),
+        ("annual_family_income", "maasam pathu aayiram", 120000),
+        ("annual_family_income", "மாசம் ஐந்தாயிரம்", 60000),
+        ("annual_family_income", "இருபதாயிரம்", 20000),
+        ("monthly_pension_amount", "poojiyam", 0),
+        ("family_size", "naalu peru", 4),
+    ],
+)
+def test_spoken_number_words_parse(spec, attr, surface, expected):
+    """A voice answer arrives as words. Without a model these must still be read."""
+    assert spec.canonicalize(attr, surface) == pytest.approx(expected)
+
+
+def test_a_sentence_without_a_number_is_not_read_as_zero(spec):
+    with pytest.raises(SchemaError):
+        spec.canonicalize("land_owned_acres", "naan vivasayi")
+
+
+@pytest.mark.parametrize(
+    "surface,expected",
+    [("400 units 2 maasathukku", 2400), ("2 மாசத்துக்கு 500 யூனிட்", 3000),
+     ("300 units per month", 3600), ("2400", 2400)],
+)
+def test_two_monthly_electricity_bill_annualizes(spec, surface, expected):
+    """TN bills every two months, and the "2" in "2 maasam" is not the reading."""
+    assert spec.canonicalize("annual_electricity_units", surface) == pytest.approx(expected)
 
 
 def test_out_of_domain_number_rejected(spec):
